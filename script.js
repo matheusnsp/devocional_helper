@@ -5,6 +5,58 @@
    ──────────────────────────────────────────────────────────*/
    const BIBLE_API_KEY = ""; // não precisa mais
 
+/* ──────────────────────────────────────────────────────────
+   CACHE LOCAL (localStorage)
+   Evita chamadas repetidas à API — limite de 5k/mês
+   Chave: URL completa da requisição
+   TTL: 30 dias (em ms)
+   ──────────────────────────────────────────────────────────*/
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 dias
+const CACHE_PREFIX = "bibleCache:";
+
+function cacheGet(url) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + url);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) {
+      localStorage.removeItem(CACHE_PREFIX + url);
+      return null;
+    }
+    return data;
+  } catch { return null; }
+}
+
+function cacheSet(url, data) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ ts: Date.now(), data }));
+  } catch (e) {
+    // localStorage cheio — limpa entradas antigas e tenta de novo
+    clearOldCache();
+    try { localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ ts: Date.now(), data })); } catch {}
+  }
+}
+
+function clearOldCache() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
+  // Remove os 20% mais antigos
+  const entries = keys.map(k => {
+    try { return { k, ts: JSON.parse(localStorage.getItem(k)).ts }; } catch { return { k, ts: 0 }; }
+  }).sort((a, b) => a.ts - b.ts);
+  entries.slice(0, Math.max(1, Math.floor(entries.length * 0.2))).forEach(e => localStorage.removeItem(e.k));
+}
+
+async function cachedFetch(url) {
+  const cached = cacheGet(url);
+  if (cached) return cached;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(res.status);
+  const json = await res.json();
+  cacheSet(url, json);
+  return json;
+}
+
+
    /* IDs de versões disponíveis na API.Bible */
    const BIBLE_VERSIONS = [
     { id: "41a6caa722a21d88-01", name: "NVT — Nova Versão Transformadora", lang: "pt" },
@@ -1221,12 +1273,9 @@ async function fetchVerse(apiId, bibleId) {
   const isPassage = apiId.includes("-");
   const path = isPassage ? `passages/${apiId}` : `verses/${apiId}`;
 
-  const res = await fetch(
+  const json = await cachedFetch(
     `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${bibleId}/${path}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false`
   );
-
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const json = await res.json();
   return (json.data?.content ?? "").trim();
 }
 
@@ -1347,9 +1396,7 @@ async function loadContextChapter() {
 
   try {
     const url = `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chapterId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`;
-    const res  = await fetch(url);
-    if (!res.ok) throw new Error(res.status);
-    const json = await res.json();
+    const json = await cachedFetch(url);
 
     document.getElementById("contextNext").disabled = !json.data.next;
     renderChapter(json.data, contextHighVerse, body);
@@ -1517,11 +1564,7 @@ async function selectBook(bookId) {
   body.innerHTML = `<div class="modal-loading">Carregando capítulos...</div>`;
 
   try {
-    const res = await fetch(
-      `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/books/${bookId}/chapters`
-    );
-    if (!res.ok) throw new Error(res.status);
-    const json = await res.json();
+    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/books/${bookId}/chapters`);
     selectorChapters = (json.data || []).filter(c => c.number !== "intro");
     renderChapterPanel();
   } catch(e) {
@@ -1565,11 +1608,7 @@ async function selectChapter(num) {
 
   try {
     const chId = `${readerBook}.${readerChapter}`;
-    const res  = await fetch(
-      `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}/verses`
-    );
-    if (!res.ok) throw new Error(res.status);
-    const json = await res.json();
+    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}/verses`);
     selectorVerses = (json.data || [])
       .filter(v => v.id && !v.id.endsWith(".intro"))
       .map(v => ({ ...v, number: v.number ?? v.id.split(".")[2] }));
@@ -1635,11 +1674,7 @@ async function loadReaderChapter() {
   body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
 
   try {
-    const res = await fetch(
-      `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`
-    );
-    if (!res.ok) throw new Error(res.status);
-    const json = await res.json();
+    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`);
 
     renderChapter(json.data, readerVerse ?? "", body);
   } catch(e) {
