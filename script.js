@@ -1,555 +1,1678 @@
-/* ============================================================
-   DEVOCIONAL DIÁRIO — script.js  v2.0
-   365 versículos · 30 temas · ~12 por tema
-   ctx = contexto histórico/literário breve
-   ============================================================ */
+/* ──────────────────────────────────────────────────────────
+   CONFIGURAÇÃO DA API.BIBLE
+   Cadastre-se gratuitamente em https://scripture.api.bible
+   e substitua pela sua chave abaixo.
+   ──────────────────────────────────────────────────────────*/
+   const BIBLE_API_KEY = ""; // não precisa mais
 
-   const verses = [
-
-    /* ── 01. AMOR (12) ── */
-    { ref:"João 3:16",         theme:"Amor", text:"Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.",          ctx:"Faz parte do diálogo de Jesus com Nicodemos, líder fariseu que o procurou à noite. O termo grego 'agápē' descreve amor incondicional e autodoativo, distinto do afeto comum. É o versículo mais memorizado de toda a Bíblia." },
-    { ref:"1 João 4:8",        theme:"Amor", text:"Aquele que não ama não conhece a Deus, porque Deus é amor.",                                                                                                ctx:"João escreve a comunidades ameaçadas por falsos mestres que negavam a encarnação. A frase 'Deus é amor' não equivale a 'amor é Deus': é afirmação sobre o caráter divino, não uma definição filosófica do amor." },
-    { ref:"Romanos 8:38-39",   theme:"Amor", text:"Pois estou convencido de que nem a morte nem a vida... nem qualquer outra criatura nos poderá separar do amor de Deus em Cristo Jesus, nosso Senhor.",    ctx:"Encerra o clímax teológico de Romanos 8. Paulo usa a figura retórica do 'merismo' — listar extremos para abarcar tudo entre eles — para declarar a permanência absoluta do amor divino independente de circunstâncias." },
-    { ref:"1 Coríntios 13:4",  theme:"Amor", text:"O amor é paciente, o amor é bondoso. Não inveja, não se vangloria, não se orgulha.",                                                                        ctx:"Inserido num contexto de conflito sobre dons espirituais em Corinto. Paulo descreve 'agápē' com 15 atributos, intencionalmente contrastando com o comportamento ciumento e divisivo que a comunidade exibia." },
-    { ref:"1 Pedro 4:8",       theme:"Amor", text:"Acima de tudo, tende amor intenso uns pelos outros, porque o amor cobre uma multidão de pecados.",                                                          ctx:"Escrito a cristãos dispersos na Ásia Menor sob pressão social e possível perseguição. 'Amor intenso' traduz 'ektenes' (grego), metáfora do músculo esticado ao máximo — amor que exige esforço contínuo e deliberado." },
-    { ref:"Deuteronômio 6:5",  theme:"Amor", text:"Amarás o Senhor, teu Deus, de todo o teu coração, de toda a tua alma e de toda a tua força.",                                                              ctx:"Parte do Shemá, oração central do judaísmo recitada diariamente há milênios. Jesus a citou como o maior mandamento (Mc 12:30). A tríplice ênfase aponta para uma entrega integral: razão, vida interior e ação prática." },
-    { ref:"Efésios 3:17-18",   theme:"Amor", text:"Sendo arraigados e alicerçados no amor, sejais capazes de compreender qual é a largura, o comprimento, a altura e a profundidade do amor de Cristo.",      ctx:"Paulo ora numa prisão romana pelos efésios. As quatro dimensões espaciais eram usadas na filosofia estoica para descrever o cosmos; Paulo as toma emprestadas para sugerir que o amor de Cristo excede qualquer grandeza mensurável." },
-    { ref:"Cantares 8:6",      theme:"Amor", text:"Porque o amor é forte como a morte; ciúme, cruel como o Seol; as suas brasas são brasas de fogo, são labaredas do Senhor.",                                ctx:"Clímax do Cântico dos Cânticos, poema nupcial que o judaísmo leu como alegoria do amor entre Deus e Israel. A equiparação com a morte e o fogo divino (Hebraico: 'shalhevet-yah') é a única menção direta de Deus no livro." },
-    { ref:"Lucas 15:20",       theme:"Amor", text:"Estando ele ainda longe, seu pai o viu e se moveu de compaixão, e, correndo, lançou-se sobre o seu pescoço e o beijou.",                                    ctx:"Na parábola do filho pródigo, o pai que corre ao ver o filho é imagem revolucionária: homens de honra no Oriente Médio antigo não corriam em público. Jesus retrata Deus transgredindo convenções sociais para acolher o pecador." },
-    { ref:"Zacarias 2:8",      theme:"Amor", text:"Porque assim diz o Senhor dos Exércitos... quem vos toca, toca a menina dos seus olhos.",                                                                   ctx:"Expressão idiomática hebraica: 'menina dos olhos' ('ʾîšôn') refere-se à pupila, a parte mais sensível e protegida do corpo. Deus usa essa metáfora para declarar a vulnerabilidade com que trata seu povo." },
-    { ref:"1 Coríntios 13:13", theme:"Amor", text:"Agora, pois, permanecem a fé, a esperança e o amor, estes três; mas o maior destes é o amor.",                                                              ctx:"Paulo conclui o 'hino ao amor' comparando fé, esperança e amor. Enquanto fé e esperança são transitórias — a fé se tornará visão, e a esperança se tornará realidade — o amor é o único que permanece eternamente." },
-    { ref:"Romanos 13:10",     theme:"Amor", text:"O amor não pratica o mal ao próximo; portanto, o amor é o cumprimento da lei.",                                                                              ctx:"Paulo sintetiza toda a ética do Antigo Testamento numa única virtude. Jesus fez o mesmo (Mc 12:31). O amor não substitui a lei — ele a cumpre por dentro, gerando obediência espontânea em vez de obediência forçada." },
-  
-    /* ── 02. FÉ (12) ── */
-    { ref:"Hebreus 11:1",      theme:"Fé", text:"Ora, a fé é a certeza daquilo que esperamos e a prova das coisas que não vemos.",                                                                            ctx:"Abre o famoso 'Capítulo da Fé', que lista heróis do Antigo Testamento. A definição usa termos jurídicos gregos: 'hypostasis' (certeza, garantia legal) e 'elegchos' (evidência em tribunal), dando à fé um caráter racional e firme." },
-    { ref:"Gálatas 2:20",      theme:"Fé", text:"Já estou crucificado com Cristo; e vivo, não mais eu, mas Cristo vive em mim; e essa vida que agora vivo na carne, vivo pela fé no Filho de Deus.",          ctx:"Paulo responde ao erro dos gálatas de misturar graça com obras da Lei. A paradoxal coexistência de morte e vida expressa a transformação da identidade cristã: o 'eu' que vivia para si foi substituído por Cristo que age a partir de dentro." },
-    { ref:"Marcos 9:24",       theme:"Fé", text:"E logo o pai do menino clamou: Eu creio! Ajuda-me na minha incredulidade!",                                                                                  ctx:"O homem pede a Jesus que cure seu filho epiléptico. A confissão honesta — crença misturada com dúvida — é tida pelos estudiosos como uma das mais autênticas declarações de fé no Evangelho. Jesus cura o menino assim mesmo." },
-    { ref:"Romanos 1:17",      theme:"Fé", text:"Porque nele a justiça de Deus se revela de fé em fé, como está escrito: O justo viverá pela fé.",                                                            ctx:"Cita Habacuque 2:4 — um profeta que questionou Deus diante da injustiça babilônica. Martinho Lutero releu esse versículo e dele emergiu o princípio da Reforma: a salvação é por graça mediante fé, não por méritos." },
-    { ref:"Mateus 17:20",      theme:"Fé", text:"Se tiverdes fé como um grão de mostarda, direis a este monte: Passa daqui para acolá, e ele se passará; e nada vos será impossível.",                        ctx:"A semente de mostarda era proverbialmente a menor semente usada pelos agricultores palestinos. Jesus inverte a lógica do 'quanto mais, melhor': não é o tamanho da fé que move montanhas, mas a autenticidade dela voltada ao Deus que age." },
-    { ref:"Tiago 2:17",        theme:"Fé", text:"Assim também a fé, se não tiver obras, é morta em si mesma.",                                                                                                ctx:"Tiago não contradiz Paulo; ambos combatem caricaturas opostas. Paulo combate obras sem graça; Tiago combate crença sem transformação. 'Obras' em Tiago são evidências de fé genuína, não meios de ganhar a salvação." },
-    { ref:"Filipenses 1:29",   theme:"Fé", text:"Porque vos foi concedido, por amor de Cristo, não somente que creiais nele, mas também que padeçais por ele.",                                               ctx:"Escrito de uma prisão romana, Paulo enquadra o sofrimento dos filipenses como graça (charis) recebida. No contexto romano, sofrer por um rei executado seria desonra; Paulo subverte esse valor ao apresentar o sofrimento como privilégio." },
-    { ref:"Efésios 2:8-9",     theme:"Fé", text:"Porque pela graça sois salvos, por meio da fé; e isso não vem de vós; é dom de Deus. Não vem das obras, para que ninguém se glorie.",                       ctx:"Paulo constrói um argumento gramatical cuidadoso: o pronome 'isso' (touto, neutro em grego) se refere a todo o complexo graça-fé-salvação, indicando que até mesmo a capacidade de crer é dom divino." },
-    { ref:"João 20:29",        theme:"Fé", text:"Disse-lhe Jesus: Porque me viste, creste? Bem-aventurados os que não viram e creram.",                                                                       ctx:"Tomé exigiu prova física da ressurreição. Após ver, crê. Jesus então bem-aventura todos os futuros crentes que não terão acesso às evidências sensoriais diretas — e essa beatitude é a última do Evangelho de João." },
-    { ref:"Provérbios 3:5",    theme:"Fé", text:"Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento.",                                                                      ctx:"A sabedoria hebraica via o 'coração' (lev) como centro da vontade e do intelecto, não apenas das emoções. Confiar no Senhor 'de todo o coração' é ato cognitivo tanto quanto emocional — uma reorientação completa do juízo." },
-    { ref:"Hebreus 11:6",      theme:"Fé", text:"Sem fé é impossível agradar a Deus, pois quem dele se aproxima precisa crer que ele existe e que recompensa os que o buscam.",                              ctx:"O autor lista dois conteúdos mínimos da fé: a existência de Deus e seu caráter recompensador. A fé não é salto no escuro — ela responde a evidências sobre quem Deus é e como ele age com aqueles que o procuram." },
-    { ref:"Romanos 10:17",     theme:"Fé", text:"Assim, a fé vem pelo ouvir, e o ouvir, pela palavra de Cristo.",                                                                                             ctx:"Paulo revela o mecanismo da fé: ela não nasce de intuição interna ou esforço volitivo, mas de ouvir a mensagem do evangelho. O grego 'rhema Christou' pode significar a palavra falada por Cristo ou sobre Cristo — ambas são o canal da fé." },
-  
-    /* ── 03. ESPERANÇA (12) ── */
-    { ref:"Jeremias 29:11",    theme:"Esperança", text:"Porque eu sei os planos que tenho para vós, diz o Senhor; planos de paz e não de mal, para vos dar um futuro e uma esperança.",                             ctx:"Escrito a israelitas deportados para a Babilônia pelo rei Nabucodonosor em 597 a.C. Jeremias os instrui a construir casas e plantar jardins — a esperança não é passividade, mas engajamento com o presente enquanto se aguarda a restauração." },
-    { ref:"Romanos 8:28",      theme:"Esperança", text:"Sabemos que todas as coisas cooperam para o bem daqueles que amam a Deus, daqueles que são chamados segundo o seu propósito.",                               ctx:"Paulo contextualiza o sofrimento presente com a glória futura. 'Cooperam' traduz o grego 'synergei' — todas as coisas trabalham juntas como numa orquestra. O versículo não nega o mal, mas afirma que Deus o direciona para um fim redentor." },
-    { ref:"Isaías 40:31",      theme:"Esperança", text:"Mas os que esperam no Senhor renovam as suas forças, sobem com asas como águias; correm e não se cansam; caminham e não se fatigam.",                        ctx:"Segundo Isaías, escrito durante o exílio babilônico. 'Esperar' (qavah) em hebraico conota 'entrelaçar cordas' — esperança não é desejo passivo, mas a tensão ativa de quem ancora sua vida em Deus." },
-    { ref:"Lamentações 3:22-23", theme:"Esperança", text:"As misericórdias do Senhor são a causa de não sermos consumidos, porque as suas compaixões não têm fim; renovam-se cada manhã. Grande é a tua fidelidade.",  ctx:"Lamentações é um lamento acróstico sobre a destruição de Jerusalém em 587 a.C. Esse fragmento de esperança no centro do luto é tanto mais poderoso por emergir do mais profundo desespero." },
-    { ref:"Romanos 15:13",     theme:"Esperança", text:"O Deus da esperança vos encha de todo o gozo e paz no crer, para que abundeis em esperança pelo poder do Espírito Santo.",                                   ctx:"Paulo encerra a seção ética de Romanos com uma bênção trinitária. Deus é chamado 'Deus da esperança' — único lugar no NT com esse título. A esperança não é emoção gerada pelo crente, mas sobreabundância produzida pelo Espírito." },
-    { ref:"1 Pedro 1:3",       theme:"Esperança", text:"Bendito seja o Deus e Pai de nosso Senhor Jesus Cristo que, segundo a sua muita misericórdia, nos regenerou para uma viva esperança, pela ressurreição de Jesus Cristo dentre os mortos.", ctx:"Pedro abre sua carta com uma bênção judaica reformulada cristologicamente. 'Viva esperança' (elpida zosan) contrasta com as esperanças 'mortas' dos cultos de mistério greco-romanos: a ressurreição histórica garante a esperança futura." },
-    { ref:"Salmos 71:14",      theme:"Esperança", text:"Mas eu esperarei continuamente e te louvarei cada vez mais.",                                                                                                 ctx:"Salmo de um ancião que olha para trás e vê a fidelidade de Deus, e por isso projeta confiança para o futuro. A estrutura do salmo move-se do lamento para o louvor — padrão típico dos Salmos que mostra esperança como processo." },
-    { ref:"Apocalipse 21:4",   theme:"Esperança", text:"E enxugará dos seus olhos toda a lágrima; e não haverá mais morte, nem pranto, nem clamor, nem dor, porque já as primeiras coisas são passadas.",            ctx:"João descreve a nova criação usando linguagem de Isaías 25. A promessa é radicalmente concreta: não dissolução da matéria, mas renovação. Deus mora com os humanos numa terra renovada — a esperança cristã é encarnada, não apenas espiritual." },
-    { ref:"Habacuque 3:17-18", theme:"Esperança", text:"Posto que a figueira não floresça e não haja fruto nas vides... ainda assim me alegrarei no Senhor e me regozijarei no Deus da minha salvação.",              ctx:"Habacuque clamou a Deus sobre injustiça e invasão babilônica. Sua conclusão é uma das declarações de fé mais radicais do AT: gozo e esperança baseados não nas circunstâncias favoráveis, mas unicamente na identidade de Deus." },
-    { ref:"Hebreus 6:19",      theme:"Esperança", text:"Esta esperança nós a temos como âncora da alma, firme e segura, a qual penetra até o interior do véu.",                                                       ctx:"A âncora era símbolo comum de esperança no mundo greco-romano (aparece em moedas e lápides). O autor de Hebreus radicaliza a metáfora: a âncora está ancorada não no fundo do mar, mas em Deus mesmo, além do véu celestial." },
-    { ref:"Salmos 31:24",      theme:"Esperança", text:"Sede fortes e corajoso o vosso coração, todos vós que esperais no Senhor.",                                                                                   ctx:"O Salmo 31 começa com angústia e termina com louvor. O imperativo final — coragem no coração — direciona-se especificamente aos que esperam em Deus. Esperança ativa gera fortaleza interior, não resignação passiva." },
-    { ref:"Romanos 5:3-4",     theme:"Esperança", text:"Mas não só isso; gloriamo-nos também nas tribulações, sabendo que a tribulação produz perseverança; a perseverança, experiência provada; e a experiência provada, esperança.", ctx:"Paulo descreve uma cadeia de transformação interior: sofrimento → perseverança → caráter provado → esperança. A esperança não é o ponto de partida, mas o fruto maduro de quem atravessou provações com Deus." },
-  
-    /* ── 04. PAZ (12) ── */
-    { ref:"João 14:27",        theme:"Paz", text:"Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá. Não se turbe o vosso coração, nem se atemorize.",                                    ctx:"Discurso de despedida de Jesus na noite da traição. 'Shalom' hebraico é muito mais que ausência de conflito: é plenitude, integridade e bem-estar total. Jesus a distingue da pax romana — paz imposta por força." },
-    { ref:"Filipenses 4:6-7",  theme:"Paz", text:"Não andeis ansiosos por coisa alguma; antes, as vossas petições sejam em tudo conhecidas diante de Deus pela oração... e a paz de Deus, que excede todo o entendimento, guardará o vosso coração.", ctx:"Paulo escreve de uma prisão, onde qualquer ansiedade seria justificada. 'Excede todo entendimento' (hyperechousan noun) sugere que essa paz não é compreensível pela razão humana — ela a transcende. O verbo 'guardar' é militar: paz como sentinela." },
-    { ref:"Isaías 26:3",       theme:"Paz", text:"Tu, Senhor, conservarás em perfeita paz aquele cujo espírito persevera em ti, porque em ti confia.",                                                           ctx:"O texto hebraico usa 'shalom shalom' — paz duplicada, forma superlativa hebraica. A seção faz parte de um apocalipse menor de Isaías (caps. 24-27). 'Persevera em ti' indica a atenção contínua da mente voltada para Deus como condição da paz." },
-    { ref:"Romanos 5:1",       theme:"Paz", text:"Tendo, pois, sido justificados pela fé, temos paz com Deus por meio de nosso Senhor Jesus Cristo.",                                                           ctx:"Paulo distingue 'paz com Deus' (status legal restaurado — ausência de hostilidade) da 'paz de Deus' (experiência subjetiva de Fl 4:7). A justificação é o fundamento ontológico do qual a experiência de paz pode fluir." },
-    { ref:"Salmos 23:2",       theme:"Paz", text:"Deitar-me faz em pastos verdejantes; guia-me mansamente a águas tranquilas.",                                                                                  ctx:"O Salmo 23 usa a metáfora do pastoreio, ofício central na economia israelita. 'Águas tranquilas' (hebraico: mei menuchot) são literalmente 'águas de descanso'. A cena evoca não apenas quietude, mas restauração ativa." },
-    { ref:"Mateus 5:9",        theme:"Paz", text:"Bem-aventurados os pacificadores, porque eles serão chamados filhos de Deus.",                                                                                 ctx:"No Sermão do Monte, Jesus usa 'pacificadores' (eirênopoioi), não 'pacíficos': não quem evita conflito, mas quem ativamente constrói reconciliação. Ser 'filho de Deus' na cultura hebraica significava refletir o caráter do pai." },
-    { ref:"Colossenses 3:15",  theme:"Paz", text:"E a paz de Cristo governe nos vossos corações, para a qual também fostes chamados em um só corpo; e sede agradecidos.",                                        ctx:"'Governe' (brabeuo) é termo agonístico grego: o árbitro que decide disputas em jogos olímpicos. Paulo personifica a paz de Cristo como árbitro das decisões e tensões internas da comunidade — ela deve ter a palavra final." },
-    { ref:"Números 6:26",      theme:"Paz", text:"O Senhor volte a sua face para ti e te dê a paz.",                                                                                                            ctx:"Parte da bênção aarônica, a mais antiga bênção litúrgica do mundo ainda em uso contínuo (aprox. 1400 a.C.). Uma versão em prata dessa bênção foi encontrada em Jerusalém — o texto bíblico mais antigo já descoberto arqueologicamente." },
-    { ref:"Efésios 2:14",      theme:"Paz", text:"Porque ele é a nossa paz, ele que de ambos fez um só, derrubando a parede de separação que estava no meio.",                                                  ctx:"Paulo refere-se ao muro que separava judeus e gentios no Templo de Jerusalém (violá-lo era pena de morte). Cristo derruba essa barreira étnica e religiosa, tornando-se ele mesmo a paz encarnada — não apenas seu promotor." },
-    { ref:"Salmos 4:8",        theme:"Paz", text:"Em paz me deito e logo adormeço, pois só tu, Senhor, me fazes morar em segurança.",                                                                          ctx:"Salmo da tarde, possivelmente usado em liturgias vespertinas israelitas. Dormir com segurança era impossível para um fugitivo — o salmista contrasta sua vulnerabilidade humana com a confiança que transforma o medo em paz." },
-    { ref:"Isaías 9:6",        theme:"Paz", text:"Porque um menino nos nasceu, um filho se nos deu; o governo está sobre os seus ombros e o seu nome será: Maravilhoso Conselheiro, Deus Forte, Pai Eterno, Príncipe da Paz.", ctx:"Profecia messiânica de Isaías no contexto da ameaça assíria ao século VIII a.C. O título 'Príncipe da Paz' (sar shalom) não descreve temperamento suave, mas soberania real que instaura o shalom — a ordem plena de Deus sobre a criação." },
-    { ref:"2 Tessalonicenses 3:16", theme:"Paz", text:"Ora, o próprio Senhor da paz vos dê sempre paz em tudo. O Senhor seja com todos vós.",                                                              ctx:"Paulo encerra sua segunda carta com uma bênção de paz 'em tudo' — não em tudo que é fácil, mas em cada circunstância. 'Senhor da paz' é título único no NT: a paz não é apenas dom que ele distribui, mas atributo de sua própria essência." },
-  
-    /* ── 05. FORÇA (12) ── */
-    { ref:"Filipenses 4:13",   theme:"Força", text:"Posso fazer tudo por meio daquele que me fortalece.",                                                                                                       ctx:"Paulo não fala de invencibilidade geral, mas do poder de se contentar tanto na abundância quanto na necessidade (v.12). 'Fortalece' (endunamounta) usa o prefixo 'en' — a força vem de dentro, infundida por Cristo que habita o crente." },
-    { ref:"Isaías 41:10",      theme:"Força", text:"Não temas, porque eu sou contigo; não te assombres, porque eu sou teu Deus; eu te fortaleço, e te ajudo, e te sustento com a minha destra fiel.",           ctx:"Segundo Isaías fala ao povo exilado na Babilônia, aterrorizado e sem esperança. O versículo usa três verbos encadeados de assistência divina. 'Destra fiel' (yamim tzidki) — a mão direita era a do poder e da aliança no mundo antigo." },
-    { ref:"Efésios 6:10",      theme:"Força", text:"Finalmente, sede fortes no Senhor e na força do seu poder.",                                                                                               ctx:"Abre a seção da 'armadura de Deus'. Paulo usa vocabulário militar romano, familiar aos leitores sob domínio imperial. A força não é autonomia humana, mas participação na força de Deus — mudança fundamental de fonte." },
-    { ref:"Salmos 46:1",       theme:"Força", text:"Deus é o nosso refúgio e força, socorro bem-presente na angústia.",                                                                                         ctx:"Lutero baseou 'Castelo Forte' nesse salmo. 'Refúgio' (machseh) é local físico de abrigo; 'bem-presente' (nimtza meod) indica Deus achado facilmente. Escrito possivelmente quando Assíria ameaçou Jerusalém (701 a.C.)." },
-    { ref:"2 Coríntios 12:9",  theme:"Força", text:"A minha graça te basta, porque o meu poder se aperfeiçoa na fraqueza.",                                                                                    ctx:"Paulo recebeu essa resposta ao pedir três vezes a remoção de um 'espinho na carne'. A lógica divina inverte a humana: quanto mais evidente a limitação humana, mais visível fica o poder de Deus que age sem depender de meios humanos." },
-    { ref:"Josué 1:9",         theme:"Força", text:"Não to ordenei eu? Sê forte e corajoso; não temas, nem te espantes, porque o Senhor teu Deus é contigo em todo lugar aonde deres.",                          ctx:"Deus diz isso a Josué após a morte de Moisés, quando Israel está prestes a entrar em Canaã. O imperativo 'sê forte' (hazak) aparece três vezes no cap. 1 — fórmula de instalação de liderança no Antigo Oriente." },
-    { ref:"Salmos 28:7",       theme:"Força", text:"O Senhor é a minha força e o meu escudo; nele confiou o meu coração, e fui ajudado; pelo que o meu coração exulta, e com o meu cântico o louvarei.",         ctx:"O salmista descreve uma trajetória: confiança → ajuda → exultação → louvor. Essa sequência mostra que louvor é resultado natural de força experimentada, não postura forçada. 'Escudo' era a arma defensiva mais importante do soldado israelita." },
-    { ref:"Neemias 8:10",      theme:"Força", text:"A alegria do Senhor é a vossa força.",                                                                                                                      ctx:"Dito por Esdras ao povo que chorava ouvindo a Lei após décadas de exílio. A frase original em hebraico sugere que a alegria do Senhor — alegria que vem dele — é a fonte da resistência, não produto do esforço humano." },
-    { ref:"Salmos 18:32",      theme:"Força", text:"Deus é quem me cinge de força e faz perfeito o meu caminho.",                                                                                              ctx:"Salmo de vitória atribuído a Davi. 'Cingir' era ato de preparação para batalha — apertar o cinturão para a luta. O versículo afirma que Deus mesmo equipa o seu servo para o enfrentamento, tornando o caminho trilhável." },
-    { ref:"Habacuque 3:19",    theme:"Força", text:"O Senhor Deus é a minha força; ele faz os meus pés como os da corça e me faz andar sobre os meus lugares altos.",                                          ctx:"Encerra o livro de Habacuque, que começa com questionamento e termina com confiança. 'Lugares altos' eram posições militares vantajosas — imagem de vitória. O profeta que duvidou conclui afirmando agilidade e autoridade dadas por Deus." },
-    { ref:"1 Crônicas 16:11",  theme:"Força", text:"Buscai ao Senhor e a sua força; buscai continuamente a sua face.",                                                                                          ctx:"Parte do hino entoado quando a Arca da Aliança chegou a Jerusalém sob Davi. 'Buscar a força do Senhor' não é manipulação de poder divino, mas orientação constante da vida inteira em direção à pessoa de Deus, fonte de toda fortaleza." },
-    { ref:"Efésios 3:16",      theme:"Força", text:"Para que, segundo as riquezas da sua glória, vos conceda ser fortalecidos com poder pelo seu Espírito no homem interior.",                                 ctx:"Paulo ora para que a força dos efésios seja interior — no 'homem interior' (eso anthropon) — e não apenas comportamental ou circunstancial. A fonte é o Espírito, a medida é a 'glória' de Deus — ilimitada em grandeza." },
-  
-    /* ── 06. SABEDORIA (12) ── */
-    { ref:"Provérbios 1:7",    theme:"Sabedoria", text:"O temor do Senhor é o princípio da sabedoria, mas os loucos desprezam a sabedoria e o ensino.",                                                         ctx:"'Temor' (yirat) não é medo servil, mas reverência que reconhece a realidade de Deus e orienta toda a vida. É o princípio epistemológico da sabedoria hebraica: conhecimento genuíno começa pelo reconhecimento da fonte de toda verdade." },
-    { ref:"Tiago 1:5",         theme:"Sabedoria", text:"Se algum de vós tem falta de sabedoria, peça-a a Deus, que a todos dá liberalmente e não faz reprovação, e ser-lhe-á dada.",                            ctx:"Tiago escreve a cristãos judeus em diáspora enfrentando provações. Inserir 'peça sabedoria' no contexto do sofrimento é significativo: a sabedoria de que se precisa não é acadêmica, mas a capacidade de atravessar dificuldades com integridade." },
-    { ref:"Colossenses 2:3",   theme:"Sabedoria", text:"Em quem estão escondidos todos os tesouros da sabedoria e do conhecimento.",                                                                               ctx:"Paulo responde a uma filosofia sincretista em Colossos que buscava sabedoria em visões e mediadores angélicos. Afirmar que toda sabedoria está 'escondida' em Cristo é redirecionar a busca espiritual para a pessoa de Jesus." },
-    { ref:"Eclesiastes 12:13", theme:"Sabedoria", text:"De tudo o que foi ouvido, eis a conclusão: Teme a Deus e guarda os seus mandamentos, porque isso é o dever de todo o homem.",                            ctx:"O 'Pregador' (Qohélet) passou doze capítulos examinando prazeres, sabedoria e trabalho — e tudo pareceu 'vaidade'. Sua conclusão é deliberadamente simples: toda investigação intelectual aponta para obediência como sabedoria prática." },
-    { ref:"Mateus 7:24",       theme:"Sabedoria", text:"Todo aquele, pois, que escuta estas minhas palavras e as pratica será comparado a um homem prudente que edificou a sua casa sobre a rocha.",              ctx:"Encerra o Sermão do Monte com uma parábola arquitetônica. Na Palestina, a diferença entre rocha e areia era visível apenas na época das chuvas de inverno. Jesus afirma que a crise revela o alicerce real de uma vida." },
-    { ref:"Provérbios 4:7",    theme:"Sabedoria", text:"O principal é a sabedoria; adquire, pois, a sabedoria, e com tudo o que possuis, adquire inteligência.",                                                ctx:"O pai que instrui o filho é o gênero literário central de Provérbios, refletindo a educação oral doméstica israelita. A instrução de que sabedoria é 'o principal' (reshit) usa o mesmo termo do Gênesis 1:1 — sabedoria como fundação da realidade." },
-    { ref:"Daniel 12:3",       theme:"Sabedoria", text:"Os que ensinam a muitos à justiça resplandecerão como as estrelas, para todo o sempre.",                                                                 ctx:"Visão escatológica de Daniel, escrita durante a perseguição de Antíoco IV (167 a.C.). 'Os sábios' (maskilim) são não os eruditos, mas os que orientam outros para a fidelidade a Deus em tempo de crise." },
-    { ref:"Jó 28:28",          theme:"Sabedoria", text:"Eis que o temor do Senhor é a sabedoria, e desviar-se do mal é o entendimento.",                                                                        ctx:"O Capítulo 28 de Jó é um poema independente sobre a inacessibilidade da sabedoria: pode-se minerar ouro e pérolas, mas não sabedoria. Ela está fora do alcance humano e é encontrada apenas em relação com Deus." },
-    { ref:"Lucas 2:52",        theme:"Sabedoria", text:"E Jesus crescia em sabedoria e estatura, e em graça para com Deus e os homens.",                                                                         ctx:"Único relato do desenvolvimento de Jesus na adolescência. O crescimento em 'sabedoria' (sophia) é listado junto com crescimento físico e relacional — Lucas apresenta a humanidade de Jesus como desenvolvimento real, não encenação divina disfarçada." },
-    { ref:"Provérbios 3:13",   theme:"Sabedoria", text:"Bem-aventurado o homem que acha a sabedoria, e o homem que adquire entendimento.",                                                                      ctx:"Provérbios usa a linguagem de beatitudes (bem-aventuranças) muito antes de Jesus. Encontrar sabedoria é retratado como bênção maior que prata ou ouro (v.14) — o mapa hebraico de valores inverte as prioridades econômicas comuns." },
-    { ref:"1 Reis 3:9",        theme:"Sabedoria", text:"Dá, pois, ao teu servo um coração que ouve, para que possa julgar o teu povo, discernindo entre o bem e o mal.",                                        ctx:"Salomão, recém-coroado rei, pede a Deus não riqueza ou vitória, mas 'coração que ouve' (lev shomea). Deus fica satisfeito com o pedido e o honra. A sabedoria começa pela disposição de ouvir — não de falar ou agir." },
-    { ref:"Provérbios 11:2",   theme:"Sabedoria", text:"Quando vem a soberba, vem também a vergonha; mas com os humildes está a sabedoria.",                                                                    ctx:"Provérbios frequentemente une sabedoria e humildade. O orgulhoso se fecha para aprender; o humilde permanece ensinável. A sabedoria hebraica é prática e relacional, não apenas intelectual — ela requer abertura contínua à correção." },
-  
-    /* ── 07. GRAÇA (12) ── */
-    { ref:"Efésios 2:8",       theme:"Graça", text:"Porque pela graça sois salvos, por meio da fé; e isso não vem de vós; é dom de Deus.",                                                                    ctx:"'Graça' (charis) em Paulo é o ato soberano de Deus de dar o que não foi merecido. Contrastando com o sistema de patronato romano, onde favores exigiam reciprocidade, a graça divina é unilateral e não cria dívida — é pura doação." },
-    { ref:"2 Coríntios 9:8",   theme:"Graça", text:"Deus tem poder para fazer abundar em vós toda a graça, para que, tendo sempre em tudo toda a suficiência, abundeis em toda boa obra.",                    ctx:"Paulo coleta fundos para a comunidade empobrecida de Jerusalém. O versículo é econômico e teológico: a generosidade é possível porque a graça de Deus supre mais do que o necessário, criando excedente para ser compartilhado." },
-    { ref:"João 1:16",         theme:"Graça", text:"E de sua plenitude todos nós recebemos, e graça sobre graça.",                                                                                             ctx:"'Graça sobre graça' (charin anti charitos) pode ser traduzida como 'graça em lugar de graça' — uma ondulação contínua de favor divino, onde cada graça recebida é sucedida por uma nova. João apresenta o Logos como fonte inesgotável." },
-    { ref:"Romanos 5:20",      theme:"Graça", text:"Mas onde o pecado abundou, superabundou a graça.",                                                                                                         ctx:"Paulo usa um superlativo verbal (hyperperisseuō) que não existe em grego clássico — ele o cria para descrever algo que excede qualquer medida linguística. A graça sempre excede o pecado em outra ordem de grandeza." },
-    { ref:"Hebreus 4:16",      theme:"Graça", text:"Cheguemos, pois, com confiança ao trono da graça, para que misericórdia e graça nos sejam dadas como socorro na hora oportuna.",                          ctx:"'Trono da graça' inverte a imagem do trono de julgamento imperial, local de terror. O autor convida a uma aproximação ousada (parresia — franqueza, liberdade de fala). Cristo permite acesso direto e confiante ao Pai." },
-    { ref:"Tito 2:11",         theme:"Graça", text:"Porque a graça de Deus se manifestou salvadora a todos os homens.",                                                                                       ctx:"Paulo personifica a graça como mestra (v.12): ela 'nos ensina'. A graça não é apenas perdão passado, mas força ativa que instrui para a vida ética presente — rejeitar a impiedade, viver com sobriedade e aguardar a vinda futura." },
-    { ref:"1 Pedro 5:10",      theme:"Graça", text:"O Deus de toda a graça, que em Cristo vos chamou para a sua eterna glória, depois de breve sofrimento, vos aperfeiçoará, confirmará, fortalecerá e estabelecerá.",  ctx:"Pedro escreve no final de uma carta de encorajamento a cristãos sob pressão social. Os quatro verbos — aperfeiçoar, confirmar, fortalecer, estabelecer — são construção e arquitetura. O sofrimento 'breve' é colocado na escala da eternidade." },
-    { ref:"Números 6:25",      theme:"Graça", text:"O Senhor faça resplandecer o seu rosto sobre ti e tenha graça de ti.",                                                                                    ctx:"Parte da bênção aarônica prescrita por Deus a Moisés. 'Rosto resplandecente' é metáfora do favor real no Antigo Oriente — um rei que vira o rosto para um súdito o privilegia com atenção e favor. Deus é o rei que se volta graciosamente ao seu povo." },
-    { ref:"Gálatas 1:15",      theme:"Graça", text:"Quando, porém, aprouve a Deus, que me separou desde o ventre de minha mãe e me chamou pela sua graça...",                                               ctx:"Paulo narra sua conversão usando linguagem de Jeremias 1:5 e Isaías 49:1, que descrevem chamados proféticos antes do nascimento. Ele se coloca na linhagem dos profetas israelitas, mas radicalmente reorienta tudo: chamado pela graça, não pela herança étnica." },
-    { ref:"Zacarias 4:7",      theme:"Graça", text:"Quem és tu, ó grande monte? Diante de Zorobabel tornar-te-ás planície; e ele lançará a pedra principal com aclamações de: Graça, graça a ela!",          ctx:"Zorobabel reconstruía o Templo de Jerusalém após o exílio, enfrentando oposição política e recursos escassos. A visão afirma que o monte de obstáculos será nivelado — e a última pedra será colocada não por força, mas por favor divino aclamado." },
-    { ref:"2 Coríntios 12:9",  theme:"Graça", text:"A minha graça te basta, porque o meu poder se aperfeiçoa na fraqueza.",                                                                                   ctx:"Resposta de Deus ao pedido de Paulo pela remoção de um 'espinho na carne'. A suficiência da graça não é consolo de segundo lugar — é revelação de que a dependência de Deus é o estado mais poderoso para quem crê." },
-    { ref:"Romanos 11:6",      theme:"Graça", text:"E, se é pela graça, já não é pelas obras; doutra forma, a graça já não seria graça.",                                                                     ctx:"Paulo defende a pureza lógica da graça: misturar graça com mérito destrói o conceito. A graça que pode ser merecida não é mais graça — é salário. A salvação por graça é um dom que, por definição, exclui toda pretensão humana de contribuição." },
-  
-    /* ── 08. ORAÇÃO (12) ── */
-    { ref:"Mateus 6:9",        theme:"Oração", text:"Portanto, vós orareis assim: Pai nosso, que estás nos céus, santificado seja o teu nome.",                                                               ctx:"Jesus ensina um modelo de oração em contraste com repetições sem sentido dos 'hipócritas'. 'Pai nosso' (Abba) era termo de intimidade familiar surpreendente aplicado a Deus no judaísmo do século I." },
-    { ref:"Filipenses 4:6",    theme:"Oração", text:"Não andeis ansiosos por coisa alguma; antes, as vossas petições sejam em tudo conhecidas diante de Deus pela oração e súplica com ações de graças.",   ctx:"A sequência oração + súplica + ação de graças é completa: reconhece necessidade, confia no provedor e antecipa a resposta. Paulo propõe transformar a ansiedade em comunicação aberta com Deus." },
-    { ref:"1 Tessalonicenses 5:17", theme:"Oração", text:"Orai sem cessar.",                                                                                                                                 ctx:"Mais curto mandato do NT (apenas 2 palavras no grego: adialeiptos proseuchesthe). 'Sem cessar' não nega a necessidade de sono, mas indica uma orientação constante da vida interior em direção a Deus — postura e não apenas prática." },
-    { ref:"Lucas 18:1",        theme:"Oração", text:"E contou-lhes uma parábola sobre o dever de orar sempre e nunca esmorecer.",                                                                            ctx:"Lucas introduz a parábola da viúva persistente e do juiz injusto. Jesus argumenta 'do menor para o maior': se uma viúva sem poder convence um juiz corrupto por persistência, quanto mais o Pai fará pelos que clamam." },
-    { ref:"Salmos 62:8",       theme:"Oração", text:"Confiai nele, ó povo, em todo o tempo; derramai perante ele o vosso coração; Deus é o nosso refúgio.",                                                 ctx:"O Salmo 62 é meditação sobre a futilidade de confiar em poder humano. 'Derramar o coração' é imagem de oração sem filtro — honestidade radical diante de Deus. O Saltério normaliza lamúria, raiva e dúvida como formas legítimas de oração." },
-    { ref:"Romanos 8:26",      theme:"Oração", text:"Da mesma forma o Espírito também nos ajuda na fraqueza, pois não sabemos orar como convém, mas o próprio Espírito intercede por nós com gemidos inexprimíveis.",  ctx:"Paulo reconhece a limitação da oração humana. O Espírito intercede 'com gemidos' (stenagmois), articulando diante do Pai o que o crente não encontra palavras para expressar — a oração mais profunda é a que o Espírito vocaliza em nós." },
-    { ref:"João 17:21",        theme:"Oração", text:"Para que todos sejam um, como tu, ó Pai, és em mim, e eu em ti; que também eles sejam em nós, para que o mundo creia que tu me enviaste.",               ctx:"A 'Oração Sacerdotal' de Jesus no Evangelho de João é a mais longa oração de Jesus registrada. O pedido de unidade entre crentes tem como finalidade missiológica — transparência relacional que aponta para a unidade trinitária." },
-    { ref:"Daniel 6:10",       theme:"Oração", text:"Daniel, porém, quando soube que o decreto tinha sido assinado, foi para casa; e, com as janelas do seu quarto abertas para Jerusalém, ajoelhava-se três vezes por dia para orar.",  ctx:"Daniel mantém sua prática de oração mesmo com decreto que a proíbe sob pena de morte. Orar três vezes por dia era costume judaico baseado no Salmo 55:17. A janela aberta para Jerusalém expressava esperança na restauração da cidade sagrada." },
-    { ref:"Mateus 7:7",        theme:"Oração", text:"Pedi, e dar-se-vos-á; buscai, e encontrareis; batei, e abrir-se-vos-á.",                                                                               ctx:"Os três verbos (pedir, buscar, bater) no grego estão no imperativo presente — ação contínua, não singular. 'Pedi e continuai pedindo'. Jesus incentiva persistência não para vencer a relutância de Deus, mas para formar o caráter do orante." },
-    { ref:"Salmos 50:15",      theme:"Oração", text:"Clama a mim no dia da angústia; eu te livrarei, e tu me glorificarás.",                                                                                  ctx:"Asafe, o autor do Salmo 50, apresenta uma teologia da oração de socorro: Deus não deseja sacrifícios formais, mas o clamor autêntico no momento de crise. A resposta de Deus tem propósito dúplice — livrar e ser glorificado." },
-    { ref:"1 João 5:14",       theme:"Oração", text:"Esta é a confiança que temos nele: que, se pedirmos alguma coisa segundo a sua vontade, ele nos ouve.",                                                  ctx:"João equilibra confiança e alinhamento: a oração eficaz não é a tecnicamente correta, mas a que se alinha com a vontade divina. 'Se pedirmos segundo a sua vontade' não é cláusula limitante — é convite a orar com conhecimento de quem é Deus." },
-    { ref:"Isaías 65:24",      theme:"Oração", text:"E acontecerá que, antes que eles clamem, eu responderei; ainda estão falando, e eu já terei ouvido.",                                                   ctx:"Promessa escatológica de Deus: a velocidade da resposta é tanta que antecede o próprio pedido. A imagem retrata comunicação entre pai e filho que se conhecem tão bem que o pai capta a necessidade antes de ser verbalizada." },
-  
-    /* ── 09. PERDÃO (12) ── */
-    { ref:"1 João 1:9",        theme:"Perdão", text:"Se confessarmos os nossos pecados, ele é fiel e justo para nos perdoar os pecados e nos purificar de toda injustiça.",                                   ctx:"João combate dois extremos: os que negavam ter pecado (v.8) e os que achavam já irremediavelmente perdidos. O perdão é apresentado como ato de fidelidade e justiça de Deus — não condescendência, mas cumprimento do que prometeu em Cristo." },
-    { ref:"Salmos 103:12",     theme:"Perdão", text:"Tão longe quanto o oriente dista do ocidente, assim ele afasta de nós as nossas transgressões.",                                                        ctx:"O poeta usa a maior distância imaginável no mundo antigo: oriente e ocidente são pontos sem convergência — ao contrário de norte e sul (que têm polos). O perdão de Deus não apenas cobre o pecado, mas o remove para uma distância inatingível." },
-    { ref:"Isaías 43:25",      theme:"Perdão", text:"Eu, eu mesmo, sou o que apago as tuas transgressões por amor de mim mesmo e não me lembrarei dos teus pecados.",                                       ctx:"Deus afirma perdoar 'por amor de si mesmo' — não porque o povo mereceu. O 'não me lembrarei' não é esquecimento cognitivo divino, mas decisão de não trazer à tona: um ato volitivo de não-acusação." },
-    { ref:"Mateus 18:21-22",   theme:"Perdão", text:"Pedro perguntou: Senhor, até quantas vezes perdoarei meu irmão? Até sete? Jesus respondeu: Não te digo até sete, mas até setenta vezes sete.",         ctx:"Pedro propôs sete vezes — generoso pelo padrão rabínico. Jesus responde com 'setenta vezes sete', invertendo a vingança ilimitada de Lameque (Gn 4:24): o perdão cristão deve ser tão ilimitado quanto a vingança do mundo caído." },
-    { ref:"Lucas 23:34",       theme:"Perdão", text:"Pai, perdoa-lhes, porque não sabem o que fazem.",                                                                                                        ctx:"Jesus ora pelo perdão de seus algozes enquanto é crucificado — ato sem paralelo na antiguidade. A ignorância ('não sabem') não é desculpa moral completa, mas contexto atenuante. Estêvão (At 7:60) repetiria essas palavras ao ser apedrejado." },
-    { ref:"Efésios 4:32",      theme:"Perdão", text:"Antes, sede bondosos e compassivos uns para com os outros, perdoando-vos mutuamente, como também Deus vos perdoou em Cristo.",                          ctx:"O imperativo de perdoar é ancorado na experiência do perdão recebido, não em força moral própria. A gramática grega usa o particípio 'tendo sido perdoados' como base para o mandamento — o perdão dado flui do perdão recebido." },
-    { ref:"Colossenses 3:13",  theme:"Perdão", text:"Suportando-vos uns aos outros e perdoando-vos mutuamente, se alguém tiver queixa contra outro; assim como o Senhor vos perdoou, assim também perdoai vós.",  ctx:"Paulo coloca o perdão mútuo no coração da ética comunitária. 'Queixa' (momphe) é termo jurídico — Paulo pressupõe que em comunidade haverá razões legítimas de ressentimento. O modelo não é minimizar a ofensa, mas absorvê-la como Deus absorveu em Cristo." },
-    { ref:"Miqueias 7:18",     theme:"Perdão", text:"Qual Deus como tu, que perdoa a iniquidade e passa por alto a transgressão do remanescente da sua herança? Não retém para sempre a sua ira, porque se deleita na misericórdia.",  ctx:"Miqueias encerra seu livro com celebração do caráter único de Deus. 'Qual Deus como tu' é trocadilho com o nome 'Miqueias' (Mi-kha-El: Quem é como Deus?). A resposta: ninguém — especialmente na disposição de perdoar o que não merece perdão." },
-    { ref:"Hebreus 8:12",      theme:"Perdão", text:"Serei misericordioso para com as suas iniquidades e dos seus pecados não me lembrarei mais.",                                                           ctx:"Cita Jeremias 31 — a nova aliança — mostrando que o perdão completo é característica definidora do novo pacto. 'Não me lembrarei' é declaração legal de não-acusação perpétua. O sistema de sacrifícios do Templo tornou-se obsoleto diante disso." },
-    { ref:"Lucas 15:22",       theme:"Perdão", text:"Mas o pai disse aos seus servos: Trazei depressa a melhor roupa e vesti-lha; ponde um anel no seu dedo e sandálias nos seus pés.",                      ctx:"Na parábola do filho pródigo, o pai não ouve a confissão até o fim — interrompe-a com gestos de restauração: a melhor roupa (honra), anel (autoridade), sandálias (liberdade — escravos andavam descalços). O perdão precede a total contrição." },
-    { ref:"Mateus 6:14",       theme:"Perdão", text:"Porque, se perdoardes aos homens as suas ofensas, também vosso Pai celestial vos perdoará.",                                                            ctx:"Jesus conecta perdão recebido com perdão concedido — não como condição para merecer, mas como sinal de transformação interior. Quem realmente experimentou o perdão de Deus torna-se naturalmente um perdoador." },
-    { ref:"Provérbios 17:9",   theme:"Perdão", text:"Quem cobre a transgressão procura o amor, mas quem insiste no assunto separa os grandes amigos.",                                                       ctx:"A sabedoria hebraica valoriza o perdão como construção de relacionamentos. 'Cobrir' (kasah) uma transgressão não é conivência com o mal, mas escolha de não insistir na ofensa recebida. A comunidade é mantida pela disposição de não manter registros de erros." },
-  
-    /* ── 10. CONFIANÇA (12) ── */
-    { ref:"Salmos 37:5",       theme:"Confiança", text:"Entrega o teu caminho ao Senhor, confia nele, e ele agirá.",                                                                                         ctx:"Salmo acróstico alfabético de Davi meditando sobre a prosperidade dos ímpios e a fidelidade de Deus com os justos. 'Entregar' (galal) significa literalmente 'rolar sobre' — transferir o peso do caminho para sobre Deus." },
-    { ref:"Provérbios 16:3",   theme:"Confiança", text:"Confia ao Senhor as tuas obras, e os teus planos serão estabelecidos.",                                                                             ctx:"A sabedoria hebraica não é determinismo, mas sinergia: os planos humanos são legítimos, mas precisam ser 'comprometidos' (galal — rolados) para Deus. Planeja bem e entrega o resultado — o Senhor estabiliza o que é dedicado a ele." },
-    { ref:"Isaías 26:4",       theme:"Confiança", text:"Confiai no Senhor perpetuamente, porque o Senhor Deus é uma rocha eterna.",                                                                         ctx:"'Rocha' (tzur) era metáfora central para Deus nos poemas de Moisés (Dt 32). A imagem evoca estabilidade geológica oposta à volatilidade das circunstâncias. Confiar 'perpetuamente' (ad ad) é expressão superlativa hebraica para 'para sempre e além'." },
-    { ref:"Salmos 56:3",       theme:"Confiança", text:"Quando estiver com medo, eu confiarei em ti.",                                                                                                      ctx:"Título do salmo o situa quando Davi foi capturado pelos filisteus em Gate. A afirmação é notável por sua honestidade: o salmista não nega o medo, mas o reconhece enquanto simultaneamente escolhe confiar. Fé e medo coexistem." },
-    { ref:"Naum 1:7",          theme:"Confiança", text:"O Senhor é bom; é uma fortaleza no dia da angústia, e conhece os que esperam nele.",                                                               ctx:"Naum proclama o julgamento da Assíria, nação que havia aterrorizado o mundo antigo. Nesse contexto de violência e poder militar esmagador, Deus é descrito como fortaleza acessível. 'Conhece' implica reconhecimento relacional — Deus cuida ativamente dos que o buscam." },
-    { ref:"Miquéias 7:7",      theme:"Confiança", text:"Mas eu, olharei para o Senhor; esperarei no Deus da minha salvação; o meu Deus me ouvirá.",                                                       ctx:"Miqueias descreve o colapso das relações humanas (v.5-6 — traição familiar) e elege Deus como único ponto fixo confiável. A certeza 'o meu Deus me ouvirá' não é baseada em circunstância favorável, mas em caráter de Deus experimentado no passado." },
-    { ref:"Salmos 91:2",       theme:"Confiança", text:"Direi ao Senhor: Ele é o meu refúgio e o meu castelo, o meu Deus em quem confio.",                                                               ctx:"O Salmo 91 era usado como proteção contra demônios no judaísmo do segundo templo e foi citado pelo diabo na tentação de Jesus (Mt 4). O salmista narra a experiência de proteção em primeira pessoa — confiança baseada em experiência vivida." },
-    { ref:"Jeremias 17:7-8",   theme:"Confiança", text:"Bendito o homem que confia no Senhor, cuja esperança é o Senhor. Porque será como a árvore plantada junto às águas.",                            ctx:"Paralelo intencional com o Salmo 1. A árvore junto ao rio sobrevive à seca porque suas raízes alcançam a água subterrânea — imagem de confiança que não depende das circunstâncias externas, mas de uma fonte invisível e perene." },
-    { ref:"2 Timóteo 1:12",    theme:"Confiança", text:"Porque eu sei em quem tenho crido e estou confiante de que ele é poderoso para guardar o meu depósito até aquele dia.",                           ctx:"Paulo escreve da prisão, aguardando execução. 'Depósito' (paratheke) era termo jurídico para bens deixados sob guarda de outrem. Paulo entrega a Deus não sua reputação ou legado, mas sua própria vida — como se deposita ouro num cofre de confiança." },
-    { ref:"Salmos 20:7",       theme:"Confiança", text:"Uns confiam em carros, outros em cavalos, mas nós nos recordamos do nome do Senhor nosso Deus.",                                                 ctx:"Salmo de vitória provavelmente usado antes de batalha. Carros de guerra e cavalos eram a tecnologia militar de ponta no Oriente Antigo. O salmista contrasta confiança em poder tecnológico com confiança no nome de Deus." },
-    { ref:"João 14:1",         theme:"Confiança", text:"Não se turbe o vosso coração; credes em Deus, crede também em mim.",                                                                               ctx:"Jesus fala aos discípulos na noite de sua traição — exatamente quando há mais razões para o coração se turbar. O imperativo 'não se turbe' não é negação da realidade, mas um chamado à ancoragem da alma na pessoa de Cristo." },
-    { ref:"Salmos 9:10",       theme:"Confiança", text:"Em ti confiarão os que conhecem o teu nome; pois tu, Senhor, nunca desamparaste os que te buscam.",                                              ctx:"O Salmo 9 é acróstico parcial que celebra vitórias passadas de Deus como fundamento para confiança presente. 'Conhecer o nome' no hebraico antigo não é intelectual, mas experiencial — confiança baseada em relacionamento com quem Deus se revelou ser." },
-  
-    /* ── 11. ALEGRIA (12) ── */
-    { ref:"Filipenses 4:4",    theme:"Alegria", text:"Alegrai-vos no Senhor sempre; outra vez digo: alegrai-vos.",                                                                                           ctx:"Escrito da prisão, esse mandamento é paradoxal. A repetição ('outra vez digo') sugere que Paulo antecipava resistência. 'No Senhor' é o âncora: alegria não baseada em circunstâncias mas na realidade imutável de Cristo." },
-    { ref:"Salmos 16:11",      theme:"Alegria", text:"Tu me mostrarás a vereda da vida; na tua presença há plenitude de alegria; na tua destra há delícias perpetuamente.",                                ctx:"Pedro citou este salmo no Pentecostes (At 2:25-28) aplicando-o à ressurreição de Jesus. A 'plenitude de alegria' na presença de Deus é antecipação da vida eterna, onde a alegria não é apenas sentimento mas modo de existência definitivo." },
-    { ref:"João 15:11",        theme:"Alegria", text:"Estas coisas vos tenho dito para que a minha alegria esteja em vós e a vossa alegria seja completa.",                                               ctx:"Jesus fala na noite de sua traição, caminhando para o Getsêmani. Que Jesus fale em alegria nesse momento é teologicamente significativo: sua alegria era a alegria do Pai sobre o Filho obediente — ele a transmite aos discípulos como legado." },
-    { ref:"Isaías 61:3",       theme:"Alegria", text:"A dar-lhes uma coroa em lugar de cinzas, óleo de alegria em lugar de luto, manto de louvor em lugar de espírito angustiado.",                     ctx:"Jesus leu esse texto em Nazaré (Lc 4:18) declarando que estava sendo cumprido. As trocas são concretas e físicas: cinzas eram sinal de luto no Oriente Médio; ungir com óleo era festa. Deus inverte os sinais externos do sofrimento." },
-    { ref:"Salmos 30:5",       theme:"Alegria", text:"Porque a sua ira dura apenas um momento, mas o seu favor, toda a vida; o choro pode durar uma noite, mas a alegria vem pela manhã.",               ctx:"O salmo celebra cura após doença grave. A estrutura temporal (noite/manhã) reflete o ciclo litúrgico israelita. 'Alegria vem pela manhã' é promessa não de ausência de noite, mas de que a noite tem limite — a manhã é a última palavra." },
-    { ref:"Lucas 10:20",       theme:"Alegria", text:"Não vos alegreis por isso, que os espíritos se vos submetem, mas alegrai-vos porque os vossos nomes estão escritos nos céus.",                     ctx:"Jesus reorienta a alegria dos 70 discípulos: do extraordinário (milagres) para o permanente (identidade registrada). Poder espiritual pode ser perdido; identidade eterna, não. A base da alegria cristã deve ser o que não pode ser tirado." },
-    { ref:"1 Pedro 1:8",       theme:"Alegria", text:"A quem, sem o haverdes visto, amais; no qual, ainda que agora não o vejais, credes e vos alegrareis com alegria inexprimível e gloriosa.",         ctx:"Pedro descreve crentes que amam e creem sem ver — situação oposta aos primeiros discípulos. 'Inexprimível' (aneklaleto) — literalmente 'impossível de falar'. A alegria futura é tão além da linguagem que Pedro cria um adjetivo composto único." },
-    { ref:"Salmos 98:4",       theme:"Alegria", text:"Celebrai o Senhor com alegria, toda a terra; levantai a voz, exultai e cantai louvores.",                                                           ctx:"Salmo de entronização celebrando Deus como rei de toda a terra. A convocação é universal: não apenas Israel, mas 'toda a terra'. O louvor aqui é ato político — reconhecimento de soberania — tanto quanto expressão emocional de alegria." },
-    { ref:"Nehemias 8:10",     theme:"Alegria", text:"A alegria do Senhor é a vossa força.",                                                                                                               ctx:"Dito quando o povo chorava ao ouvir a Lei. Esdras e Neemias interrompem o choro com essa declaração. A alegria aqui é resultado da restauração e da Palavra — não imposição de positividade, mas reorientação de perspectiva." },
-    { ref:"Romanos 14:17",     theme:"Alegria", text:"Porque o reino de Deus não é comida nem bebida, mas justiça, paz e alegria no Espírito Santo.",                                                    ctx:"Paulo resume a essência do reino de Deus em três realidades espirituais. A alegria não é decoração opcional do reino — ela é constitutiva da sua natureza. O Espírito Santo é a fonte da qual brota a alegria genuína." },
-    { ref:"Salmos 126:5",      theme:"Alegria", text:"Os que semeiam com lágrimas ceifarão com alegria.",                                                                                                  ctx:"Salmo do retorno do cativeiro babilônico. A imagem agrícola sugere que a temporada de lagrimas não é desperdiçada — ela planta sementes que germinam em alegria futura. O sofrimento fiel é trabalho produtivo na economia de Deus." },
-    { ref:"Tiago 1:2",         theme:"Alegria", text:"Meus irmãos, tende grande alegria quando cairdes em várias tentações.",                                                                              ctx:"Tiago abre sua carta com uma provocação: alegria nas provações. O grego 'pasan charan' (toda a alegria, alegria completa) é superlativo que exclui tristeza misturada. A alegria não é apesar das provações — ela nasce do que as provações produzem." },
-  
-    /* ── 12. PROVIDÊNCIA (12) ── */
-    { ref:"Mateus 6:26",       theme:"Providência", text:"Olhai para as aves do céu: não semeiam, não segam, nem ajuntam em celeiros, e vosso Pai celestial as alimenta. Não tendes vós muito mais valor do que elas?",  ctx:"Jesus usa argumento rabínico 'do menor para o maior' (qal vahomer). Aves eram criaturas modestas na hierarquia judaica. O argumento não proíbe planejamento — exclui a ansiedade paralisante diante de necessidades futuras." },
-    { ref:"Filipenses 4:19",   theme:"Providência", text:"O meu Deus suprirá todas as vossas necessidades segundo as suas riquezas em glória em Cristo Jesus.",                                            ctx:"Paulo agradece o apoio financeiro dos filipenses e promete que Deus os proverá em retorno. A medida da provisão é 'segundo suas riquezas em glória' — não a riqueza humana limitada, mas a abundância divina ilimitada como padrão de suprimento." },
-    { ref:"Gênesis 22:14",     theme:"Providência", text:"Chamou Abraão aquele lugar: O Senhor proverá; daí se diz até hoje: No monte do Senhor se proverá.",                                            ctx:"Após Deus providenciar um carneiro no sacrifício de Isaque, Abraão nomeia o lugar 'Yahweh-Yireh'. O verbo hebraico 'yir'eh' (ver/prover) é o mesmo de Genesis 1 — Deus vê, antecipa e provê antes mesmo que a necessidade se manifeste plenamente." },
-    { ref:"Romanos 8:32",      theme:"Providência", text:"Aquele que não poupou nem o seu próprio Filho, antes o entregou por todos nós, como não nos dará também, com ele, todas as coisas?",            ctx:"Argumento 'do maior para o menor': se Deus fez o sacrifício supremo, qualquer outro bem será certamente dado. 'Todas as coisas' é contextualizado pelo que o crente necessita para cumprir sua vocação." },
-    { ref:"Lucas 12:7",        theme:"Providência", text:"Mas até os cabelos da vossa cabeça estão todos contados. Não temais; valeis mais do que muitos pardais.",                                      ctx:"No mundo antigo, pardais eram vendidos em lotes — dois por um centavo (assarion). Jesus eleva o valor humano acima da mais insignificante transação comercial. A providência divina chega ao nível do detalhe biométrico: cada fio de cabelo." },
-    { ref:"Isaías 58:11",      theme:"Providência", text:"O Senhor te guiará continuamente, fartará a tua alma em lugares secos e fortalecerá os teus ossos; e serás como jardim regado e como manancial de águas.",  ctx:"Deus promete provisão em resposta ao jejum genuíno — não ritual vazio, mas ação de justiça. A imagem do 'jardim regado' (gan raveh) contrasta com a aridez da terra ressequida: quem cuida dos pobres receberá cuidado divino equivalente." },
-    { ref:"Deuteronômio 8:3",  theme:"Providência", text:"E te humilhou, e te deixou ter fome, e te sustentou com o maná... para te fazer saber que o homem não viverá só de pão, mas de tudo o que sai da boca do Senhor.",  ctx:"Moisés interpreta o maná no deserto não como milagre pragmático, mas como lição pedagógica: a providência ensina dependência. Jesus citou exatamente esse versículo ao ser tentado pelo diabo a transformar pedras em pão (Mt 4:4)." },
-    { ref:"Salmos 145:15-16",  theme:"Providência", text:"Os olhos de todos esperam em ti, e tu lhes dás o seu mantimento a seu tempo. Abres a tua mão e satisfazes o desejo de todo ser vivente.",    ctx:"Salmo acróstico que celebra o reinado de Deus. A abertura da mão divina é gesto de generosidade real — mãos abertas, não fechadas em controle. A provisão é temporizada ('a seu tempo') — Deus é cuidador que nutre com ritmo e sabedoria." },
-    { ref:"Salmos 104:27-28",  theme:"Providência", text:"Todos eles te aguardam, para que lhes dês o seu mantimento a seu tempo. Tu lhes dás, e eles o colhem; abres a tua mão, e eles se fartam de bens.",  ctx:"Salmo da criação que celebra a ordem providente de Deus. Diferente de Gn 1 (teologia da criação), o Salmo 104 é poesia da manutenção — Deus não criou e se retirou, mas continua ativamente sustentando os ciclos da natureza e da vida." },
-    { ref:"1 Reis 17:6",       theme:"Providência", text:"E os corvos lhe traziam pão e carne pela manhã, e pão e carne à tarde; e ele bebia da ribeira.",                                               ctx:"Elias é alimentado por corvos — aves impuras na lei israelita — numa ribeira escondida durante a seca que ele próprio anunciara. A providência divina usa meios inesperados e ignora fronteiras rituais quando necessário para cumprir seu propósito." },
-    { ref:"Salmos 34:9",       theme:"Providência", text:"Temei ao Senhor, vós, seus santos, porque nada falta aos que o temem.",                                 ctx:"Salmo de Davi, composto quando fingiu ser louco diante do rei Aquis. Do engano humano emergiu uma meditação sobre suficiência divina. 'Nada falta' (en machasor) é declaração radical — não de ausência de dificuldade, mas de plenitude em Deus." },
-    { ref:"2 Coríntios 9:10",  theme:"Providência", text:"Ora, aquele que dá semente ao semeador e pão para comer também vos dará semente, a multiplicará e fará crescer os frutos da vossa justiça.",   ctx:"Cita Isaías 55:10, conectando provisão material com propósito espiritual. Deus não provê apenas para consumo pessoal, mas para aumentar a capacidade de generosidade. A providência é ciclo: recebemos para poder dar, e dar abre novo ciclo de provisão." },
-  
-    /* ── 13. ARREPENDIMENTO (12) ── */
-    { ref:"2 Crônicas 7:14",   theme:"Arrependimento", text:"Se o meu povo, que se chama pelo meu nome, se humilhar e orar, e me buscar e se converter dos seus maus caminhos, então, eu ouvirei dos céus, perdoarei os seus pecados e sararei a sua terra.", ctx:"Resposta de Deus à dedicação do Templo de Salomão. O texto é estruturado em quatro condições (humilhar, orar, buscar, converter) seguidas de três promessas (ouvir, perdoar, sarar). 'Sarar a terra' é rara promessa de restauração ecológica vinculada ao arrependimento moral." },
-    { ref:"Lucas 15:7",        theme:"Arrependimento", text:"Digo-vos que assim haverá mais alegria no céu por um pecador que se arrepende do que por noventa e nove justos que não precisam de arrependimento.", ctx:"Jesus responde às críticas dos fariseus por comer com pecadores. A alegria no céu por um arrependido é imagem surpreendente — o céu inteiro celebra cada conversão. 'Que não precisam de arrependimento' pode ser irônico: todos precisam." },
-    { ref:"Atos 3:19",         theme:"Arrependimento", text:"Arrependei-vos e convertei-vos, para que os vossos pecados sejam apagados, e venham assim os tempos de refrigério da presença do Senhor.",  ctx:"Pedro prega após curar o cojo no Templo. 'Apagados' (exaleiphthênai) é metáfora de registros contábeis cancelados. 'Tempos de refrigério' (anapsyxeôs) — literalmente 'sopro fresco' — associa o arrependimento à chegada de uma nova era." },
-    { ref:"Salmos 51:10",      theme:"Arrependimento", text:"Cria em mim, ó Deus, um coração puro e renova em mim um espírito reto.",                                                                    ctx:"Atribuído a Davi após confrontado por Natã sobre o pecado com Bate-Seba. O verbo 'cria' (bara) é reservado exclusivamente a ações de Deus no AT — Davi reconhece que a transformação interior está além do seu poder. Pede criação nova, não reforma moral." },
-    { ref:"Joel 2:13",         theme:"Arrependimento", text:"Rasgai o vosso coração e não as vossas vestes, e convertei-vos ao Senhor, vosso Deus.",                                                    ctx:"Joel fala antes de uma invasão de gafanhotos interpretada como julgamento. Rasgar vestes era gesto público de luto no mundo antigo — esvaziado de significado quando repetido por hábito. Joel convoca o gesto invisível e genuíno: coração rasgado." },
-    { ref:"Ezequiel 18:30",    theme:"Arrependimento", text:"Portanto vos julgarei, ó casa de Israel, a cada um segundo os seus caminhos, diz o Senhor Deus. Arrependei-vos e convertei-vos de todas as vossas transgressões.", ctx:"Ezequiel combate o fatalismo coletivo. Afirma responsabilidade individual: cada geração pode se arrepender e receber nova vida. O arrependimento é apresentado como porta de saída do determinismo — sempre há uma escolha disponível." },
-    { ref:"Isaías 55:7",       theme:"Arrependimento", text:"Abandone o ímpio o seu caminho e o homem mau os seus pensamentos; volte-se para o Senhor, que se compadecerá dele; volte-se para o nosso Deus, que muito perdoará.",  ctx:"'Muito perdoará' (yarbeh lisloach) é literalmente 'multiplicará o perdão' — perdão abundante, não racionado. O versículo pede transformação cognitiva ('seus pensamentos') além de comportamental ('seu caminho'): arrependimento que começa na mente." },
-    { ref:"Lucas 19:8",        theme:"Arrependimento", text:"Então Zaqueu disse ao Senhor: Senhor, resolvo dar metade dos meus bens aos pobres; e, se nalguma coisa tenho defraudado alguém, restituirei quatro vezes mais.",  ctx:"Zaqueu não é confrontado diretamente por Jesus — apenas recebido. A transformação econômica radical é espontânea, não exigida. 'Quatro vezes' excede o requisito da Lei mosaica (Ex 22:1). O arrependimento autêntico é criativo em sua expressão de restituição." },
-    { ref:"Apocalipse 3:19",   theme:"Arrependimento", text:"Eu repreendo e disciplino a todos os que amo. Sê, pois, zeloso e arrepende-te.",                                                           ctx:"Carta à igreja de Laodiceia, a mais severamente criticada das sete igrejas. A disciplina de Deus é apresentada como evidência de amor filial — vocabulário de Pr 3:12. O imperativo 'sê zeloso' (zeloue) sugere urgência: fervorosa mudança de direção." },
-    { ref:"Oseas 6:1",         theme:"Arrependimento", text:"Vinde, tornemos para o Senhor, pois ele nos despedaçou e nos sarará; feriu-nos, mas nos curará.",                                          ctx:"Oseas escreve para Israel do norte em colapso moral. O convite ao retorno usa paradoxo: Deus que fere é o mesmo que cura. A dupla ação não é crueldade, mas cirurgia pastoral — o diagnóstico correto é condição para o tratamento eficaz." },
-    { ref:"Atos 17:30",        theme:"Arrependimento", text:"Mas agora anuncia aos homens que todos em todo o lugar se arrependam.",                                                                     ctx:"Paulo fala no Areópago de Atenas — o mais alto tribunal filosófico do mundo greco-romano. O chamado universal ao arrependimento contrasta com o exclusivismo étnico anterior: a responsabilidade perante o Criador agora abrange toda a humanidade." },
-    { ref:"Lamentações 3:40",  theme:"Arrependimento", text:"Sondemos os nossos caminhos e os provemos, e tornemos para o Senhor.",                                                                     ctx:"No meio do livro mais sombrio do Antigo Testamento, o autor convida à autoavaliação honesta. 'Sondar' (chaqar) é investigação forense profunda — não superficial. O arrependimento começa com coragem de olhar para dentro antes de olhar para cima." },
-  
-    /* ── 14. SERVIÇO (12) ── */
-    { ref:"Marcos 10:45",      theme:"Serviço", text:"Porque o Filho do Homem também não veio para ser servido, mas para servir e dar a sua vida em resgate por muitos.",                               ctx:"Jesus responde ao pedido de Tiago e João por lugares de honra. Inverte a lógica do patronato romano onde o grande é servido. 'Resgatar' (lytron) é termo comercial para liberar escravos. Jesus redefine grandeza como autodespojamento a serviço de outros." },
-    { ref:"Gálatas 5:13",      theme:"Serviço", text:"Porque vós, irmãos, fostes chamados à liberdade. Não useis da liberdade para dar ocasião à carne, mas servi-vos uns aos outros pelo amor.",    ctx:"Paulo equilibra liberdade (contra os legalistas) e serviço (contra os libertinos). A liberdade cristã não é autodeterminação ilimitada, mas capacidade de servir sem medo ou obrigação — serviço motivado por amor, não compulsão." },
-    { ref:"1 Pedro 4:10",      theme:"Serviço", text:"Cada um administre, segundo o dom que recebeu, em favor dos outros, como bons despenseiros da multiforme graça de Deus.",                       ctx:"'Multiforme' (poikilos) — variada em textura e cor, como um mosaico. Pedro vê a diversidade de dons como reflexo da variedade da graça divina. 'Despenseiro' (oikonomos) era gerente de propriedade alheia — os dons não são propriedade pessoal." },
-    { ref:"Romanos 12:11",     theme:"Serviço", text:"No que requer diligência, não sejais negligentes; sede fervorosos no espírito, servindo ao Senhor.",                                             ctx:"'Fervorosos no espírito' (pneumati zeontes) — literalmente 'fervendo em espírito', como água que borbulha de calor. Paulo descreve serviço a Deus que é energético sem ser agitado. A diligência vem de um Espírito que arde internamente." },
-    { ref:"Lucas 22:27",       theme:"Serviço", text:"Qual é, pois, o maior: o que está à mesa ou o que serve? Não é o que está à mesa? E, contudo, eu estou no meio de vós como aquele que serve.",  ctx:"Na última ceia, Jesus reverte a hierarquia do banquete mediterrâneo. O dono da mesa era o honrado; os servidores eram escravos. Jesus — o anfitrião — serve. A lavagem dos pés em João 13 é a expressão dramática desse mesmo princípio." },
-    { ref:"Hebreus 6:10",      theme:"Serviço", text:"Porque Deus não é injusto para esquecer a vossa obra e o trabalho do amor que tendes mostrado em seu nome, havendo servido e servindo ainda aos santos.",  ctx:"O autor encoraja crentes desanimados lembrando que Deus é 'justo' — não no sentido de severo, mas de leal. Todo ato de serviço aos irmãos é testemunhado e registrado por Deus. A memória divina do serviço fiel é base de motivação." },
-    { ref:"Josué 24:15",       theme:"Serviço", text:"Escolhei hoje a quem servirdes... quanto a mim e à minha casa, serviremos ao Senhor.",                                                          ctx:"Discurso final de Josué antes de morrer, em Siquém — lugar onde Abraão primeiro adorou em Canaã. A declaração de Josué não é arrogância familiar, mas declaração pública de liderança exemplar pelo patriarca que escolhe o serviço como identidade." },
-    { ref:"Isaías 58:6-7",     theme:"Serviço", text:"Não é antes isto o jejum que escolho: que soltes as prisões da impiedade, que desfaças as ataduras do jugo... que repartas o teu pão com o faminto?",  ctx:"Deus rejeita o ritual desconectado da ética social. O jejum que ele 'escolhe' (yivchor) é programa de justiça: libertar oprimidos, alimentar famintos, hospedar sem-teto. O serviço ao necessitado é reinterpretado como ato litúrgico de primeira ordem." },
-    { ref:"Mateus 25:40",      theme:"Serviço", text:"Em verdade vos digo que, quando o fizestes a um destes meus irmãos, um dos mais pequeninos, a mim o fizestes.",                                  ctx:"Jesus identifica-se com os marginalizados (famintos, estrangeiros, presos) no contexto do julgamento das nações. A surpresa dos que serviram ('quando te vimos?') revela que o serviço genuíno não calcula retorno — é amor sem audiência." },
-    { ref:"Efésios 6:7",       theme:"Serviço", text:"Servindo de boa vontade como ao Senhor, e não como aos homens.",                                                                                   ctx:"Paulo fala a escravos cristãos, num contexto onde a escravidão era estrutural no mundo romano. A teologia da motivação: o 'para quem' transforma o 'o quê'. Servir a Cristo ressignifica qualquer trabalho, por humilde que seja." },
-    { ref:"João 12:26",        theme:"Serviço", text:"Se alguém me serve, siga-me, e onde eu estou, aí estará também o meu servidor; se alguém me servir, meu Pai o honrará.",                        ctx:"Jesus define serviço como seguimento — não execução de tarefas, mas orientação de vida em direção a ele. A promessa de honra do Pai é surpreendente: o servo não é ignorado nem explorado, mas reconhecido pelo próprio Deus." },
-    { ref:"Romanos 12:7",      theme:"Serviço", text:"Se é ministério, seja diligente no ministério; se é ensino, no ensino.",                                                                          ctx:"Paulo lista dons para serem exercidos com esmero. 'Diligente no ministério' sugere que servir a Deus requer tanto competência quanto coração. O servidor de Deus não oferece o que sobra de energia — ele investe o melhor no que foi chamado a fazer." },
-  
-    /* ── 15. BÊNÇÃO (12) ── */
-    { ref:"Números 6:24-26",   theme:"Bênção", text:"O Senhor te abençoe e te guarde; o Senhor faça resplandecer o seu rosto sobre ti e te seja gracioso; o Senhor volte a sua face para ti e te dê a paz.",  ctx:"A Bênção Aarônica, prescrita por Deus a Moisés, é a bênção litúrgica mais antiga ainda em uso contínuo. Encontrada gravada em duas lâminas de prata (século VII a.C.), é o texto bíblico mais antigo descoberto pela arqueologia." },
-    { ref:"Efésios 1:3",       theme:"Bênção", text:"Bendito seja o Deus e Pai de nosso Senhor Jesus Cristo, que nos abençoou com todas as bênçãos espirituais nos lugares celestiais em Cristo.",       ctx:"Paulo abre Efésios com uma beraka (bênção judaica reformulada cristologicamente). 'Lugares celestiais' (epouraniois) — não localização geográfica futura, mas esfera de realidade espiritual presente. As bênçãos já estão disponíveis 'em Cristo'." },
-    { ref:"Deuteronômio 28:2", theme:"Bênção", text:"E todas estas bênçãos virão sobre ti e te alcançarão, quando deres ouvidos à voz do Senhor, teu Deus.",                                            ctx:"Dt 28 lista bênçãos da aliança seguidas de mais extensas maldições — estrutura típica de tratados do Antigo Oriente. As bênçãos 'virão' e 'alcançarão' — verbos de movimento: não o crente que persegue as bênçãos, mas elas que o perseguem." },
-    { ref:"Malaquias 3:10",    theme:"Bênção", text:"Trazei todos os dízimos à casa do tesouro, para que haja mantimento na minha casa; e provai-me nisto, diz o Senhor dos Exércitos, se eu não vos abrir as janelas dos céus.",  ctx:"'Provai-me' (bachan) é único lugar em que Deus convida explicitamente a ser testado. O dízimo neste contexto é ato de fé — expressão de confiança em que Deus cuida do que se doa. As 'janelas dos céus' é linguagem do dilúvio invertida: não juízo, mas bênção abundante." },
-    { ref:"Salmos 1:1-2",      theme:"Bênção", text:"Bem-aventurado o homem que não anda no conselho dos ímpios... mas que no mandamento do Senhor tem o seu prazer, e nele medita de dia e de noite.",   ctx:"O Salmo 1 serve como prefácio ao Saltério inteiro. 'Bem-aventurado' (ashre) é plural intensivo em hebraico — 'todas as felicidades!'. A bênção não vem de rituais isolados, mas de uma orientação de vida completa em direção à Palavra de Deus." },
-    { ref:"Provérbios 10:22",  theme:"Bênção", text:"A bênção do Senhor enriquece, e não acrescenta dor com ela.",                                                                                      ctx:"Provérbios distingue prosperidade humana (conquistada com ansiedade) da bênção divina (que enriquece e traz paz). O 'enriquece sem dor' é teologia da suficiência: a provisão de Deus não vem com as angústias que acompanham a ambição desordenada." },
-    { ref:"Salmos 67:1",       theme:"Bênção", text:"Deus se compadeça de nós e nos abençoe, e sobre nós faça resplandecer o seu rosto.",                                                              ctx:"Eco da bênção aarônica de Números 6, mas com propósito missiológico explícito: ser abençoado para que 'o teu caminho seja conhecido na terra' (v.2). A bênção não é terminal — é instrumento de testemunho entre as nações." },
-    { ref:"Provérbios 3:33",   theme:"Bênção", text:"A maldição do Senhor está sobre a casa do ímpio, mas ele abençoa a morada dos justos.",                                                            ctx:"Provérbios frequentemente contrasta o destino dos ímpios com o dos justos. A bênção sobre a 'morada' (neveh — pastagem, lar) é coletiva e espacial: não apenas indivíduos, mas espaços habitados por pessoas comprometidas com Deus recebem favor divino." },
-    { ref:"Gálatas 3:14",      theme:"Bênção", text:"Para que a bênção de Abraão chegasse aos gentios em Cristo Jesus, a fim de recebermos, pela fé, a promessa do Espírito.",                          ctx:"Paulo conecta a promessa a Abraão (Gn 12:3 — 'em ti serão benditas todas as famílias da terra') com a era do Espírito. A bênção prometida a Abraão não era exclusivamente material — seu conteúdo final é o próprio Espírito derramado sobre todas as nações." },
-    { ref:"Deuteronômio 11:26-27", theme:"Bênção", text:"Vede, hoje ponho perante vós bênção e maldição: bênção se ouvirdes os mandamentos do Senhor vosso Deus.",                                  ctx:"Moisés apresenta a aliança como escolha moral — não destino cego. A colocação de bênção e maldição diante do povo pressupõe liberdade e responsabilidade reais. O shalom de Deus é caminho aberto, mas requer a escolha deliberada de caminhar nele." },
-    { ref:"1 Pedro 3:9",       theme:"Bênção", text:"Não torneis mal por mal, nem injúria por injúria; antes pelo contrário, bendizei, pois para isso fostes chamados, para herdardes bênção.",        ctx:"Pedro combate a retaliação entre comunidades perseguidas. O chamado a 'bendizer' os que perseguem é subversivo no contexto romano: inverte a lógica da honra/vergonha. Quem abençoa onde seria esperado maldizer demonstra uma lealdade que transcende instinto." },
-    { ref:"Salmos 115:13",     theme:"Bênção", text:"Abençoará os que temem ao Senhor, tanto os pequenos como os grandes.",                                                                              ctx:"O Salmo 115 confronta a adoração de ídolos com o Deus vivo que age e fala. A abençoadora promessa é democrática: 'tanto os pequenos como os grandes'. A bênção divina não privilegia posição social — ela flui de temor, não de status." },
-  
-    /* ── 16. SANTIDADE (12) ── */
-    { ref:"1 Pedro 1:15-16",   theme:"Santidade", text:"Mas, assim como é santo aquele que vos chamou, sede vós também santos em toda a vossa maneira de viver; porque está escrito: Sede santos, porque eu sou santo.", ctx:"Pedro cita Levítico 11:44 — lei do Antigo Testamento — como mandamento para cristãos gentios no Novo. A santidade não é abolida pela graça, mas redefinida: não separação ritual, mas conformidade de caráter com o Deus que é intrinsecamente santo." },
-    { ref:"Romanos 12:1",      theme:"Santidade", text:"Portanto, irmãos, rogo-vos pelas misericórdias de Deus que apresenteis os vossos corpos em sacrifício vivo, santo e agradável a Deus, que é o vosso culto racional.",  ctx:"Paulo inaugura a ética de Romanos com o conceito de sacrifício vivo — inversão radical do sacrifício animal do Templo. 'Culto racional' (logikên latreian) é adoração que envolve toda a racionalidade humana, não apenas atos rituais." },
-    { ref:"Hebreus 12:14",     theme:"Santidade", text:"Segui a paz com todos e a santificação, sem a qual ninguém verá o Senhor.",                                                                      ctx:"O autor conecta santidade à visão de Deus — antecipando Mateus 5:8. 'Santificação' (hagiasmon) é processo contínuo, não evento único. O texto coloca a santidade como caminho necessário da peregrinação cristã, não decoração opcional." },
-    { ref:"1 João 3:3",        theme:"Santidade", text:"E todo aquele que nele tem esta esperança se purifica, assim como ele é puro.",                                                                   ctx:"João conecta esperança escatológica com purificação presente: a esperança da vinda de Cristo não produz acomodação, mas motivação para a santidade agora. Quem espera ser como ele busca parecer-se com ele desde já." },
-    { ref:"2 Coríntios 7:1",   theme:"Santidade", text:"Tendo, pois, estas promessas, amados, purifiquemo-nos de toda a imundícia da carne e do espírito, aperfeiçoando a santidade no temor de Deus.",   ctx:"A santidade é aperfeiçoada progressivamente — usando verbo de processo (epiteleō), não de evento único. Paulo a ancora nas 'promessas' recebidas: a santidade não é esforço para merecer, mas resposta ao que já foi garantido pelo caráter de Deus." },
-    { ref:"Efésios 4:24",      theme:"Santidade", text:"E revesti-vos do novo homem, criado segundo Deus em justiça e retidão provenientes da verdade.",                                              ctx:"Paulo usa a metáfora de vestimenta — prática cotidiana e deliberada. 'Criado segundo Deus' (kata theon ktisthenta) sugere que o novo homem é obra de Deus, não conquista humana. A santidade é receber o que Deus cria e então vesti-lo conscientemente." },
-    { ref:"Salmos 24:3-4",     theme:"Santidade", text:"Quem subirá ao monte do Senhor? Quem se firmar no seu lugar santo? Aquele que tem mãos inocentes e coração puro.",                             ctx:"Liturgia de entrada ao Templo: quem pode aproximar-se de Deus? O padrão não é status social ou herança étnica, mas integridade interior ('coração puro') e integridade relacional ('mãos inocentes'). Jesus retomará esses critérios nas Bem-aventuranças." },
-    { ref:"1 Tessalonicenses 4:3", theme:"Santidade", text:"Porque a vontade de Deus é esta: a vossa santificação.",                                                                                    ctx:"Paulo declara diretamente a vontade de Deus sobre os tessalonicenses — eliminando a pergunta sobre qual seria. A santificação não é uma entre várias opções na vontade divina; ela é o coração do que Deus quer para cada crente." },
-    { ref:"Isaías 6:3",        theme:"Santidade", text:"E clamavam um ao outro, dizendo: Santo, santo, santo é o Senhor dos Exércitos; toda a terra está cheia da sua glória.",                        ctx:"O trisagion dos serafins no trono de Deus é o único atributo de Deus repetido três vezes no AT — ênfase superlativa em hebraico. Isaías entra na visão como 'homem de lábios impuros' e sai purificado — a santidade divina transforma quem a contempla." },
-    { ref:"Levítico 20:26",    theme:"Santidade", text:"Sereis santos para mim; porque eu, o Senhor, sou santo, e vos separei dos povos, para serdes meus.",                                           ctx:"O mandamento de santidade no Levítico está enraizado na identidade de Deus como separação para (não apenas de). Israel não deveria ser santo para não se contaminar, mas para pertencer a Deus — santidade como relação, não como isolamento." },
-    { ref:"João 17:17",        theme:"Santidade", text:"Santifica-os na verdade; a tua palavra é a verdade.",                                                                                           ctx:"Jesus ora pela santificação dos discípulos antes de sua própria morte. A agência é Deus ('santifica-os'), o meio é a Palavra, e o conteúdo é a verdade. A santidade não nasce de esforço humano isolado, mas de exposição contínua à Palavra de Deus." },
-    { ref:"Romanos 6:22",      theme:"Santidade", text:"Agora, porém, libertados do pecado e feitos servos de Deus, tendes o vosso fruto para a santificação, e por fim a vida eterna.",             ctx:"Paulo usa a metáfora agrícola do fruto: a santificação é produto orgânico que cresce de uma nova relação. 'Feitos servos de Deus' é mudança de dono — o escravo recebe o caráter do senhor a quem serve. A santidade é consequência de pertencer a Deus." },
-  
-    /* ── 17. LOUVOR (12) ── */
-    { ref:"Salmos 150:6",      theme:"Louvor", text:"Todo ser que tem fôlego louve ao Senhor! Aleluia!",                                                                                                ctx:"Encerra o Saltério inteiro com convocação universal ao louvor. 'Todo ser que tem fôlego' (kol haneshama) abrange cada criatura viva. O Saltério começa com 'bem-aventurado o homem' (individual) e termina com louvor cósmico — trajetória de crescimento." },
-    { ref:"Hebreus 13:15",     theme:"Louvor", text:"Por ele, pois, ofereçamos sempre a Deus sacrifício de louvor, isto é, o fruto dos lábios que confessam o seu nome.",                             ctx:"O autor reinterpreta o sistema sacrificial do Templo: o sacrifício de louvor substituiu os holocaustos animais. 'Fruto dos lábios' (karpon cheileōn) — citação de Oseias 14:2 — apresenta o louvor como colheita agrícola produzida internamente." },
-    { ref:"Salmos 34:1",       theme:"Louvor", text:"Bendirei ao Senhor em todo o tempo; o seu louvor estará sempre nos meus lábios.",                                                                 ctx:"Salmo de Davi, composto em extremo perigo. O compromisso de louvar 'em todo o tempo' é radical: inclui momentos de terror e incerteza, não apenas de alegria. Louvor contínuo é ato de reorientação da realidade — decidir onde os olhos olham." },
-    { ref:"Efésios 5:19-20",   theme:"Louvor", text:"Falando entre vós em salmos, e hinos, e cânticos espirituais; cantando e entoando salmos ao Senhor no vosso coração; dando sempre graças por tudo.",  ctx:"Paulo descreve a comunidade cristã como comunidade cantante. 'No vosso coração' (tê kardia hymōn) sugere que o canto não é performance, mas expressão de realidade interior. A gratidão 'por tudo' conecta louvor e providência." },
-    { ref:"Apocalipse 5:12",   theme:"Louvor", text:"Digno é o Cordeiro que foi morto de receber o poder, e riqueza, e sabedoria, e força, e honra, e glória, e louvor.",                             ctx:"O hino dos seres celestiais no Apocalipse lista sete atributos — número da perfeição no simbolismo bíblico. O Cordeiro 'que foi morto' combina vitimação e exaltação. O louvor celestial celebra o poder que é exercido pelo sacrifício, não pela força bruta." },
-    { ref:"Salmos 22:3",       theme:"Louvor", text:"Tu, porém, és santo, tu que habitas entre os louvores de Israel.",                                                                                 ctx:"O versículo é paradoxo: Jesus o citou da cruz ('Deus meu, por que me abandonaste?' — v.1). Mesmo no abandono aparente, o salmista afirma que Deus habita no louvor. O louvor cria o espaço habitado por Deus — uma teologia da liturgia." },
-    { ref:"Isaías 43:21",      theme:"Louvor", text:"O povo que formei para mim publicará o meu louvor.",                                                                                              ctx:"Deus descreve Israel como comunidade formada com propósito de louvor. 'Formei para mim' (yatzarti li) usa o verbo do oleiro (Gn 2:7). A existência da comunidade de fé tem propósito constitutivo de proclamação — louvor é missão, não apenas devoção." },
-    { ref:"Salmos 100:4",      theme:"Louvor", text:"Entrai pelas suas portas com ação de graças, e nos seus átrios com louvor; rendei-lhe graças e bendizei o seu nome.",                            ctx:"Salmo de peregrinação, provavelmente cantado ao se aproximar do Templo de Jerusalém. A sequência — entrar, agradecer, louvar, bendizer — é liturgia corporativa deliberada. O louvor não é espontâneo apenas; ele também é aprendido e praticado comunitariamente." },
-    { ref:"Romanos 11:36",     theme:"Louvor", text:"Porque dele, e por meio dele, e para ele são todas as coisas. A ele seja a glória eternamente. Amém.",                                           ctx:"Paulo encerra a seção teológica de Romanos (caps. 1-11) com doxologia espontânea. As três preposições (de, por meio, para) expressam a relação de tudo com Deus: origem, sustentação e finalidade. A teologia mais profunda termina em adoração." },
-    { ref:"Salmos 63:3",       theme:"Louvor", text:"Porque melhor é a tua benignidade do que a vida; os meus lábios te louvarão.",                                                                   ctx:"Davi escreve no deserto da Judeia, em extrema privação física. Sua conclusão é surpreendente: a benevolência de Deus (hesed) vale mais que a própria vida. O versículo é declaração de hierarquia de valores: Deus acima da sobrevivência." },
-    { ref:"1 Crônicas 16:34",  theme:"Louvor", text:"Rendei graças ao Senhor, porque ele é bom, porque a sua benignidade dura para sempre.",                                                          ctx:"Este louvor — repetido em várias formas ao longo do Saltério — era o refrão dos levitas no Templo. A brevidade é sua força: bondade + duração eterna. A liturgia israelita repetiria isso até tornar-se reflexo profundo da alma: Deus é bom, sempre." },
-    { ref:"Salmos 8:1",        theme:"Louvor", text:"Ó Senhor, Senhor nosso, quão admirável é o teu nome em toda a terra, tu que expuseste a tua glória nos céus!",                                  ctx:"Davi compõe diante do céu estrelado. 'Nome' (shem) em hebraico é a totalidade do caráter e da identidade revelados. A contemplação da grandeza cósmica de Deus não diminui o humano (v.4-5), mas o eleva à sua vocação de mordomia sobre a criação." },
-  
-    /* ── 18. PROPÓSITO (12) ── */
-    { ref:"Jeremias 1:5",      theme:"Propósito", text:"Antes que eu te formasse no ventre, eu te conheci; antes que saísses da madre, te santifiquei; para profeta das nações te constituí.",          ctx:"Chamado de Jeremias em linguagem de predestinação pessoal. O verbo 'conheci' (yadaʿti) é profundo: conhecimento relacional e de escolha soberana. A vocação de Jeremias não é reação ao mérito futuro, mas intenção anterior à existência." },
-    { ref:"Efésios 2:10",      theme:"Propósito", text:"Porque somos feitura dele, criados em Cristo Jesus para as boas obras, as quais Deus de antemão preparou para que andássemos nelas.",           ctx:"Paulo afirma que as boas obras são terreno já preparado — 'de antemão' (proetoimasen) — pelo qual os crentes caminham. Não inventamos nosso propósito; descobrimos o caminho que Deus já construiu. A vida cristã é uma exploração, não uma criação." },
-    { ref:"Romanos 8:29",      theme:"Propósito", text:"Porque os que de antemão conheceu, também os predestinou para serem conformes à imagem do seu Filho.",                                         ctx:"O propósito final da predestinação paulina não é apenas o céu, mas a conformidade com Cristo — ser transformado à imagem do Filho. O destino do crente não é escapar da criação, mas refletir o Filho Unigênito em cada dimensão da existência." },
-    { ref:"Salmos 57:2",       theme:"Propósito", text:"Clamarei ao Deus Altíssimo, ao Deus que por mim tudo consuma.",                                                                                ctx:"Davi, escondido de Saul numa caverna, afirma que Deus 'consuma' (gamar) por ele — cumpre o propósito específico para a sua vida. Não é providência genérica, mas cuidado personalizado: Deus age até o fim do propósito de cada pessoa." },
-    { ref:"Filipenses 1:6",    theme:"Propósito", text:"Tendo por certo que aquele que começou em vós a boa obra a aperfeiçoará até ao dia de Jesus Cristo.",                                         ctx:"Paulo expressa 'confiança' (peitho — persuasão, certeza) na continuidade da obra de Deus. O 'que começou' é Deus mesmo — a origem da transformação é divina. 'Aperfeiçoará' (epitelesei) é verbo de conclusão artesanal: Deus termina o que inicia." },
-    { ref:"Isaías 46:10",      theme:"Propósito", text:"Anuncio o fim desde o princípio e, desde os tempos antigos, as coisas que ainda não sucederam; digo: O meu conselho permanecerá de pé, farei toda a minha vontade.",  ctx:"Deus afirma soberania absoluta sobre a história: conhece o fim desde o início. Isso não é fatalismo, mas teologia da segurança: o propósito de Deus não pode ser subvertido por contingências humanas ou poderes históricos." },
-    { ref:"Atos 17:28",        theme:"Propósito", text:"Porque nele vivemos, e nos movemos, e existimos; como alguns dos vossos poetas também disseram: Porque somos também da sua raça.",            ctx:"Paulo cita dois poetas gregos pagãos — Arato e Epimênides — diante do Areópago. A audácia teológica: até a intuição dos poetas gregos sobre divina imanência aponta para o Deus bíblico. Toda busca humana de propósito está inscrita no Criador." },
-    { ref:"Gênesis 1:27",      theme:"Propósito", text:"E criou Deus o homem à sua imagem, à imagem de Deus o criou; homem e mulher os criou.",                                                       ctx:"'Imagem de Deus' (tselem Elohim) no Antigo Oriente era usada para estátuas reais colocadas em territórios conquistados como representação do soberano. Todo ser humano é a 'estátua viva' de Deus — representante do Rei sobre a criação." },
-    { ref:"1 Coríntios 10:31", theme:"Propósito", text:"Portanto, quer comais, quer bebais ou façais qualquer outra coisa, fazei tudo para a glória de Deus.",                                         ctx:"Paulo responde a uma disputa sobre carne sacrificada a ídolos com uma teologia da vida cotidiana. O princípio resultante é amplo: até as atividades mais comuns (comer, beber) são âmbito da glória de Deus quando realizadas com intencionalidade." },
-    { ref:"2 Timóteo 1:9",     theme:"Propósito", text:"Que nos salvou e nos chamou com uma santa vocação; não segundo as nossas obras, mas segundo o seu próprio propósito e graça.",                ctx:"Paulo distingue a base da salvação (graça) de sua expressão (vocação santa). A vocação não é adicionada à salvação — ela é parte do propósito eterno de Deus. Somos salvos para uma vida que reflete o caráter e a missão de Deus no mundo." },
-    { ref:"Salmos 138:8",      theme:"Propósito", text:"O Senhor consumará o que me diz respeito; a tua benignidade, Senhor, dura para sempre; não abandones as obras das tuas mãos.",              ctx:"Davi afirma que Deus 'consumará' (gamar) o que diz respeito a ele — completará o esboço que começou. A oração final — 'não abandones as obras das tuas mãos' — pressupõe que o crente é obra em andamento, não projeto concluído." },
-    { ref:"Provérbios 19:21",  theme:"Propósito", text:"Muitos são os planos no coração do homem, mas o conselho do Senhor é que subsiste.",                                                          ctx:"A sabedoria hebraica reconhece a legitimidade dos planos humanos, mas os relativiza diante do propósito soberano de Deus. Não é fatalismo — é hierarquia: planejamos bem, mas reconhecemos que o Senhor é o último arquiteto." },
-  
-    /* ── 19. CURA (12) ── */
-    { ref:"Salmos 147:3",      theme:"Cura", text:"Ele sara os que têm o coração quebrantado e curativo-lhes as suas feridas.",                                                                      ctx:"O Salmo 147 celebra o retorno do exílio — contexto de trauma coletivo profundo. 'Coração quebrantado' (nishbarei lev) é ferida emocional e espiritual. A cura de Deus não é apenas física — ela alcança o núcleo mais vulnerável da experiência humana." },
-    { ref:"Isaías 53:5",       theme:"Cura", text:"Mas ele foi traspassado pelas nossas transgressões e moído pelas nossas iniquidades; o castigo que nos traz a paz estava sobre ele, e pelas suas feridas fomos sarados.",  ctx:"O Quarto Cântico do Servo Sofredor — interpretado pelo NT como profecia da crucifixão de Jesus. 'Pelas suas feridas fomos sarados' (uvachaburato nirpa lanu) usa o tempo perfeito profético hebraico — evento futuro declarado como já concluído." },
-    { ref:"Salmos 34:18",      theme:"Cura", text:"Perto está o Senhor dos que têm o coração quebrantado, e salva os de espírito contrito.",                                                         ctx:"O Salmo 34 é acróstico de Davi em fuga. A promessa de proximidade de Deus ao quebrantado contraria a teologia da prosperidade: não é o próspero e bem-sucedido que atrai a presença divina, mas o que reconhece sua própria fragilidade." },
-    { ref:"Jeremias 30:17",    theme:"Cura", text:"Porque eu te restituirei a saúde, e te curarei das tuas feridas, diz o Senhor.",                                                                  ctx:"Promessa de restauração ao povo exilado — que ninguém mais curava ('que te cura?' v.13). Deus intervém precisamente onde os recursos humanos se esgotaram. A cura é declarada antes de ser experimentada — a fé recebe a promessa como presença." },
-    { ref:"Tiago 5:16",        theme:"Cura", text:"Confessai, pois, os vossos pecados uns aos outros e orai uns pelos outros, para serdes curados. A oração fervorosa do justo é muito poderosa.",   ctx:"Tiago coloca cura no contexto de comunidade e confissão mútua. 'Fervorosa' (energoumene) usa a raiz de 'energia' — oração que funciona, que é ativa. A cura (iasis) aqui pode ser tanto física quanto relacional — a confissão restaura as duas." },
-    { ref:"Êxodo 15:26",       theme:"Cura", text:"Porque eu sou o Senhor teu Médico.",                                                                                                              ctx:"Deus se revela como 'Yahweh-Rafa' — o Senhor que cura — logo após o êxodo do Egito. O nome divino 'Rafa' é o mesmo verbo usado para remendar roupas ou consertar objetos quebrados. A cura divina é restauração da integridade original." },
-    { ref:"2 Crônicas 7:14",   theme:"Cura", text:"Se o meu povo... se converter dos seus maus caminhos, então, eu ouvirei dos céus, perdoarei os seus pecados e sararei a sua terra.",             ctx:"A cura prometida é coletiva e geográfica — a terra inteira. Na cosmovisão hebraica, a saúde da terra está ligada à obediência moral do povo. O arrependimento genuíno não apenas restaura o indivíduo, mas tem efeito ecológico e social." },
-    { ref:"Marcos 5:34",       theme:"Cura", text:"E Jesus disse-lhe: Filha, a tua fé te salvou; vai em paz e fica curada do teu mal.",                                                              ctx:"A mulher com fluxo de sangue por doze anos toca o manto de Jesus em meio à multidão. Jesus declara que foi a fé dela — não a magia do toque — que a curou. 'Filha' é palavra de acolhimento relacional: a cura física é acompanhada de restauração social." },
-    { ref:"Lucas 4:18",        theme:"Cura", text:"O Espírito do Senhor está sobre mim, pelo que me ungiu para evangelizar os pobres; enviou-me para curar os quebrantados de coração.",            ctx:"Jesus lê Isaías 61 em Nazaré e declara o cumprimento naquele momento. A missão inclui cura — do coração, não apenas do corpo. 'Quebrantados de coração' (tethrausmenous) é literalmente os 'esmagados' — Jesus veio para quem está em pedaços." },
-    { ref:"Salmos 103:3",      theme:"Cura", text:"Que perdoa todas as tuas iniquidades, que sara todas as tuas enfermidades.",                                                                      ctx:"O Salmo 103 lista os benefícios de Deus em cascata. Perdão e cura são colocados em paralelo — o versículo sugere conexão profunda entre saúde espiritual e bem-estar integral. Davi celebra um Deus cujo cuidado é multidimensional." },
-    { ref:"Atos 10:38",        theme:"Cura", text:"Como Deus ungiu a Jesus de Nazaré com o Espírito Santo e com poder, e como ele andou por toda a parte fazendo o bem e curando todos os oprimidos do diabo.",  ctx:"Pedro resume o ministério de Jesus a Cornélio, um gentio. A cura no ministério de Jesus é expressão de bondade (euergetōn — 'fazendo bens') — não demonstração de poder. O reino de Deus avança através do cuidado compaixoso do oprimido." },
-    { ref:"3 João 1:2",        theme:"Cura", text:"Amado, oro que em tudo te vá bem e que gostes de saúde, assim como a tua alma passa bem.",                                                       ctx:"Saudação de João ao seu amigo Gaio — modelo de bênção que integra prosperidade, saúde e saúde da alma. A oração cristã primitiva não desprezava o corpo: a integridade humana é física, relacional e espiritual ao mesmo tempo." },
-  
-    /* ── 20. HUMILDADE (12) ── */
-    { ref:"Miquéias 6:8",      theme:"Humildade", text:"Ele te declarou, ó homem, o que é bom; e que é o que o Senhor pede de ti, senão que pratiques a justiça, e ames a misericórdia, e andes humildemente com o teu Deus?",  ctx:"Miquéias resume toda a lei e os profetas em três requisitos. 'Humildemente' (hatznea) é advérbio de postura — caminhar com Deus em modéstia, sem ostentação. A humildade não é autoabaixa­mento, mas perspectiva correta de si mesmo diante de Deus." },
-    { ref:"Mateus 11:29",      theme:"Humildade", text:"Tomai sobre vós o meu jugo e aprendei de mim, porque sou manso e humilde de coração; e achareis descanso para as vossas almas.",            ctx:"Jesus descreve sua própria identidade com duas palavras: 'manso e humilde'. 'Manso' (praus) é força domesticada; 'humilde' (tapeinos) é posição voluntariamente baixa. A escola da humildade é a pessoa de Jesus — ele não apenas ensina, ele encarna." },
-    { ref:"Filipenses 2:3",    theme:"Humildade", text:"Não façais nada por partidarismo ou vanglória, mas por humildade, considerando cada um os outros superiores a si mesmo.",                    ctx:"Paulo escreve da prisão, pedindo que a comunidade reflita a mente de Cristo (v.5). 'Considerar superiores' (hyperechontas) é ato cognitivo e volitivo — não sentimento automático, mas escolha deliberada de colocar o outro acima." },
-    { ref:"Mateus 18:4",       theme:"Humildade", text:"Portanto, quem se humilhar como esta criança, este é o maior no reino dos céus.",                                                           ctx:"Jesus responde à pergunta sobre quem é o maior colocando uma criança no centro. Crianças no mundo romano e judaico não eram romantizadas — eram os de menor status social. A criança como modelo aponta para ausência de pretensão e aceitação de dependência." },
-    { ref:"1 Pedro 5:6",       theme:"Humildade", text:"Humilhai-vos, pois, sob a poderosa mão de Deus, para que ele, em tempo oportuno, vos exalte.",                                             ctx:"A sequência humilhação → exaltação é padrão bíblico (Pv 29:23; Lc 14:11). 'Mão poderosa de Deus' é metáfora do êxodo (Ex 6:1) — mão que salvou também governa. Humilhar-se não é passividade masoquista, mas posicionamento correto diante de quem tem poder real." },
-    { ref:"Tiago 4:6",         theme:"Humildade", text:"Mas ele dá maior graça. Por isso diz: Deus resiste aos soberbos, mas dá graça aos humildes.",                                               ctx:"Cita Provérbios 3:34 (LXX). O verbo 'resiste' (antitassetai) é militar: Deus se posiciona em batalha contra o orgulhoso. A humildade não é estratégia para receber graça — ela é o estado natural de quem reconhece a realidade de Deus e de si mesmo." },
-    { ref:"Isaías 66:2",       theme:"Humildade", text:"Mas atentarei para este: para o pobre e contrito de espírito e para o que treme à minha palavra.",                                         ctx:"Deus declara que os céus e a terra não o contêm — mas seu olhar se fixa no humilde. A humildade descrita inclui contrição e reverência à Palavra. Deus habita não nos templos grandiosos, mas nos corações que reconhecem sua própria limitação." },
-    { ref:"Provérbios 22:4",   theme:"Humildade", text:"A recompensa da humildade e do temor do Senhor são riquezas, honra e vida.",                                                                ctx:"A sabedoria hebraica apresenta humildade como alinhamento com a ordem real das coisas. Quem reconhece a grandeza de Deus e seu lugar como criatura toma as decisões mais sensatas a longo prazo — a humildade é estratégia sapiencial." },
-    { ref:"Lucas 14:11",       theme:"Humildade", text:"Porque todo aquele que se exaltar será humilhado, e todo aquele que se humilhar será exaltado.",                                            ctx:"Dito num banquete onde Jesus observou disputas pelos lugares de honra. O princípio é paradoxo do reino: a ordem de chegada ao festim divino é invertida. Não é estratégia para subir — é descrição da realidade do reino onde os valores mundanos estão invertidos." },
-    { ref:"Números 12:3",      theme:"Humildade", text:"Ora, Moisés era mui manso, mais do que todos os homens que havia sobre a face da terra.",                                                   ctx:"Moisés é descrito como o mais humilde (hebraico: 'anav' — pobre, afligido, manso) no contexto de ataque à sua liderança. A liderança mais efetiva no AT é descrita não em termos de força carismática, mas de mansidão — disponibilidade sem agressividade defensiva." },
-    { ref:"Romanos 12:16",     theme:"Humildade", text:"Sede unânimes entre vós; não ambicioneis coisas elevadas, mas acomodai-vos às que são humildes; não sejais sábios em vosso próprio conceito.",  ctx:"Paulo vincula humildade à unidade da comunidade: o orgulho fragmenta, a humildade une. 'Acomodai-vos às que são humildes' (tois tapeinois synapagomenoi) pode referir-se tanto a pessoas humildes quanto a tarefas humildes — ambas ensinam o mesmo." },
-    { ref:"Mateus 23:12",      theme:"Humildade", text:"Porque o que se exaltar será humilhado, e o que se humilhar será exaltado.",                                                               ctx:"Jesus diz isso em crítica aos fariseus que buscavam títulos e lugares de honra. A inversão divina é lei do reino: a exaltação que vem de Deus requer a posição baixa voluntária. Autoexaltação e exaltação por Deus se excluem mutuamente." },
-  
-    /* ── 21. SOFRIMENTO (12) ── */
-    { ref:"Romanos 8:18",      theme:"Sofrimento", text:"Porque para mim tenho por certo que as aflições do tempo presente não são comparáveis com a glória que em nós há de ser revelada.",        ctx:"Paulo escreve após listar tribulações em 5:3-5. A comparação não é que o sofrimento é pequeno, mas que a glória futura é tão maior que coloca o sofrimento em nova perspectiva. 'Em nós há de ser revelada' — a glória não vem apenas de fora, mas emerge de dentro." },
-    { ref:"2 Coríntios 4:17",  theme:"Sofrimento", text:"Porque este leve e momentâneo peso de aflição nos está produzindo um peso eterno de glória que ultrapassa toda medida.",                  ctx:"Paulo chama 'leve e momentâneo' o que foi catalogue em outro lugar como açoites, prisões e naufrágio (2Co 11). A relativização não é negação da dor, mas colocação dela na escala da eternidade. O sofrimento 'produz' glória — é força geradora." },
-    { ref:"1 Pedro 4:12-13",   theme:"Sofrimento", text:"Amados, não estranheis o fogo ardente que está no meio de vós... mas alegrai-vos, na medida em que sois participantes dos sofrimentos de Cristo.",  ctx:"Pedro escreve a cristãos sob perseguição. 'Não estranheis' (xenizomai — 'não sejais estrangeiros frente a') sugere que a surpresa diante do sofrimento é inapropriada. Participar dos sofrimentos de Cristo é comunhão com ele, não punição." },
-    { ref:"Jó 1:21",           theme:"Sofrimento", text:"Disse: Nu saí do ventre de minha mãe e nu voltarei para lá; o Senhor o deu, e o Senhor o tomou; seja bendito o nome do Senhor.",           ctx:"Jó perde filhos, propriedades e saúde num só dia. Sua resposta — louvor — não é negação do luto, mas profissão de fé que reconhece a soberania de Deus mesmo quando ele age misteriosamente. O texto não defende nem o sofrimento nem a resposta simples." },
-    { ref:"Salmos 23:4",       theme:"Sofrimento", text:"Ainda que eu ande pelo vale da sombra da morte, não temerei mal algum, porque tu estás comigo; o teu bordão e o teu cajado me consolam.",   ctx:"'Vale da sombra da morte' (tsalmaveth) pode referir-se a caminhos perigosos entre montanhas palestinas. O deus pagão estaria ausente no vale — o Deus de Israel acompanha. O cajado era instrumento do pastor para resgatar ovelhas de buracos." },
-    { ref:"Hebreus 12:11",     theme:"Sofrimento", text:"Na verdade, nenhuma disciplina, no momento em que é aplicada, parece ser motivo de alegria, mas de tristeza; depois, no entanto, produz fruto de justiça e paz.",  ctx:"O autor escreve a uma comunidade tentada a abandonar a fé. A disciplina divina é comparada à disciplina paterna (v.9-10). A transformação não é imediata — 'depois' (hysteron) exige perspectiva temporal. A disciplina tem gramática de investimento, não de punição." },
-    { ref:"Isaías 43:2",       theme:"Sofrimento", text:"Quando passares pelas águas, eu serei contigo; e pelos rios, eles não te submergirão; quando passares pelo fogo, não te queimarás.",          ctx:"Segundo Isaías fala ao exilado. As metáforas de água e fogo não prometem ausência de provação ('quando passares') mas presença divina na provação. O Deus bíblico não garante isenção do sofrimento — ele garante companhia dentro dele." },
-    { ref:"Salmos 46:2-3",     theme:"Sofrimento", text:"Portanto, não temeremos ainda que a terra se mude e as montanhas abalem no âmago do mar.",                                                 ctx:"Imagens de caos cósmico — terra abalando, mares rugindo. O salmista não nega que o mundo pode tremer, mas declara que a identidade do crente está ancorada em algo maior que as circunstâncias. 'Não temeremos' é decisão, não ausência de medo." },
-    { ref:"Romanos 5:3-4",     theme:"Sofrimento", text:"Mas não só isso; gloriamo-nos também nas tribulações, sabendo que a tribulação produz perseverança; a perseverança, experiência provada; e a experiência provada, esperança.",  ctx:"A cadeia produtiva do sofrimento em Paulo é surpreendente: não condena nem romantiza o sofrimento — o contextualiza dentro de um processo de formação. Cada etapa produz a próxima, até a esperança que 'não envergonha' (v.5)." },
-    { ref:"2 Coríntios 12:10", theme:"Sofrimento", text:"Por isso, me comprazo nas fraquezas, nas injúrias, nas necessidades, nas perseguições, nas angústias por amor de Cristo; porque quando sou fraco, então sou forte.",  ctx:"Paulo conclui sua reflexão sobre o 'espinho na carne'. O oxímoro final — fraco/forte — é o coração de sua teologia do sofrimento: a fraqueza humana torna-se o espaço onde o poder de Cristo é mais visível." },
-    { ref:"Salmos 30:11",      theme:"Sofrimento", text:"Tu mudaste o meu pranto em folguedo; desataste o meu saco e me cingiste de alegria.",                                                      ctx:"Davi testemunha de uma transformação divina de estado. 'Saco' era vestimenta de luto no mundo antigo. O desatamento do saco e o cingimento de alegria são gestos reais de mudança de condição — Deus atua sobre os sinais externos do sofrimento." },
-    { ref:"Apocalipse 21:3-4", theme:"Sofrimento", text:"Eis o tabernáculo de Deus com os homens... e ele enxugará dos seus olhos toda a lágrima; e não haverá mais morte, nem pranto, nem clamor, nem dor.",  ctx:"A escatologia cristã não é fuga do sofrimento presente, mas promessa de transformação futura. O ato de Deus 'enxugar' lágrimas é íntimo e pessoal — não gestão institucional da dor, mas cuidado direto do Pai pela criança que chorou." },
-  
-    /* ── 22. SALVAÇÃO (12) ── */
-    { ref:"Atos 4:12",         theme:"Salvação", text:"Em nenhum outro há salvação, porque também debaixo do céu nenhum outro nome há dado entre os homens pelo qual devamos ser salvos.",          ctx:"Pedro responde ao Sinédrio após curar o cojo. A afirmação exclusivista foi revolucionária no ambiente pluralista greco-romano. O contexto é cristológico: 'salvação' (soteria) é a obra específica de Jesus de Nazaré, não qualquer bem-estar genérico." },
-    { ref:"Romanos 10:9",      theme:"Salvação", text:"Se confessares com tua boca que Jesus é Senhor e em teu coração creres que Deus o ressuscitou dentre os mortos, serás salvo.",               ctx:"Paulo articula dois elementos da salvação: confissão pública (boca) e crença interna (coração). 'Senhor' (Kyrios) em contexto greco-romano era título imperial; afirmar que Jesus é Kyrios era ato político tanto quanto espiritual." },
-    { ref:"Lucas 19:10",       theme:"Salvação", text:"Pois o Filho do Homem veio buscar e salvar o perdido.",                                                                                       ctx:"Jesus declara o propósito de sua missão após encontrar Zaqueu. 'Filho do Homem' evoca Daniel 7:13 — figura celeste com autoridade universal. Que venha 'buscar' (não apenas receber) inverte: é o pastor que vai ao campo, não o perdido que encontra o caminho." },
-    { ref:"Efésios 2:5",       theme:"Salvação", text:"Estando nós ainda mortos em delitos, nos deu vida juntamente com Cristo; pela graça sois salvos.",                                           ctx:"'Mortos em delitos' é diagnóstico radical de Paulo: não doentes ou feridos, mas mortos — sem capacidade de resposta espiritual própria. A salvação é ressurreição, não recuperação. Deus não auxilia os que se ajudam — ele ressuscita os que estão mortos." },
-    { ref:"João 3:36",         theme:"Salvação", text:"Aquele que crê no Filho tem a vida eterna; mas aquele que rejeita o Filho não verá a vida, mas a ira de Deus permanece sobre ele.",          ctx:"João usa tempo presente para ambos: quem crê 'tem' (presente) vida eterna — não apenas aguardará, mas já a possui. A 'ira' que permanece também é presente — não apenas julgamento futuro. A salvação é realidade presente que se estende em eternidade." },
-    { ref:"Tito 3:5",          theme:"Salvação", text:"Ele nos salvou, não pelas obras de justiça que houvéssemos feito, mas segundo a sua misericórdia, mediante o lavar regenerador e renovador do Espírito Santo.",  ctx:"Paulo usa dois verbos: 'lavar' (banho de nascimento) e 'renovar' (transformação contínua). A salvação tem dimensão inaugural (regeneração) e processual (renovação). O Espírito é agente ativo de ambas." },
-    { ref:"Isaías 12:2",       theme:"Salvação", text:"Eis que Deus é a minha salvação; confiarei nele e não temerei; porque o Senhor Deus é a minha força e o meu cântico, e se tornou a minha salvação.",  ctx:"Isaías 12 é hino de ação de graças colocado após as profecias de restauração dos capítulos 1-11. 'Deus é minha salvação' — 'Yeshua' é o substantivo hebraico, que é também o nome de Jesus. O nome 'Jesus' literalmente significa 'Yahweh salva'." },
-    { ref:"Hebreus 7:25",      theme:"Salvação", text:"Por isso pode também salvar perfeitamente os que por ele se aproximam de Deus, vivendo sempre para interceder por eles.",                     ctx:"'Salvar perfeitamente' (eis to panteles) — até a completude, até o fim. Cristo como sumo sacerdote eterno oferece intercessão permanente. A salvação não é apenas passado (perdão) mas presente (intercessão contínua) e futuro (glória)." },
-    { ref:"Romanos 1:16",      theme:"Salvação", text:"Porque não me envergonho do evangelho de Cristo, pois é o poder de Deus para a salvação de todo aquele que crê, primeiro do judeu, e também do grego.",  ctx:"Paulo afirma o evangelho como 'poder de Deus' — não mera doutrina, mas força atuante. 'Primeiro do judeu' reconhece a prioridade histórica de Israel sem estabelecer exclusividade. A salvação cruza a principal fronteira étnico-religiosa do mundo antigo." },
-    { ref:"2 Timóteo 3:15",    theme:"Salvação", text:"E que desde a infância sabes as sagradas letras, que podem tornar-te sábio para a salvação, pela fé em Cristo Jesus.",                        ctx:"Paulo escreve ao jovem Timóteo sobre o valor das Escrituras. As 'sagradas letras' que Timóteo aprendeu desde criança (do AT) são capazes de conduzir à sabedoria salvífica. A Escritura não é apenas informação — ela tem poder de orientar para Cristo." },
-    { ref:"Salmos 118:14",     theme:"Salvação", text:"O Senhor é a minha força e o meu cântico, e ele se tornou a minha salvação.",                                                               ctx:"Cântico de ação de graças pela libertação divina. O versículo é citado por Moisés após o êxodo (Êx 15:2) e usado mesianicamente por Jesus (Mt 21:42). A linguagem combina força militar, celebração musical e experiência pessoal de redenção." },
-    { ref:"1 Timóteo 2:4",     theme:"Salvação", text:"O qual quer que todos os homens sejam salvos e cheguem ao pleno conhecimento da verdade.",                                                   ctx:"Paulo declara a vontade salvífica universal de Deus. O 'quer' (thélei) é desejo genuíno, não simples permissão. A salvação é acompanhada de 'pleno conhecimento da verdade' (epignōsin alētheias) — não é apenas status legal, mas transformação cognitiva." },
-  
-    /* ── 23. PALAVRA DE DEUS (12) ── */
-    { ref:"2 Timóteo 3:16-17", theme:"Palavra de Deus", text:"Toda a Escritura é divinamente inspirada e proveitosa para ensinar, para repreender, para corrigir, para instruir na justiça, para que o homem de Deus seja perfeito e perfeitamente habilitado para toda boa obra.",  ctx:"'Divinamente inspirada' (theopneustos) — literalmente 'soprada por Deus', único uso desse composto no NT. A Escritura é instrumento polivalente: ensina doutrina, corrige erros, reorienta vida. O objetivo não é erudição, mas a formação de um caráter 'perfeito' (artios — completo)." },
-    { ref:"Salmos 119:105",    theme:"Palavra de Deus", text:"Lâmpada para os meus pés é a tua palavra e luz para o meu caminho.",                                                                  ctx:"Maior salmo do Saltério (176 versículos), totalmente dedicado à Palavra de Deus. 'Lâmpada' ilumina o passo imediato; 'luz' revela o caminho mais distante. A Palavra guia em duas escalas: decisão presente e direção de longo prazo." },
-    { ref:"Isaías 55:11",      theme:"Palavra de Deus", text:"Assim será a minha palavra, que sair da minha boca; ela não tornará para mim vazia, mas fará o que me apraz e prosperará naquilo para que a enviei.",  ctx:"A palavra de Deus é comparada à chuva e neve que frutificam (v.10). O argumento é da natureza para a palavra: como a chuva tem poder germinativo próprio, a Palavra divina tem poder eficaz — ela realiza, não apenas informa." },
-    { ref:"João 1:1",          theme:"Palavra de Deus", text:"No princípio era o Verbo, e o Verbo estava com Deus, e o Verbo era Deus.",                                                              ctx:"João abre seu Evangelho ecoando Gênesis 1 ('no princípio') e filosofia grega (Logos como princípio racional do universo). Jesus é o Logos encarnado: a Palavra que era eterna com Deus tornou-se humano — a revelação máxima de Deus é uma pessoa." },
-    { ref:"Mateus 24:35",      theme:"Palavra de Deus", text:"O céu e a terra passarão, mas as minhas palavras não passarão.",                                                                      ctx:"Jesus declara permanência das suas palavras usando o padrão da escatologia judaica (céu e terra passam) como contraste. O que é máximo em durabilidade na criação (céu/terra) ainda é temporário; as palavras de Jesus transcendem a própria criação." },
-    { ref:"Hebreus 4:12",      theme:"Palavra de Deus", text:"Porque a palavra de Deus é viva e eficaz, e mais afiada do que qualquer espada de dois gumes, e penetra até à divisão da alma e do espírito.",  ctx:"'Viva e eficaz' (zōsa kai energēs) — dois atributos que nenhum texto humano reclama. A comparação com a espada de dois gumes sugere que a Palavra penetra onde nenhuma cirurgia humana chega: nas motivações mais profundas." },
-    { ref:"Romanos 10:17",     theme:"Palavra de Deus", text:"Assim, a fé vem pelo ouvir, e o ouvir, pela palavra de Cristo.",                                                                      ctx:"Paulo revela o mecanismo da fé: ela não nasce de intuição interna ou esforço volitivo, mas de ouvir a mensagem. O grego 'rhema Christou' pode significar a palavra falada por Cristo ou sobre Cristo — ambas são o canal da fé." },
-    { ref:"Jeremias 15:16",    theme:"Palavra de Deus", text:"Foram achadas as tuas palavras, e eu as comi; as tuas palavras foram para mim o gozo e a alegria do meu coração.",                   ctx:"Jeremias usa a metáfora de comer para descrever sua assimilação da Palavra — imagem também usada por Ezequiel (Ez 3:3). A Palavra não é apenas lida; ela é ingerida, digerida, incorporada ao ser. A alegria resultante é nutricional: vem de dentro." },
-    { ref:"Colossenses 3:16",  theme:"Palavra de Deus", text:"A palavra de Cristo habite em vós ricamente, em toda a sabedoria, ensinando-vos e admoestando-vos uns aos outros.",                   ctx:"'Habite ricamente' (enoikeitō plousiōs) — não visita ocasional, mas residência abundante. Paulo descreve a Palavra habitando na comunidade: não apenas indivíduos com Bíblias pessoais, mas uma comunidade saturada da Palavra que ensina mutuamente." },
-    { ref:"Salmos 19:7",       theme:"Palavra de Deus", text:"A lei do Senhor é perfeita e restaura a alma; o testemunho do Senhor é fiel e dá sabedoria ao simples.",                             ctx:"Salmo de dois movimentos: a revelação de Deus na natureza (v.1-6) e na Palavra (v.7-11). 'Restaura a alma' (meshiv nefesh) — a Palavra tem poder de reanimação espiritual. 'Simples' (pethi — ingênuo, não-instruído) recebe sabedoria: a Palavra democratiza o conhecimento." },
-    { ref:"Mateus 4:4",        theme:"Palavra de Deus", text:"Mas ele respondeu: Está escrito: Nem só de pão viverá o homem, mas de toda palavra que procede da boca de Deus.",                     ctx:"Jesus, com fome após quarenta dias de jejum, recusa a tentação de transformar pedras em pão citando Deuteronômio 8:3. Ele coloca a Palavra acima da necessidade física imediata — não negando a nutrição, mas afirmando uma fome mais fundamental." },
-    { ref:"Provérbios 30:5",   theme:"Palavra de Deus", text:"Toda palavra de Deus é pura; ele é escudo para os que nele confiam.",                                                                ctx:"'Pura' (tzerufah — refinada como metal precioso no forno). Cada palavra divina passou pelo processo máximo de purificação: nenhuma impureza, nenhuma falsidade. A confiabilidade da Palavra funda a confiança do crente no próprio Deus que a pronunciou." },
-  
-    /* ── 24. FAMÍLIA (12) ── */
-    { ref:"Josué 24:15",       theme:"Família", text:"Quanto a mim e à minha casa, serviremos ao Senhor.",                                                                                         ctx:"Josué, patriarca e líder, declara a identidade espiritual de sua família publicamente. No Oriente Médio antigo, a liderança da família era religiosa tanto quanto social. A declaração é ato fundante de uma linhagem de fé." },
-    { ref:"Provérbios 22:6",   theme:"Família", text:"Instrui o menino no caminho em que deve andar, e quando envelhecer não se desviará dele.",                                                   ctx:"'Instrui' (chanok) é raiz de 'Hanukah' — dedicação. A instrução do filho é ato de dedicação, não apenas transmissão de informação. 'No caminho em que deve andar' sugere sensibilidade à singularidade de cada criança — não molde único, mas vocação individual." },
-    { ref:"Efésios 6:4",       theme:"Família", text:"E vós, pais, não provoqueis vossos filhos à ira, mas criai-os na disciplina e na admonição do Senhor.",                                    ctx:"Paulo inverte o padrão da patria potestas romana, onde o pai tinha poder absoluto. O mandamento aos pais inclui uma proibição (não provocar) e uma prescrição positiva (criar). A pedagogia cristã combina disciplina e instrução verbal." },
-    { ref:"Deuteronômio 6:6-7", theme:"Família", text:"E estas palavras que eu hoje te ordeno estarão no teu coração; e as ensinarás a teus filhos, e delas falarás assentado em tua casa e andando pelo caminho.",  ctx:"A transmissão da fé às gerações seguintes é mandamento no coração do Shemá. 'Assentado em casa e andando pelo caminho' — a instrução não é programa formal, mas conversa integrada ao ritmo da vida diária. A fé é aprendida na vida compartilhada." },
-    { ref:"Salmos 127:3",      theme:"Família", text:"Eis que os filhos são herança do Senhor, e o fruto do ventre é a sua recompensa.",                                                          ctx:"Salmo de Salomão que reorienta a perspectiva sobre filhos: não posse ou extensão do ego parental, mas herança do Senhor — confiados, não possuídos. A família inteira está sob o governo do Deus que dá e confia, não do pai que controla." },
-    { ref:"Rute 1:16",         theme:"Família", text:"Onde quer que tu fores, irei eu; onde quer que tu pousares, ali pousarei eu; o teu povo é o meu povo e o teu Deus é o meu Deus.",          ctx:"Rute, moabita, declara lealdade à sogra Noemi viúva e empobrecida. A linguagem é de aliança nupcial, mas aplicada a parentesco de luto. Rute escolhe o povo e o Deus de Israel — e se torna ancestral de Davi e de Jesus (Mt 1:5)." },
-    { ref:"Colossenses 3:18-19", theme:"Família", text:"Vós, mulheres, sede submissas a vossos maridos, como convém no Senhor. Vós, maridos, amai vossas mulheres e não as trateis com aspereza.",  ctx:"Paulo equilibra instrução aos dois cônjuges. A submissão da mulher está qualificada 'como convém no Senhor' — critério cristológico. O mandamento ao marido é mais exigente: amor ativo e ausência de amargura. O amor ágape conjugal vai além do sentimento." },
-    { ref:"Provérbios 31:25",  theme:"Família", text:"Ela é revestida de força e de glória, e ri-se do dia de amanhã.",                                                                            ctx:"A 'mulher virtuosa' de Provérbios 31 é pessoa de negócios, cuidadora, sábia e generosa. 'Ri-se do dia de amanhã' não é ingenuidade — é confiança baseada em preparação e fé. A personagem representa a sabedoria encarnada na vida prática." },
-    { ref:"Efésios 5:25",      theme:"Família", text:"Vós, maridos, amai vossas mulheres, como também Cristo amou a Igreja e a si mesmo se entregou por ela.",                                    ctx:"O padrão do amor conjugal em Paulo é a entrega sacrificial de Cristo pela Igreja. 'Se entregou' (paredōken) é o mesmo verbo do abandono de Jesus na cruz. O amor conjugal cristão é medido não pelo sentimento romântico, mas pelo sacrifício radical." },
-    { ref:"Gênesis 2:24",      theme:"Família", text:"Portanto, deixará o homem o seu pai e a sua mãe, e se unirá à sua mulher, e serão ambos uma só carne.",                                    ctx:"Jesus citou esse versículo sobre indissolubilidade do casamento (Mt 19:5). 'Uma só carne' (basar echad) é intimidade total — física, social e espiritual. O casamento é criação de uma nova unidade que tem precedência sobre a família de origem." },
-    { ref:"Salmos 78:4",       theme:"Família", text:"Não as esconderemos dos seus filhos; contaremos à geração vindoura os louvores do Senhor e a sua força e as suas maravilhas que fez.",    ctx:"Salmo histórico de Asafe que resume a missão geracional do povo de Deus: não guardar para si as memórias de Deus, mas transmiti-las. 'Contaremos' é ato de narração intencional — a história de Deus é patrimônio a ser passado, não segredo a ser preservado." },
-    { ref:"Malaquias 4:6",     theme:"Família", text:"Ele converterá o coração dos pais para os filhos e o coração dos filhos para os seus pais.",                                                 ctx:"Últimas palavras do Antigo Testamento antes de 400 anos de silêncio. O fechamento da era profética anuncia reconciliação geracional — ato de Elias precursor. Lucas aplica isso a João Batista (1:17), que prepara o caminho restabelecendo relações." },
-  
-    /* ── 25. IDENTIDADE (12) ── */
-    { ref:"Salmos 139:13-14",  theme:"Identidade", text:"Pois fostes vós que formastes os meus rins; cobriste-me no ventre de minha mãe. Render-te-ei graças, porque me fizeste de modo assombroso e maravilhoso.",  ctx:"Davi reflete sobre sua origem antes de discutir a onisciência divina. 'Assombroso e maravilhoso' (nora niflaiti) — termos usados para milagres divinos. A origem de cada pessoa é ato criativo de Deus — a identidade humana tem fundamento teológico." },
-    { ref:"Gálatas 3:28",      theme:"Identidade", text:"Não há judeu nem grego, não há servo nem livre, não há homem nem mulher; porque todos vós sois um em Cristo Jesus.",                      ctx:"Paulo descreve a nova ordem comunitária 'em Cristo'. As três distinções derrubadas eram as mais fundamentais na antiguidade — étnicas, econômicas e de gênero. A identidade 'em Cristo' não anula as diferenças, mas impede que elas criem hierarquia." },
-    { ref:"1 João 3:1",        theme:"Identidade", text:"Vede que grande amor nos concedeu o Pai, que fôssemos chamados filhos de Deus; e somos.",                                              ctx:"João expressa espanto ('vede que grande amor!') — o acesso à paternidade de Deus é inesperado e imerecido. O duplo afirmativo 'e somos' (kai esmen) é ênfase: não apenas título simbólico, mas status ontológico real já presente." },
-    { ref:"Colossenses 1:13-14", theme:"Identidade", text:"O qual nos trasladou do poder das trevas e nos transportou para o reino do Filho do seu amor.",                                        ctx:"Paulo usa dois verbos de migração: 'trasladou' (errusato — arrancou com força) e 'transportou' (metestēsen — relocou). A mudança de identidade é mudança de reino — não reform, mas transferência. O crente pertence a uma nova realidade soberana." },
-    { ref:"2 Coríntios 5:17",  theme:"Identidade", text:"Assim, se alguém está em Cristo, é uma nova criação. As coisas antigas já passaram; eis que tudo se fez novo.",                         ctx:"Paulo usa a linguagem da nova criação escatológica (Isaías 65:17) para descrever cada conversão individual. 'Tudo se fez novo' (kaina gegonen) usa o perfeito grego — evento passado com efeitos presentes contínuos. A nova identidade já está estabelecida." },
-    { ref:"Romanos 8:16",      theme:"Identidade", text:"O mesmo Espírito testifica com o nosso espírito que somos filhos de Deus.",                                                             ctx:"A certeza da filiação divina não vem de argumentação, mas de co-testemunho: o Espírito de Deus fala com o espírito humano. 'Filhos' (tekna) — palavra de relacionamento, não de status. A identidade mais profunda é relacional e certificada por Deus." },
-    { ref:"Efésios 1:4",       theme:"Identidade", text:"Como também nos elegeu nele antes da fundação do mundo, para sermos santos e irrepreensíveis diante dele em amor.",                       ctx:"A eleição paulina é para santidade, não para passividade. 'Antes da fundação do mundo' — a identidade do crente é anterior à criação: Deus não reagiu à nossa existência, mas a antecipou com intenção amorosa." },
-    { ref:"Jeremias 31:3",     theme:"Identidade", text:"Amo-te com amor eterno; portanto, com benignidade te atraí.",                                                                           ctx:"Deus fala a Israel com intensidade pessoal surpreendente: amor 'eterno' (ahavat olam) — sem início nem fim. 'Atraí' (mashakhti) — cordão de amor que não arrasta à força, mas convida com gentileza. A identidade do povo nasce do amor que precedeu a resposta." },
-    { ref:"1 Pedro 2:9",       theme:"Identidade", text:"Mas vós sois a geração eleita, o sacerdócio real, a nação santa, o povo adquirido, a fim de proclamardes as virtudes daquele que vos chamou das trevas para a sua maravilhosa luz.",  ctx:"Pedro aplica quatro títulos do Antigo Testamento Israel (Êx 19:5-6) a crentes gentios. A identidade é múltipla e preciosa: eleitos, sacerdotes, santos, adquiridos. O propósito dessa identidade é proclamação — ser povo de Deus é tarefa missionária." },
-    { ref:"Romanos 8:1",       theme:"Identidade", text:"Portanto, agora, nenhuma condenação há para os que estão em Cristo Jesus.",                                                             ctx:"Paulo inicia a seção culminante de Romanos com um veredicto legal absoluto: zero condenação. 'Em Cristo Jesus' é a localização que define a identidade — não o comportamento passado ou presente, mas a posição dentro do Filho de Deus." },
-    { ref:"João 15:15",        theme:"Identidade", text:"Já não vos chamo servos... Mas chamei-vos amigos, porque tudo quanto ouvi de meu Pai vos tenho dado a conhecer.",                      ctx:"Jesus muda o vocabulário relacional na última ceia: de servos para amigos (philous). No mundo antigo, amigos do rei tinham acesso privilegiado aos segredos da corte. Jesus compartilha os segredos do Pai — a identidade dos discípulos é de amizade íntima." },
-    { ref:"Efésios 1:11",      theme:"Identidade", text:"Nele, também, fomos feitos herança, sendo predestinados conforme o plano daquele que faz todas as coisas segundo o conselho da sua vontade.",  ctx:"'Fomos feitos herança' (eklērōthēmen) — tornamo-nos a porção herdada por Deus. O crente é herança divina tanto quanto Deus é herança do crente. A identidade mais profunda: ser o que Deus escolheu preservar, valorizar e possuir eternamente." },
-  
-    /* ── 26. MISSÃO (12) ── */
-    { ref:"Mateus 28:19-20",   theme:"Missão", text:"Ide, portanto, fazei discípulos de todas as nações... ensinando-os a guardar tudo quanto vos tenho mandado. E eis que estou convosco todos os dias, até a consumação dos séculos.",  ctx:"A Grande Comissão encerra o Evangelho de Mateus. 'Toda autoridade' precede o mandato — Jesus não envia com autoridade própria, mas compartilha a sua. 'Fazei discípulos' é o único imperativo; os outros verbos (indo, batizando, ensinando) são participativos." },
-    { ref:"Atos 1:8",          theme:"Missão", text:"Mas recebereis o poder do Espírito Santo, que há de vir sobre vós; e ser-me-eis testemunhas, tanto em Jerusalém como em toda a Judeia e Samaria, e até aos confins da terra.",  ctx:"Jesus descreve o escopo geográfico da missão em círculos concêntricos — local, regional e global. 'Testemunhas' (martyres) é palavra que adquiriu a conotação de martirio porque os primeiros testemunhos custaram a vida. A missão exige veracidade de vida." },
-    { ref:"2 Coríntios 5:20",  theme:"Missão", text:"De sorte que somos embaixadores em nome de Cristo, como se Deus por nosso meio exortasse. Em nome de Cristo, pois, rogamos: sede reconciliados com Deus.",  ctx:"'Embaixador' (presbeutēs) era representante oficial do imperador no território estrangeiro. Paulo aplica o título à missão cristã: cada crente é representante oficial do rei celeste. O conteúdo da embaixada é reconciliação — não lei, mas convite." },
-    { ref:"Marcos 16:15",      theme:"Missão", text:"E disse-lhes: Ide por todo o mundo e pregai o evangelho a toda criatura.",                                                                    ctx:"O mandato missionário em Marcos é o mais breve dos Evangelhos: 'todo o mundo, toda criatura'. A universalidade é absoluta — nenhuma fronteira geográfica, étnica ou social limita o alcance da proclamação. O evangelho é para todos, sem exceção." },
-    { ref:"Provérbios 11:30",  theme:"Missão", text:"O fruto do justo é árvore de vida, e o que ganha almas é sábio.",                                                                          ctx:"'Ganha almas' (chakam nefesh) é literalmente 'quem é sábio de alma'. A missão no Antigo Testamento não era proselitismo, mas influência de vida: o justo que vive bem 'ganha' — atrai, captura a atenção de — outras almas para o caminho de Deus." },
-    { ref:"Lucas 24:47",       theme:"Missão", text:"E em seu nome seria pregado o arrependimento para remissão dos pecados a todas as nações, começando por Jerusalém.",                        ctx:"O último mandato de Jesus em Lucas conecta missão a arrependimento e remissão — o conteúdo da proclamação é especificado. 'Começando por Jerusalém' é surpresa: a cidade que crucificou Jesus é o primeiro campo missionário, não o último." },
-    { ref:"Romanos 10:14",     theme:"Missão", text:"Mas como invocarão aquele em quem não creram? E como crerão naquele de quem não ouviram? E como ouvirão, se não há quem pregue?",          ctx:"Paulo constrói uma cadeia lógica reversa da fé à missão: fé depende de ouvir, ouvir depende de pregação, pregação depende de enviados. A missão não é opcional para Paulo — ela é elo indispensável na cadeia que liga o Deus que salva ao humano que crê." },
-    { ref:"Isaías 52:7",       theme:"Missão", text:"Quão formosos são sobre os montes os pés do que anuncia boas novas, do que faz ouvir a paz, do que anuncia o bem, do que faz ouvir a salvação, do que diz a Sião: O teu Deus reina!",  ctx:"Paulo cita esse versículo em Romanos 10:15 para fundamentar a missão. 'Formosos sobre os montes' — os mensageiros correm sobre o terreno árduo de Judá para anunciar o fim do exílio. O evangelista é aquele cujos pés carregam a mais urgente das mensagens." },
-    { ref:"Mateus 5:14",       theme:"Missão", text:"Vós sois a luz do mundo. Não se pode esconder uma cidade edificada sobre um monte.",                                                       ctx:"Jesus declara identidade antes de mandato: os discípulos não são chamados a ser luz — eles são luz. A luz não pode esconder-se por natureza. A questão não é tornar-se missionário, mas permitir que a luz que se é brilhe sem obstáculos artificiais." },
-    { ref:"Ezequiel 33:11",    theme:"Missão", text:"Dize-lhes: Vivo eu, diz o Senhor Deus, que não tenho prazer na morte do ímpio, mas em que o ímpio se converta do seu caminho e viva.",  ctx:"Deus afirma sua vontade salvífica com um juramento ('vivo eu'). A imagem de Deus como sentinela (v.1-9) que avisa antes do julgamento mostra que a missão tem urgência — não para infligir julgamento, mas para evitá-lo. O desejo de Deus é vida, não morte." },
-    { ref:"João 20:21",        theme:"Missão", text:"Jesus disse-lhes outra vez: Paz seja convosco! Como o Pai me enviou, assim também eu vos envio.",                                            ctx:"A missão dos discípulos é modelada pela missão do Filho: como o Pai enviou, assim o Filho envia. O padrão da encarnação — entrar no mundo, ser vulnerável, servir com autoridade — é o modelo do missionário. A paz que precede o envio é alicerce, não bônus." },
-    { ref:"1 Coríntios 9:22",  theme:"Missão", text:"Fiz-me fraco para os fracos, a fim de ganhar os fracos. Fiz-me tudo para todos, para chegar a salvar alguns de qualquer maneira.",      ctx:"Paulo descreve sua metodologia missionária de adaptação cultural. Ele não abandona o evangelho, mas abandona privilégios pessoais. A flexibilidade missionária serve à inflexibilidade da mensagem: adaptar a forma para preservar o conteúdo." },
-  
-    /* ── 27. CRIAÇÃO (12) ── */
-    { ref:"Gênesis 1:1",       theme:"Criação", text:"No princípio, criou Deus os céus e a terra.",                                                                                               ctx:"Dez palavras em hebraico (bereshit bara Elohim et hashamayim veet haaretz) que fundaram a cosmovisão ocidental. 'Criou' (bara) é verbo exclusivo de ação divina no AT. O mundo não é eterno nem divino — é criação de um Deus que existe antes e acima dele." },
-    { ref:"Salmos 19:1",       theme:"Criação", text:"Os céus proclamam a glória de Deus, e o firmamento anuncia a obra das suas mãos.",                                                       ctx:"O Salmo 19 descreve duas revelações: a natural (v.1-6) e a escritural (v.7-11). A criação é discurso divino sem palavras — 'não há linguagem nem fala' (v.3), mas a mensagem chega ao fim do mundo. A beleza do cosmos é eloquência de Deus." },
-    { ref:"João 1:3",          theme:"Criação", text:"Todas as coisas foram feitas por intermédio dele, e sem ele nada do que foi feito se fez.",                                               ctx:"João apresenta Jesus (o Logos) como agente da criação — eco de Provérbios 8 (a Sabedoria presente na criação). O versículo é inclusivo: não algumas coisas, mas todas; e exclusivo: sem ele, nada. A criação inteira é obra cristológica." },
-    { ref:"Colossenses 1:16-17", theme:"Criação", text:"Porque nele foram criadas todas as coisas... Ele é antes de todas as coisas, e todas as coisas subsistem por ele.",                  ctx:"Paulo afirma três relações de Cristo com a criação: agente ('por ele'), objetivo ('para ele'), e sustentação contínua ('subsistem por ele'). A criação não apenas nasceu de Cristo — ela continua existindo por sua ação sustentadora constante." },
-    { ref:"Salmos 24:1",       theme:"Criação", text:"Do Senhor é a terra e a sua plenitude, o mundo e os que nele habitam.",                                                                   ctx:"Hino de entrada ao Templo que proclama a soberania criacional de Deus. 'A sua plenitude' (umloah) — tudo que a terra contém. A propriedade divina da criação é base da ética ecológica e da mordomia humana: cuidamos do que pertence a Deus." },
-    { ref:"Apocalipse 4:11",   theme:"Criação", text:"Digno és, Senhor e nosso Deus, de receber a glória, e a honra, e o poder; porque tu criaste todas as coisas, e por tua vontade existem e foram criadas.",  ctx:"O hino dos quatro seres viventes e dos vinte e quatro anciãos no trono — única doxologia no Apocalipse especificamente sobre criação. 'Por tua vontade existem' — a criação é manifestação contínua da vontade criadora de Deus, não evento pontual do passado." },
-    { ref:"Isaías 40:28",      theme:"Criação", text:"Não sabes tu? Não ouviste que o Deus eterno, o Senhor, o Criador dos confins da terra, não se cansa nem se fatiga?",                    ctx:"Isaías dirige o exilado à contemplação da grandeza criacional de Deus como antídoto ao desânimo. O Criador não conhece fadiga — ao contrário dos deuses pagãos, que eram limitados e podiam ser esgotados. A criação revela um Deus inesgotável." },
-    { ref:"Gênesis 2:7",       theme:"Criação", text:"O Senhor Deus formou, pois, o homem do pó da terra e soprou em suas narinas o fôlego de vida; e o homem passou a ser alma vivente.",    ctx:"A criação do humano usa dois materiais: pó (humilação — humus tem a mesma raiz de humano e humilde) e fôlego divino. O humano é a única criatura formada com intimidade de toque e sopro divinos — criatura de barro e de espírito ao mesmo tempo." },
-    { ref:"Romanos 1:20",      theme:"Criação", text:"Porque os atributos invisíveis de Deus, assim o seu eterno poder como a sua própria divindade, claramente se veem, desde a criação do mundo, sendo percebidos por meio das coisas que foram criadas.",  ctx:"Paulo afirma revelação natural — o cosmos revela atributos divinos cognoscíveis. A revelação da criação não salva, mas responsabiliza: ninguém pode alegar ignorância total sobre Deus. O universo é argumento da existência e do caráter divino." },
-    { ref:"Salmos 33:6",       theme:"Criação", text:"Pela palavra do Senhor foram feitos os céus, e pelo sopro da sua boca, todo o exército deles.",                                          ctx:"A criação por palavra contrasta com as cosmogonias antigas, onde deuses criavam por violência (batalha com monstros do caos) ou por procriação sexual. O Deus bíblico cria por decreto soberano — a realidade responde à sua voz." },
-    { ref:"Jeremias 32:17",    theme:"Criação", text:"Ah, Senhor Deus! Eis que tu fizeste o céu e a terra com o teu grande poder e com o teu braço estendido; nada te é impossível.",        ctx:"Jeremias ora em contexto impossível: compra um campo enquanto a Babilônia assedia Jerusalém — ato absurdo à luz da situação. Sua oração começa com confissão da grandeza criacional de Deus como alicerce para confiar em promessas improváveis." },
-    { ref:"2 Coríntios 5:17",  theme:"Criação", text:"Assim, se alguém está em Cristo, é uma nova criação. As coisas antigas já passaram; eis que tudo se fez novo.",                         ctx:"Paulo usa a linguagem da nova criação (Isaías 65:17) para cada conversão. A nova criação não espera o fim dos tempos — ela começa em cada pessoa que se une a Cristo. A escatologia invadiu o presente: o novo mundo já começou nas pessoas regeneradas." },
-  
-    /* ── 28. TEMOR DE DEUS (12) ── */
-    { ref:"Provérbios 9:10",   theme:"Temor de Deus", text:"O temor do Senhor é o princípio da sabedoria, e o conhecimento do Santo é a prudência.",                                         ctx:"Eco de Provérbios 1:7, mas com acréscimo: 'conhecimento do Santo'. O temor que gera sabedoria não é terror abstrato, mas relacionamento com o Deus que se revelou. A religião genuína e a inteligência prática brotam da mesma fonte: conhecer Deus." },
-    { ref:"Eclesiastes 12:13", theme:"Temor de Deus", text:"De tudo o que foi ouvido, eis a conclusão: Teme a Deus e guarda os seus mandamentos, porque isso é o dever de todo o homem.",   ctx:"Após doze capítulos de investigação filosófica sobre o sentido da vida, Qohélet conclui com a resposta mais simples: teme a Deus. A sabedoria mais alta não é mais complexidade, mas a clareza de quem colocou Deus no centro." },
-    { ref:"Salmos 111:10",     theme:"Temor de Deus", text:"O princípio da sabedoria é o temor do Senhor; todos os que o praticam têm bom entendimento.",                                     ctx:"Salmo acróstico que celebra as obras de Deus. 'Princípio' (reshit) pode ser 'começo' ou 'o mais excelente' — o temor do Senhor é tanto o ponto de partida quanto o ápice da sabedoria. O entendimento vem não de estudo isolado, mas de reverência vivida." },
-    { ref:"Atos 9:31",         theme:"Temor de Deus", text:"E a Igreja por toda a Judeia, Galileia e Samaria tinha paz e era edificada; e caminhava no temor do Senhor e no conforto do Espírito Santo, e crescia em número.",  ctx:"Lucas descreve a saúde da Igreja primitiva com dois qualificadores: temor do Senhor (reverência) e conforto do Espírito (encorajamento). O crescimento numérico segue a integridade espiritual — não ao contrário. O temor não paralisa; ele ordena e fortalece." },
-    { ref:"Salmos 34:7",       theme:"Temor de Deus", text:"O anjo do Senhor se aquartela em derredor dos que o temem, e os livra.",                                                           ctx:"Imagem militar: o 'acampamento' (chaneh) do anjo do Senhor em volta do temeroso de Deus. O temor não deixa o crente exposto — ele chama a proteção divina. A reverência a Deus é ao mesmo tempo atitude interior e barreira exterior." },
-    { ref:"Isaías 8:13",       theme:"Temor de Deus", text:"Ao Senhor dos Exércitos, a este santificai; a ele, o vosso temor, e a ele, o vosso espanto.",                                   ctx:"Isaías fala a uma nação apavorada com ameaças políticas (Síria e Efraim). O remédio para o medo é redirecionar o medo: temer a Deus relocaliza o terror para a fonte de toda realidade. Quem teme a Deus aprende a não temer mais nada do mesmo modo." },
-    { ref:"Apocalipse 14:7",   theme:"Temor de Deus", text:"Temei a Deus e dai-lhe glória, porque chegou a hora do seu juízo; e adorai aquele que fez o céu, e a terra, e o mar, e as fontes das águas.",  ctx:"O anjo voa 'pelo meio do céu' proclamando um evangelho eterno: 'temei a Deus e dai-lhe glória'. O temor de Deus no contexto do julgamento não é pânico, mas reconhecimento correto da realidade: Deus é o criador soberano a quem toda criatura presta contas." },
-    { ref:"Mateus 10:28",      theme:"Temor de Deus", text:"E não temais os que matam o corpo, mas não podem matar a alma; temei antes aquele que pode destruir tanto a alma como o corpo no inferno.",  ctx:"Jesus articula hierarquia dos medos: o pior que humanos podem fazer (matar o corpo) é infinitamente menor que o que Deus pode fazer. O temor de Deus liberta dos temores humanos — quem teme o maior não precisa temer os menores." },
-    { ref:"Salmos 86:11",      theme:"Temor de Deus", text:"Instrui-me, Senhor, no teu caminho, e andarei na tua verdade; une o meu coração ao temor do teu nome.",                         ctx:"Davi pede 'coração unido' (yahad lev) — coração que não está dividido entre múltiplas lealdades. O temor do nome de Deus é aqui o princípio unificador de toda a vida interior. O coração dividido gera vida fragmentada; o coração unido no temor torna-se íntegro." },
-    { ref:"Hebreus 12:28-29",  theme:"Temor de Deus", text:"Portanto, recebendo um reino que não pode ser abalado, retenhamos a graça, pela qual sirvamos a Deus agradavelmente, com reverência e piedoso temor; porque o nosso Deus é um fogo consumidor.",  ctx:"O autor combina graça e temor — não como opostos, mas como complementos. A graça que salva ainda dirige a um Deus que é 'fogo consumidor' (Dt 4:24). O temor cristão é reverência de filho para pai, não terror de servo para tirano." },
-    { ref:"Levítico 19:14",    theme:"Temor de Deus", text:"Não amaldiçoarás ao surdo, nem porás tropeço diante do cego; mas temerás ao teu Deus. Eu sou o Senhor.",                          ctx:"O 'temor de Deus' aparece aqui como motivação para proteger os vulneráveis. Deus é a testemunha que o surdo não pode ouvir e o cego não pode ver — e por isso ninguém os protege. O temor de Deus preenche a lacuna onde nenhuma outra supervisão alcança." },
-    { ref:"Provérbios 14:26-27", theme:"Temor de Deus", text:"No temor do Senhor há forte confiança, e ele será refúgio para os seus filhos. O temor do Senhor é fonte de vida, para desviar dos laços da morte.",  ctx:"Provérbios apresenta o temor de Deus como fonte de dois dons: confiança (para o temeroso) e proteção (para seus filhos). A metáfora de 'fonte de vida' é particularmente rica em terra seca: o temor de Deus é nascente que sustenta toda a vida que brota ao redor." },
-  
-    /* ── 29. ETERNIDADE (12) ── */
-    { ref:"João 3:16",         theme:"Eternidade", text:"Para que todo aquele que nele crê não pereça, mas tenha a vida eterna.",                                                             ctx:"A vida eterna (zoē aiōnios) não é apenas vida que dura para sempre — é 'vida do éon vindouro', a qualidade de existência do novo mundo. Jesus não apenas promete mais tempo; ele promete uma nova ordem de ser, que começa agora e nunca termina." },
-    { ref:"Romanos 8:38-39",   theme:"Eternidade", text:"Pois estou convencido de que nem a morte nem a vida... nos poderá separar do amor de Deus que está em Cristo Jesus.",              ctx:"Paulo lista onze poderes (morte, vida, anjos, principados, coisas presentes, futuras, poderes, altura, profundidade, qualquer outra criatura) incapazes de separar o crente do amor divino. A eternidade do amor de Deus é a garantia da eternidade do crente." },
-    { ref:"Apocalipse 22:20",  theme:"Eternidade", text:"Aquele que dá testemunho destas coisas diz: Certamente, venho em breve. Amém, vem, Senhor Jesus.",                               ctx:"Últimas palavras de Jesus no cânon cristão (além da bênção de v.21). O 'em breve' (tachy) é tensão escatológica: não promessa de cronograma imediato, mas de certeza inevitável. A resposta 'vem, Senhor Jesus' é a oração mais fundamental da fé cristã." },
-    { ref:"Salmos 90:2",       theme:"Eternidade", text:"Antes que os montes nascessem ou que tu criasses a terra e o mundo, mesmo de eternidade a eternidade, tu és Deus.",               ctx:"Moisés contempla a eternidade de Deus em contraste com a brevidade humana (v.10: 'setenta anos'). 'De eternidade a eternidade' (meolam ad olam) — do passado sem início ao futuro sem fim. Deus não habita o tempo — ele habita a eternidade." },
-    { ref:"Mateus 25:46",      theme:"Eternidade", text:"E estes irão para o castigo eterno, e os justos para a vida eterna.",                                                               ctx:"O paralelo 'eterno' para castigo e vida é intencional em Mateus 25 — a mesma palavra grega (aiōnios) modifica ambos. A eternidade não é apenas para o paraíso; ela qualifica toda a existência pós-ressurreição. A escolha presente tem peso infinito." },
-    { ref:"2 Coríntios 4:18",  theme:"Eternidade", text:"Não atentando nós nas coisas que se veem, mas nas que se não veem; porque as que se veem são temporais, e as que se não veem são eternas.",  ctx:"Paulo faz distinção epistemológica: o visível é temporário (proskaira — 'por um período'); o invisível é eterno. Não é que o material seja mau — é que ele é transitório. A sabedoria é orientar a vida pelo permanente, não pelo provisório." },
-    { ref:"1 João 2:17",       theme:"Eternidade", text:"E o mundo passa, e a sua concupiscência; mas aquele que faz a vontade de Deus permanece para sempre.",                             ctx:"João contrasta dois modos de ser: o passageiro (o mundo e seus desejos) e o permanente (a vontade de Deus). 'Permanece para sempre' é promessa ontológica: quem vive alinhado com Deus participa da permanência do próprio Deus." },
-    { ref:"Hebreus 13:8",      theme:"Eternidade", text:"Jesus Cristo é o mesmo ontem, e hoje, e eternamente.",                                                                              ctx:"No contexto de consolo pela morte de líderes da comunidade (v.7), o autor oferece fundamento inabalável: Jesus não muda com as gerações. A imutabilidade de Cristo é âncora existencial: o mundo muda, os líderes morrem, mas Jesus permanece idêntico." },
-    { ref:"Salmos 103:17",     theme:"Eternidade", text:"A misericórdia do Senhor é desde a eternidade até a eternidade para com os que o temem, e a sua justiça até aos filhos dos filhos.",  ctx:"O amor fiel de Deus (hesed) não é sentimento oscilante — ele tem duração eterna e cobertura geracional. O Salmo 103 alça a vista para a escala cósmica do amor divino: ele existia antes do crente e persistirá além de qualquer geração." },
-    { ref:"Isaías 57:15",      theme:"Eternidade", text:"Porque assim diz o Alto e o Sublime, o que habita a eternidade e cujo nome é Santo: Habito no alto e no santo lugar, mas com o contrito e abatido de espírito.",  ctx:"O paradoxo mais surpreendente do AT: Deus que 'habita a eternidade' também habita 'com o contrito'. A transcendência absoluta e a imanência radical coexistem. O Deus eterno não é inacessível — ele se aproxima precisamente do que é pequeno e quebrado." },
-    { ref:"João 17:3",         theme:"Eternidade", text:"E a vida eterna é esta: que te conheçam a ti, o único Deus verdadeiro, e a Jesus Cristo, a quem enviaste.",                        ctx:"Jesus define a vida eterna não como duração, mas como relação: conhecer a Deus e a Jesus Cristo. 'Conhecer' (ginōskōsin) é presente contínuo — vida eterna é processo de conhecimento crescente, não chegada a um estado estático. A eternidade é relacionamento aprofundado." },
-    { ref:"Eclesiastes 3:11",  theme:"Eternidade", text:"Ele fez tudo formoso em seu tempo; também pôs a eternidade no coração do homem.",                                                  ctx:"Qohélet observa que Deus plantou o senso da eternidade (ha-olam) no coração humano. Isso explica a inquietação fundamental: nenhum prazer finito satisfaz completamente porque fomos feitos para o infinito. A saudade do eterno é evidência da imagem de Deus." },
-  
-    /* ── 30. MISERICÓRDIA (12) ── */
-    { ref:"Salmos 103:8",      theme:"Misericórdia", text:"O Senhor é misericordioso e piedoso, longânimo e grande em benignidade.",                                                        ctx:"O Salmo 103 cita a auto-revelação de Deus a Moisés no Sinai (Êx 34:6-7) — a descrição mais completa do caráter de Deus no AT. 'Longânimo' (erek apayim — lento para a ira) contrasta com a impaciência humana. A misericórdia é constitutiva de quem Deus é." },
-    { ref:"Lamentações 3:22-23", theme:"Misericórdia", text:"As misericórdias do Senhor são a causa de não sermos consumidos, porque as suas compaixões não têm fim; renovam-se cada manhã.",  ctx:"Emergindo do livro mais trágico do AT, essa afirmação é tanto mais poderosa. 'Renovam-se cada manhã' — a misericórdia não é capital finito que se esgota; ela é renovada diariamente como o amanhecer. Cada manhã é novo começo garantido pelo hesed divino." },
-    { ref:"Mateus 5:7",        theme:"Misericórdia", text:"Bem-aventurados os misericordiosos, porque eles alcançarão misericórdia.",                                                       ctx:"A bem-aventurança da misericórdia cria um ciclo: misericórdia dada gera misericórdia recebida. No Sermão do Monte, Jesus não ordena que se busque misericórdia, mas que se a pratique — e ela retorna. A misericórdia é o único dom que se multiplica ao ser dado." },
-    { ref:"Tito 3:5",          theme:"Misericórdia", text:"Ele nos salvou, não pelas obras de justiça que houvéssemos feito, mas segundo a sua misericórdia.",                              ctx:"Paulo afirma que a base da salvação não é comportamento humano, mas caráter divino. 'Segundo sua misericórdia' — a salvação é mensurada pela generosidade de Deus, não pela merecimento do crente. A misericórdia precede e supera toda contabilidade moral." },
-    { ref:"Lucas 10:37",       theme:"Misericórdia", text:"E ele respondeu: O que usou de misericórdia para com ele. Jesus, então, lhe disse: Vai e faz o mesmo.",                         ctx:"No epílogo da parábola do bom samaritano, Jesus inverte a pergunta de 'quem é meu próximo' para 'quem agiu como próximo'. A resposta é funcional: próximo é quem pratica misericórdia. O mandato final — 'vai e faz o mesmo' — é o mais prático do NT." },
-    { ref:"Miqueias 6:8",      theme:"Misericórdia", text:"Ele te declarou, ó homem, o que é bom; e que é o que o Senhor pede de ti, senão que pratiques a justiça, e ames a misericórdia, e andes humildemente com o teu Deus?",  ctx:"'Ames a misericórdia' (ahavat chesed) — não apenas praticá-la por obrigação, mas amá-la. A misericórdia que Deus pede é motivada por afeição, não por lei. Miqueias propõe que a misericórdia seja valor amado, não apenas comportamento exigido." },
-    { ref:"Êxodo 34:6-7",     theme:"Misericórdia", text:"O Senhor é Deus compassivo e piedoso, longânimo e grande em misericórdia e fidelidade, que conserva a misericórdia em milhares de gerações.",  ctx:"Auto-revelação de Deus a Moisés após o pecado do bezerro de ouro — o momento de máxima ruptura da aliança. Deus se revela primariamente em misericórdia, não em julgamento. Esse 'credo' divino é citado ou ecoado mais de 20 vezes no AT." },
-    { ref:"Efésios 2:4-5",     theme:"Misericórdia", text:"Mas Deus, sendo rico em misericórdia, pelo seu grande amor com que nos amou, mesmo quando estávamos mortos em nossas transgressões, nos deu vida juntamente com Cristo.",  ctx:"Paulo empilha três afirmações sobre Deus antes da ação salvífica: rico em misericórdia, grande amor, iniciativa unilateral ('mesmo quando'). A misericórdia não espera que o humano melhore — ela age no pior momento da condição humana." },
-    { ref:"Hebreus 4:16",      theme:"Misericórdia", text:"Cheguemos, pois, com confiança ao trono da graça, para que misericórdia e graça nos sejam dadas como socorro na hora oportuna.",  ctx:"Misericórdia (eleos) e graça (charis) são listadas como presentes disponíveis no trono celestial. 'Na hora oportuna' (eis eukairan boētheian) — a misericórdia não é tardia: ela chega na janela certa para ser útil, não quando já passou a necessidade." },
-    { ref:"Salmos 136:1",      theme:"Misericórdia", text:"Louvai ao Senhor, porque é bom, porque a sua misericórdia dura para sempre.",                                                   ctx:"O Salmo 136 é litania antifônica: a congregação responde a cada versículo com 'porque a sua misericórdia dura para sempre' (ki le-olam chasdô). Repetida 26 vezes, essa resposta é confissão coletiva que ancora cada evento histórico na fidelidade eterna de Deus." },
-    { ref:"Salmos 23:6",       theme:"Misericórdia", text:"Surely goodness and mercy shall follow me all the days of my life; e habitarei na casa do Senhor por longos dias.",              ctx:"'Seguirão' (yirduf — perseguirão, rastrearão) usa verbo de caça ou perseguição. Bondade e misericórdia não apenas acompanham passivamente — elas perseguem o crente como predador persegue presa. A misericórdia é agressivamente proativa." },
-    { ref:"Romanos 9:15",      theme:"Misericórdia", text:"Porque diz a Moisés: Terei misericórdia de quem me aprazer ter misericórdia, e me compadecerei de quem me aprazer compadecer-me.",  ctx:"Paulo cita Êxodo 33:19 para defender a soberania da misericórdia divina. A misericórdia não é coagida por mérito ou exigida por demanda — ela é ato livre de Deus que flui de seu caráter. A liberdade da misericórdia é garantia de sua inesgotabilidade." }
+   /* IDs de versões disponíveis na API.Bible */
+   const BIBLE_VERSIONS = [
+    { id: "41a6caa722a21d88-01", name: "NVT — Nova Versão Transformadora", lang: "pt" },
+    { id: "78a9f6124f344018-01", name: "NIV — New International Version", lang: "en" },
   ];
   
-  /* ── Estado ── */
-  /* ── Controle de Estado ── */
-  let currentTheme = "Todos";
-  let pool = [...verses];
-  let idx = 0;
+   
+   /* ──────────────────────────────────────────────────────────
+      MAPEAMENTO DE REFERÊNCIAS → ID DA API.BIBLE
+      Formato: "BOOK.CHAPTER.VERSE"  (padrão USFM da API)
+      Para versículos compostos (ex: Rom 8:38-39), usamos
+      passages endpoint: "ROM.8.38-ROM.8.39"
+      ──────────────────────────────────────────────────────────*/
+   const verses = [
+   
+     /* ── 01. AMOR (12) ── */
+     { apiId:"JHN.3.16",         theme:"Amor",      ref:"João 3:16",
+       ctx:"Jesus estava conversando com Nicodemos, um líder religioso que foi até Ele de noite. E foi nessa conversa que Jesus proferiu as palavras mais poderosas já ditas sobre o amor de Deus. Não um amor sentimental — um amor que custou o Filho Unigênito. Deus não enviou um anjo. Não enviou um profeta. Enviou o Seu próprio Filho. É isso que faz esse amor ser diferente de tudo o que o mundo conhece." },
+   
+     { apiId:"1JN.4.8",          theme:"Amor",      ref:"1 João 4:8",
+       ctx:"João escrevia para pessoas que estavam sendo confundidas por falsos mestres. E ele aponta direto para o coração da questão: se você não ama, você simplesmente não conhece Deus. Porque Deus não apenas tem amor — Ele é amor. Isso não é poesia. É a natureza mais profunda de quem Ele é." },
+   
+     { apiId:"ROM.8.38-ROM.8.39", theme:"Amor",     ref:"Romanos 8:38-39",
+       ctx:"Paulo escreveu isso de dentro de uma prisão, sabendo que podia ser executado. E ainda assim declarou com total certeza: nada pode me separar do amor de Deus. Nem morte, nem vida, nem coisa alguma nesta criação. Essa não é uma esperança frágil — é uma convicção inabalável baseada em quem Cristo é." },
+   
+     { apiId:"1CO.13.4",          theme:"Amor",     ref:"1 Coríntios 13:4",
+       ctx:"A igreja de Corinto estava dividida, ciosa e orgulhosa. E Paulo os para no meio do caminho e diz: sem amor, tudo o que vocês fazem não vale nada. O amor que Deus pede não é um sentimento — é uma decisão. É paciência quando você quer explodir. É bondade quando você quer se fechar. É a marca de quem realmente foi transformado." },
+   
+     { apiId:"1PE.4.8",           theme:"Amor",     ref:"1 Pedro 4:8",
+       ctx:"Pedro escrevia para cristãos que estavam sendo perseguidos. E ele diz: acima de tudo, amem com intensidade uns aos outros. O amor cobre uma multidão de pecados — não porque você faz vista grossa, mas porque o amor escolhe não manter um registro de ofensas. É o que mantém a comunidade de pé nos momentos mais difíceis." },
+   
+     { apiId:"DEU.6.5",           theme:"Amor",     ref:"Deuteronômio 6:5",
+       ctx:"Esse mandamento é o centro da fé de Israel, repetido todos os dias por milênios. Jesus o chamou de o maior de todos os mandamentos. Amar a Deus de todo o coração, toda a alma e toda a força — isso não é um ritual. É uma entrega total. É quando Deus deixa de ser uma obrigação e se torna o centro de tudo na sua vida." },
+   
+     { apiId:"EPH.3.17-EPH.3.18", theme:"Amor",     ref:"Efésios 3:17-18",
+       ctx:"Paulo estava preso quando escreveu essa oração. E o que ele pede para os crentes não é saúde, nem prosperidade — ele pede que eles compreendam a dimensão do amor de Cristo. Largura, comprimento, altura, profundidade. Ele quer dizer: esse amor é maior do que você consegue imaginar. Mas você pode começar a experimentá-lo." },
+   
+     { apiId:"SNG.8.6",           theme:"Amor",     ref:"Cantares 8:6",
+       ctx:"O amor descrito aqui não é fraco nem passageiro. É forte como a morte — e quem já perdeu alguém sabe que a morte não recua. Esse é o amor de Deus por você. Firme. Inabalável. Que nenhuma circunstância consegue apagar. É fogo sagrado — não consome para destruir, mas para purificar e guardar." },
+   
+     { apiId:"LUK.15.20",         theme:"Amor",     ref:"Lucas 15:20",
+       ctx:"Na parábola do filho pródigo, o pai vê o filho chegando de longe e corre para encontrá-lo. No mundo daquela época, homens de respeito não corriam em público. Mas o pai corre — porque o amor de Deus não espera você chegar até Ele por conta própria. Ele vem ao seu encontro quando você ainda está no caminho de volta." },
+   
+     { apiId:"ZEC.2.8",           theme:"Amor",     ref:"Zacarias 2:8",
+       ctx:"Deus usa uma das imagens mais delicadas que existem: a pupila do olho. A parte mais sensível, mais protegida do seu corpo. É assim que Deus te vê. Quem toca no Seu povo, toca nessa parte mais sensível d'Ele. Isso faz você entender o quanto você importa para Deus." },
+   
+     { apiId:"1CO.13.13",         theme:"Amor",     ref:"1 Coríntios 13:13",
+       ctx:"Paulo lista as três maiores virtudes da vida cristã e declara: o amor é o maior. A fé um dia se tornará visão. A esperança se tornará realidade. Mas o amor permanece — porque Deus é amor, e a eternidade é a vida com Ele. De tudo o que você pode cultivar hoje, o amor é o único que nunca vai caducar." },
+   
+     { apiId:"ROM.13.10",         theme:"Amor",     ref:"Romanos 13:10",
+       ctx:"Paulo vai direto ao ponto: o amor não faz mal ao próximo. Por isso, ele é o cumprimento de toda a lei. Não é que a lei não importa — é que quando você genuinamente ama, você obedece por dentro, não por fora. Não é regra que você segue com medo; é um coração que foi transformado." },
+   
+     /* ── 02. FÉ (12) ── */
+     { apiId:"HEB.11.1",          theme:"Fé",       ref:"Hebreus 11:1",
+       ctx:"Essa é a definição mais clara de fé nas Escrituras. Fé não é achismo, não é esperança vaga — é certeza de coisas que você ainda não vê com os olhos físicos, mas que são tão reais quanto o que você toca. É a convicção que ancora sua vida no que Deus prometeu, mesmo quando as circunstâncias gritam o contrário." },
+   
+     { apiId:"GAL.2.20",          theme:"Fé",       ref:"Gálatas 2:20",
+       ctx:"Paulo descreve aqui a maior transformação que pode acontecer na vida de um ser humano. O 'eu' velho — o que vivia para si, para seus próprios planos e orgulhos — foi crucificado com Cristo. E agora é Cristo que vive por dentro. A fé que salva não apenas muda o comportamento. Ela muda quem você é." },
+   
+     { apiId:"MRK.9.24",          theme:"Fé",       ref:"Marcos 9:24",
+       ctx:"Esse homem tinha um filho sofrendo, e foi honesto com Jesus: eu creio, mas tenho dúvida. E Jesus curou o filho assim mesmo. Essa confissão é uma das mais sinceras de toda a Bíblia — e Jesus não rejeitou ele por ter dúvidas. Se você tiver fé do tamanho de um grão, mas for genuína, isso é suficiente para Deus agir." },
+   
+     { apiId:"ROM.1.17",          theme:"Fé",       ref:"Romanos 1:17",
+       ctx:"Esse versículo foi o que mudou a história da Igreja. Martinho Lutero leu 'o justo viverá pela fé' e compreendeu que a salvação não se ganha por esforço humano — ela vem de Deus, pela fé. Não é o que você faz que te salva. É o que Cristo já fez. E a fé é a mão que recebe esse presente." },
+   
+     { apiId:"MAT.17.20",         theme:"Fé",       ref:"Mateus 17:20",
+       ctx:"Jesus não disse que você precisa de uma fé enorme. Ele disse que uma fé pequenininha — como o menor de todos os grãos — já é capaz de mover montanhas. A questão não é o tamanho da sua fé. É em quem você está colocando ela. Uma fé pequena em um Deus grande move o impossível." },
+   
+     { apiId:"JAS.2.17",          theme:"Fé",       ref:"Tiago 2:17",
+       ctx:"Tiago está respondendo a pessoas que diziam crer mas não viviam como crentes. A fé que salva não é apenas concordar com doutrinas. Ela transforma o que você faz. Fé morta é fé que não mudou nada em você. A fé verdadeira sempre produz fruto — não para ganhar a salvação, mas porque você realmente foi transformado." },
+   
+     { apiId:"PHP.1.29",          theme:"Fé",       ref:"Filipenses 1:29",
+       ctx:"Paulo diz uma coisa que o mundo acha absurda: sofrer por Cristo é uma graça. Não é punição, não é abandono — é privilégio. Porque no sofrimento por causa do evangelho, você compartilha algo com o próprio Jesus. E é nesse lugar que a fé se aprofunda de um jeito que a prosperidade nunca conseguiria produzir." },
+   
+     { apiId:"EPH.2.8-EPH.2.9",   theme:"Fé",       ref:"Efésios 2:8-9",
+       ctx:"Paulo é absolutamente claro aqui: a salvação é dom de Deus. Não é produto do seu esforço, da sua religiosidade, da sua disciplina. É graça. E a própria fé que você usa para receber essa graça também vem de Deus. Isso não deixa espaço para orgulho espiritual — só para gratidão." },
+   
+     { apiId:"JHN.20.29",         theme:"Fé",       ref:"João 20:29",
+       ctx:"Tomé precisou ver para crer. Jesus o encontrou onde ele estava — e o deixou tocar. Mas então Jesus disse: bem-aventurados os que não viram e creram. Isso é você. Você não estava no aposento quando Jesus apareceu. Mas você crê. E Jesus declara você bem-aventurado por isso." },
+   
+     { apiId:"PRO.3.5",           theme:"Fé",       ref:"Provérbios 3:5",
+       ctx:"Confiar em Deus de todo o coração significa soltar o controle. Não depender do seu próprio raciocínio como ponto final. Isso não quer dizer que você não pensa — quer dizer que você reconhece que Deus enxerga o que você não enxerga. É a fé que diz: Senhor, eu não entendo tudo, mas eu confio em Ti." },
+   
+     { apiId:"HEB.11.6",          theme:"Fé",       ref:"Hebreus 11:6",
+       ctx:"Sem fé é impossível agradar a Deus — não difícil, impossível. Porque fé é o fundamento de qualquer relacionamento com Ele. E o mínimo que a fé precisa conter é isso: Deus existe, e Ele recompensa quem O busca com sinceridade. Comece aí. Deus honra quem vem até Ele com esse coração." },
+   
+     { apiId:"ROM.10.17",         theme:"Fé",       ref:"Romanos 10:17",
+       ctx:"A fé não nasce do nada. Ela vem de ouvir — ouvir a Palavra de Cristo. É por isso que pregar importa. É por isso que ler a Bíblia importa. A fé não é produzida pelo esforço humano — ela nasce quando você expõe seu coração à mensagem de Jesus Cristo. A Palavra é a semente; a fé é o fruto." },
+   
+     /* ── 03. ESPERANÇA (12) ── */
+     { apiId:"JER.29.11",         theme:"Esperança", ref:"Jeremias 29:11",
+       ctx:"Deus disse isso para um povo que estava vivendo como exilado na Babilônia — longe de casa, sem liberdade, sem perspectiva visível. E mesmo assim Ele declarou: eu tenho planos de paz para vocês. Não de mal. Isso não foi dito num dia fácil. Foi dito no pior momento. E vale para você também." },
+   
+     { apiId:"ROM.8.28",          theme:"Esperança", ref:"Romanos 8:28",
+       ctx:"Paulo não diz que todas as coisas são boas. Ele diz que todas as coisas cooperam para o bem de quem ama a Deus. Tem uma diferença enorme. Coisas terríveis podem acontecer — mas Deus é capaz de usar até o pior momento da sua vida para produzir algo que você não poderia imaginar. Isso é esperança real." },
+   
+     { apiId:"ISA.40.31",         theme:"Esperança", ref:"Isaías 40:31",
+       ctx:"Esse texto foi escrito para um povo que estava exausto — exilado, sem forças, sem esperança. E Deus promete: os que esperam em Mim vão renovar as suas forças. Não os que lutam mais, não os que se esforçam mais — os que esperam. Esperar em Deus não é passividade. É confiar que Ele é suficiente quando você já não tem mais nada." },
+   
+     { apiId:"LAM.3.22-LAM.3.23", theme:"Esperança", ref:"Lamentações 3:22-23",
+       ctx:"O livro de Lamentações descreve a destruição total de Jerusalém. É o texto mais triste do Antigo Testamento. E no meio desse naufrágio, o escritor encontra uma âncora: as misericórdias de Deus se renovam a cada manhã. Não importa como foi ontem. A cada manhã, Deus começa de novo com você." },
+   
+     { apiId:"ROM.15.13",         theme:"Esperança", ref:"Romanos 15:13",
+       ctx:"Paulo chama Deus de 'Deus da esperança' — um título que não aparece em mais lugar nenhum no Novo Testamento. A esperança que Paulo descreve aqui não vem de você se animar. Ela vem do Espírito Santo que transborda dentro de você. É uma esperança sobrenatural, dada por Deus, sustentada por Ele." },
+   
+     { apiId:"1PE.1.3",           theme:"Esperança", ref:"1 Pedro 1:3",
+       ctx:"Pedro chama a esperança cristã de 'viva' — não morta, não vaga, não incerta. Ela é viva porque está ancorada na ressurreição de Jesus. A esperança de um mundo melhor, de restauração, de vida eterna — tudo isso se sustenta em um fato histórico real: Jesus saiu do túmulo. Essa é a diferença de tudo." },
+   
+     { apiId:"PSA.71.14",         theme:"Esperança", ref:"Salmos 71:14",
+       ctx:"O escritor desse salmo está numa fase difícil da vida — perseguido, envelhecendo, vulnerável. Mas ele faz uma escolha: continuarei esperando, e louvarei cada vez mais. Esperança não é um sentimento que vem. É uma decisão que você toma — especialmente quando não tem vontade. E quando você louva na dificuldade, algo muda." },
+   
+     { apiId:"REV.21.4",          theme:"Esperança", ref:"Apocalipse 21:4",
+       ctx:"Essa é a promessa final da Bíblia para todos que pertencem a Deus. Deus mesmo vai enxugar cada lágrima dos seus olhos. Não haverá mais morte, nem choro, nem dor. Essa não é uma metáfora vaga de 'ficar melhor'. É uma promessa concreta de que um dia tudo o que te quebrou vai ser completamente restaurado." },
+   
+     { apiId:"HAB.3.17-HAB.3.18", theme:"Esperança", ref:"Habacuque 3:17-18",
+       ctx:"Habacuque descreve o cenário mais devastador que um agricultor poderia imaginar: sem figos, sem uvas, sem olivas, sem gado. Tudo perdido. E mesmo assim ele diz: ainda assim me alegrarei no Senhor. Essa é a esperança mais pura que existe — não baseada no que você tem, mas em quem Deus é." },
+   
+     { apiId:"HEB.6.19",          theme:"Esperança", ref:"Hebreus 6:19",
+       ctx:"O escritor usa a imagem de uma âncora para descrever a nossa esperança. Mas essa âncora não está no fundo do mar — ela está presa em Deus mesmo. Por isso ela não cede na tempestade. Não importa o quanto a sua vida balançar, a esperança que está ancorada em Cristo não vai ceder." },
+   
+     { apiId:"PSA.31.24",         theme:"Esperança", ref:"Salmos 31:24",
+       ctx:"O mandamento aqui é direto: sede fortes e corajosos, todos os que esperam no Senhor. A espera em Deus não produz fraqueza — ela produz coragem. Porque quando você sabe em quem você está esperando, e sabe que Ele é fiel, o coração deixa de tremer e começa a firmar." },
+   
+     { apiId:"ROM.5.3-ROM.5.4",   theme:"Esperança", ref:"Romanos 5:3-4",
+       ctx:"Paulo descreve como a esperança se forma em nós através do sofrimento. A tribulação produz perseverança. A perseverança produz caráter. E o caráter produz esperança. Não é que o sofrimento é bom em si mesmo — é que Deus usa até o sofrimento para construir em você algo que não se quebra." },
+   
+     /* ── 04. PAZ (12) ── */
+     { apiId:"JHN.14.27",         theme:"Paz",       ref:"João 14:27",
+       ctx:"Jesus disse isso na noite em que seria preso e executado. E mesmo assim Ele fala de paz — não a paz que o mundo oferece, que depende de tudo ir bem. A paz de Jesus está disponível no meio da crise. Ele a deixa como herança. Não precisa conquistar. Precisa receber." },
+   
+     { apiId:"PHP.4.6-PHP.4.7",   theme:"Paz",       ref:"Filipenses 4:6-7",
+       ctx:"Paulo escreveu isso de dentro da prisão. Ele tinha todo motivo para a ansiedade. Mas ele encontrou o segredo: transforme a ansiedade em oração. Não negue o que está sentindo — leve para Deus, com gratidão. E aí acontece algo que ultrapassa toda lógica: uma paz que guarda o seu coração como uma sentinela." },
+   
+     { apiId:"ISA.26.3",          theme:"Paz",       ref:"Isaías 26:3",
+       ctx:"A paz perfeita prometida aqui tem uma condição: a mente firme em Deus. Não é fácil. O mundo faz de tudo para desviar o seu foco. Mas quando você deliberadamente mantém os olhos em Deus — na Sua fidelidade, no Seu caráter — uma paz profunda começa a tomar lugar. Não paz sem batalha. Paz dentro da batalha." },
+   
+     { apiId:"ROM.5.1",           theme:"Paz",       ref:"Romanos 5:1",
+       ctx:"Antes de Cristo, o ser humano estava em guerra com Deus — separado por causa do pecado. Mas a justificação pela fé resolve isso. Você não está mais do lado errado. Através de Jesus, você tem paz com Deus. Esse é o fundamento de tudo. Antes de sentir paz, você precisa saber que tem paz." },
+   
+     { apiId:"PSA.23.2",          theme:"Paz",       ref:"Salmos 23:2",
+       ctx:"A imagem do pastor levando as ovelhas para repousar à beira de águas tranquilas é uma das mais pacificantes de toda a Bíblia. Davi escreveu isso por experiência própria — ele foi pastor. Ele sabia o que era cuidar de ovelhas. E ele usou isso para descrever o cuidado de Deus com você: pessoal, atento, restaurador." },
+   
+     { apiId:"MAT.5.9",           theme:"Paz",       ref:"Mateus 5:9",
+       ctx:"Jesus não chamou de bem-aventurados os que evitam conflito — mas os pacificadores. Quem trabalha ativamente para trazer reconciliação, restaurar relacionamentos, construir pontes. Isso é o que filhos de Deus fazem — porque refletem o caráter do Pai que enviou o Filho para nos reconciliar com Ele." },
+   
+     { apiId:"COL.3.15",          theme:"Paz",       ref:"Colossenses 3:15",
+       ctx:"Paulo diz que a paz de Cristo deve governar o seu coração — ser o árbitro das suas decisões. Quando você está em dúvida, quando há tensão, quando precisa escolher entre caminhos — deixe a paz de Cristo decidir. Se você não tem paz com aquela decisão, é um sinal de Deus para parar e reconsiderar." },
+   
+     { apiId:"NUM.6.26",          theme:"Paz",       ref:"Números 6:26",
+       ctx:"Essa bênção foi dada por Deus a Moisés para que os sacerdotes a pronunciassem sobre o povo de Israel. E ainda ressoa hoje — porque o mesmo Deus que mandou essas palavras no deserto quer dá-las a você. O Senhor voltando o Seu rosto para você significa favor, atenção e paz que vêm diretamente d'Ele." },
+   
+     { apiId:"EPH.2.14",          theme:"Paz",       ref:"Efésios 2:14",
+       ctx:"No Templo de Jerusalém havia um muro que separava judeus de gentios. Cruzá-lo era crime grave. Jesus derrubou esse muro. Não apenas como símbolo — como realidade. Em Cristo, as divisões mais profundas entre pessoas são superadas. Jesus não veio apenas trazer paz com Deus. Ele veio ser a paz entre os seres humanos." },
+   
+     { apiId:"PSA.4.8",           theme:"Paz",       ref:"Salmos 4:8",
+       ctx:"Davi escreveu isso em fuga de seus inimigos — literalmente dormindo ao relento, vulnerável. E mesmo assim ele diz: em paz me deito e durmo. Não porque a situação era segura. Mas porque Deus era o Seu lugar seguro. Essa paz que permite dormir no meio da tempestade só vem de uma confiança profunda em Deus." },
+   
+     { apiId:"ISA.9.6",           theme:"Paz",       ref:"Isaías 9:6",
+       ctx:"Isaías profetizou sobre o Messias séculos antes de Jesus nascer. E um dos títulos que ele deu foi 'Príncipe da Paz'. Não porque Jesus tinha um temperamento suave e evitava conflitos — mas porque Ele é o Rei que instaura a ordem e a plenitude de Deus sobre tudo. Onde Jesus reina, a paz verdadeira chega." },
+   
+     { apiId:"2TH.3.16",          theme:"Paz",       ref:"2 Tessalonicenses 3:16",
+       ctx:"Paulo encerra a carta com uma bênção de paz 'em tudo' — não em tudo que é fácil, mas em toda circunstância. E ele chama Deus de 'Senhor da paz' — título único no Novo Testamento. A paz não é apenas algo que Deus distribui. É parte do que Ele é. Quando Ele está com você, a paz está com você." },
+   
+     /* ── 05. FORÇA (12) ── */
+     { apiId:"PHP.4.13",          theme:"Força",     ref:"Filipenses 4:13",
+       ctx:"Esse versículo não é um slogan de autoajuda. Paulo não está dizendo que pode fazer qualquer coisa que quiser. Ele está falando de contentamento — aprender a estar bem tanto na abundância quanto na necessidade. E a força para isso vem de Cristo, não de força de vontade. É uma força que vem de dentro." },
+   
+     { apiId:"ISA.41.10",         theme:"Força",     ref:"Isaías 41:10",
+       ctx:"Deus fala diretamente ao povo no exílio — exausto, com medo, sem perspectiva. E diz: não temas, porque Eu sou contigo. Não estou te observando de longe — Eu sou teu Deus. Eu te fortaleço, te ajudo, te sustento. Três promessas em sequência, como três pilares. Quando tudo cede, Deus ainda está ali." },
+   
+     { apiId:"EPH.6.10",          theme:"Força",     ref:"Efésios 6:10",
+       ctx:"Paulo está abrindo a seção sobre a armadura espiritual. E ele começa por aqui: a força que você precisa não é a sua — é a força de Deus. A batalha espiritual é real, mas você não entra nela dependendo da sua própria capacidade. Você entra nela revestido do poder de Quem já venceu." },
+   
+     { apiId:"PSA.46.1",          theme:"Força",     ref:"Salmos 46:1",
+       ctx:"Martinho Lutero foi buscar nesse salmo a letra de 'Castelo Forte' em meio à Reforma — quando toda a Europa estava contra ele. 'Deus é o nosso refúgio e força.' Não era discurso — era experiência. Nos momentos de maior pressão, Deus se revela como o lugar seguro que não se move." },
+   
+     { apiId:"2CO.12.9",          theme:"Força",     ref:"2 Coríntios 12:9",
+       ctx:"Paulo pediu três vezes para Deus remover um sofrimento. E Deus disse não — mas não saiu de perto. Disse: Minha graça te basta. Meu poder se completa na sua fraqueza. O que parecia um problema era na verdade um palco para o poder de Deus brilhar. A fraqueza que você não suporta pode ser exatamente onde Deus mais age." },
+   
+     { apiId:"JOS.1.9",           theme:"Força",     ref:"Josué 1:9",
+       ctx:"Josué tinha acabado de perder Moisés e estava prestes a liderar um povo inteiro para uma guerra. O nível de pressão era imenso. E Deus diz: sê forte e corajoso. Não porque a situação era fácil — porque Eu estou contigo em todo lugar. A coragem não vem de ausência de medo. Vem da presença de Deus." },
+   
+     { apiId:"PSA.28.7",          theme:"Força",     ref:"Salmos 28:7",
+       ctx:"Davi descreve uma trajetória: ele confia em Deus, recebe ajuda, e o coração exulta em louvor. Não é teoria — é testemunho. O Senhor é minha força e meu escudo. Quando você passa por algo e sai do outro lado, você sabe que não saiu por conta própria. E o louvor é a resposta natural a isso." },
+   
+     { apiId:"NEH.8.10",          theme:"Força",     ref:"Neemias 8:10",
+       ctx:"O povo estava chorando ao ouvir a Lei de Deus depois de décadas no exílio. E Esdras os para e diz: a alegria do Senhor é a vossa força. Não é a sua alegria — é a alegria que vem d'Ele. Uma alegria que não depende das circunstâncias porque tem uma fonte diferente de tudo que o mundo oferece." },
+   
+     { apiId:"PSA.18.32",         theme:"Força",     ref:"Salmos 18:32",
+       ctx:"Esse é um salmo de vitória de Davi. E ele não usa o vocabulário do guerreiro invencível. Ele diz: Deus é quem me cinge de força. É Deus quem prepara, equipa, e torna o caminho trilhável. O forte não é o que nunca caiu — é o que percebeu que Deus o levantou todas as vezes." },
+   
+     { apiId:"HAB.3.19",          theme:"Força",     ref:"Habacuque 3:19",
+       ctx:"Habacuque é o profeta que começou o livro questionando Deus com raiva. E termina dizendo: o Senhor Deus é a minha força, Ele faz meus pés como os da corça. Da dúvida e da revolta para a confiança e a agilidade. Esse é o caminho da fé — não ausência de perguntas, mas encontrar a Deus mesmo dentro delas." },
+   
+     { apiId:"1CH.16.11",         theme:"Força",     ref:"1 Crônicas 16:11",
+       ctx:"Esse versículo foi cantado quando a Arca da Aliança chegou a Jerusalém — um momento de celebração histórica. Mas a instrução é para sempre: busquem ao Senhor e a sua força, busquem continuamente a sua face. A força de Deus não é algo que você pega uma vez. É resultado de um relacionamento contínuo." },
+   
+     { apiId:"EPH.3.16",          theme:"Força",     ref:"Efésios 3:16",
+       ctx:"Paulo ora para que os efésios sejam fortalecidos no homem interior pelo Espírito. Não fortalecidos externamente, não na aparência — por dentro. É lá que a batalha mais importante acontece. E é lá que o Espírito Santo atua, produzindo uma força que não depende de como você está se sentindo nem do que está acontecendo ao redor." },
+   
+     /* ── 06. SABEDORIA (12) ── */
+     { apiId:"PRO.1.7",           theme:"Sabedoria", ref:"Provérbios 1:7",
+       ctx:"O livro de Provérbios começa com essa declaração: o temor do Senhor é o ponto de partida de toda sabedoria. Não o conhecimento, não a experiência, não a inteligência — o temor do Senhor. Isso quer dizer reconhecer quem Deus é e orientar toda a sua vida em função disso. É aí que a sabedoria começa." },
+   
+     { apiId:"JAS.1.5",           theme:"Sabedoria", ref:"Tiago 1:5",
+       ctx:"Tiago disse isso para pessoas passando por provações — precisando de sabedoria para navegar situações difíceis. E a instrução é simples: peça a Deus. Ele dá generosamente e sem reclamar. A sabedoria que Deus dá não é para te fazer parecer inteligente. É para te dar a capacidade de atravessar os momentos mais duros com integridade." },
+   
+     { apiId:"COL.2.3",           theme:"Sabedoria", ref:"Colossenses 2:3",
+       ctx:"Em Colossos havia pessoas ensinando que a sabedoria verdadeira estava em visões, em experiências espirituais especiais, em mistérios escondidos. Paulo responde: toda a sabedoria e todo o conhecimento estão escondidos em Cristo. Você não precisa buscar em outro lugar. Quando você conhece Jesus, você tem acesso ao que há de mais profundo." },
+   
+     { apiId:"ECC.12.13",         theme:"Sabedoria", ref:"Eclesiastes 12:13",
+       ctx:"O pregador passou doze capítulos analisando prazeres, riqueza, sabedoria, poder — e concluiu que tudo é vaidade. E no final chega à conclusão mais simples e mais profunda: teme a Deus e guarda os Seus mandamentos. Toda a investigação intelectual, no final, aponta para a mesma direção: obedece a Deus." },
+   
+     { apiId:"PRO.4.7",           theme:"Sabedoria", ref:"Provérbios 4:7",
+       ctx:"O pai instrui o filho: o mais importante é a sabedoria. Invista tudo para obtê-la. No mundo antigo, isso era uma orientação radical — porque o normal era investir em poder e riqueza. Mas a sabedoria hebraica colocava o entendimento de Deus acima de qualquer coisa que o dinheiro pudesse comprar." },
+   
+     { apiId:"1CO.1.25",          theme:"Sabedoria", ref:"1 Coríntios 1:25",
+       ctx:"O mundo vê a Cruz como loucura e fraqueza. Paulo inverte: a loucura de Deus é mais sábia do que a sabedoria dos homens. A salvação pelo sacrifício de um carpinteiro crucificado não faz sentido para o raciocínio humano. Mas foi o plano mais sábio e mais poderoso que existiu — e funcionou." },
+   
+     { apiId:"PRO.9.10",          theme:"Sabedoria", ref:"Provérbios 9:10",
+       ctx:"O temor do Senhor e o conhecimento do Santo — essas são as raízes da sabedoria. Não é possível ser verdadeiramente sábio sem ter Deus como ponto de partida. Porque a sabedoria não é apenas habilidade intelectual — é capacidade de enxergar a realidade como ela é. E a realidade fundamental é que Deus existe e que Ele é Santo." },
+   
+     { apiId:"PSA.119.105",       theme:"Sabedoria", ref:"Salmos 119:105",
+       ctx:"A Palavra de Deus é descrita como lâmpada para os pés e luz para o caminho. A lâmpada ilumina o próximo passo. A luz revela o caminho mais longo. Você não precisa enxergar o destino inteiro — precisa enxergar o que está na sua frente agora. A Bíblia faz exatamente isso: dá sabedoria para o passo presente e direção para o caminho." },
+   
+     { apiId:"JOB.28.28",         theme:"Sabedoria", ref:"Jó 28:28",
+       ctx:"O capítulo 28 de Jó é um poema profundo: é possível encontrar ouro, prata, pedras preciosas — mas onde se encontra a sabedoria? A resposta de Jó ao final é a mesma de Salomão: temer a Deus. A sabedoria mais profunda não está nos livros, não está na experiência acumulada — está no relacionamento com o Criador." },
+   
+     { apiId:"PRO.16.16",         theme:"Sabedoria", ref:"Provérbios 16:16",
+       ctx:"Adquirir sabedoria vale mais do que ouro. Adquirir entendimento vale mais do que prata. A sabedoria hebraica inverte as prioridades do mercado. Ouro compra coisas. Sabedoria te equipa para viver bem, tomar decisões certas e atravessar crises. É o investimento de mais longo prazo que você pode fazer." },
+   
+     { apiId:"ISA.11.2",          theme:"Sabedoria", ref:"Isaías 11:2",
+       ctx:"Essa é uma profecia sobre o Messias — e o Espírito que repousaria sobre Ele incluía espírito de sabedoria e entendimento. Jesus é descrito como o repositório completo de toda a sabedoria divina. Quando você tem Cristo, você tem acesso ao mesmo Espírito que revestiu Ele. A sabedoria não está distante de você." },
+   
+     { apiId:"ROM.11.33",         theme:"Sabedoria", ref:"Romanos 11:33",
+       ctx:"Depois de onze capítulos de teologia profunda, Paulo para e exclama: ó profundidade das riquezas da sabedoria de Deus! Ele chegou num ponto onde as palavras não dão conta. A sabedoria de Deus é imensurável. Insondável. Há sempre mais para descobrir. Isso não assusta — é motivo de adoração." },
+   
+     /* ── 07. GRAÇA (12) ── */
+     { apiId:"EPH.2.8",           theme:"Graça",     ref:"Efésios 2:8",
+       ctx:"Paulo não deixa espaço para dúvida: você foi salvo pela graça, mediante a fé — e isso não veio de você, é dom de Deus. Não veio das suas obras. Isso elimina todo e qualquer orgulho espiritual. Você não chegou a Deus porque foi bom o suficiente. Você chegou porque Deus foi gracioso o suficiente." },
+   
+     { apiId:"2CO.9.8",           theme:"Graça",     ref:"2 Coríntios 9:8",
+       ctx:"Paulo estava pedindo uma oferta para a Igreja de Jerusalém que estava passando fome. E ele ancora a generosidade dos coríntios na generosidade de Deus: Ele tem poder para fazer abundar em vocês toda a graça. Deus não só supre o necessário — Ele supre em excesso, para que você tenha o suficiente e ainda possa ajudar outros." },
+   
+     { apiId:"JHN.1.16",          theme:"Graça",     ref:"João 1:16",
+       ctx:"João descreve a graça de Cristo como uma onda após a outra. Uma graça recebida abre caminho para a próxima. Não é um saldo que você esgota — é um fluxo contínuo que vem da plenitude de quem Cristo é. Cada dia com Deus é uma nova medida de graça chegando na sua vida." },
+   
+     { apiId:"ROM.5.20",          theme:"Graça",     ref:"Romanos 5:20",
+       ctx:"Paulo diz: onde o pecado abundou, a graça superabundou. Não é permissão para pecar mais — é declaração da imensidão da graça. Não importa o quanto você errou. Não existe profundidade de pecado que seja mais funda do que a graça de Deus é alta. A graça sempre supera." },
+   
+     { apiId:"HEB.4.16",          theme:"Graça",     ref:"Hebreus 4:16",
+       ctx:"O trono de Deus é chamado aqui de 'trono da graça'. Não trono de julgamento, não trono de distância — trono de graça. E você pode se aproximar com confiança, não com medo. Cristo abriu o caminho. Você não precisa se preparar para se aproximar de Deus — você vai até Ele exatamente como está, porque a graça é para isso." },
+   
+     { apiId:"TIT.2.11",          theme:"Graça",     ref:"Tito 2:11",
+       ctx:"Paulo personifica a graça como alguém que ensina — ela nos instrui a rejeitar a impiedade e viver com sobriedade neste século. A graça não é apenas perdão do passado. Ela é poder ativo que age no presente. A graça que te salvou continua trabalhando em você para produzir uma vida diferente." },
+   
+     { apiId:"1PE.5.10",          theme:"Graça",     ref:"1 Pedro 5:10",
+       ctx:"Pedro escreve para crentes que estavam sofrendo. E ele diz: o Deus de toda a graça, depois de breve sofrimento, vai aperfeiçoar, confirmar, fortalecer e estabelecer vocês. Quatro ações. Nenhuma passiva. Deus está trabalhando no sofrimento — não deixando acontecer, mas construindo algo dentro de você." },
+   
+     { apiId:"NUM.6.25",          theme:"Graça",     ref:"Números 6:25",
+       ctx:"Essa bênção — o Senhor faça resplandecer o Seu rosto sobre ti e te seja gracioso — é parte da bênção sacerdotal mais antiga que existe. Deus instruiu os sacerdotes a pronunciar isso sobre o povo. E quando o rosto de Deus está virado para você, trazendo graça, não existe condição humana que possa anular esse favor." },
+   
+     { apiId:"GAL.1.15",          theme:"Graça",     ref:"Gálatas 1:15",
+       ctx:"Paulo conta como Deus o chamou pela graça antes mesmo de ele nascer — um perseguidor da Igreja que se tornou o maior evangelista do Novo Testamento. Se Deus pode chamar Paulo pela graça, não existe pessoa que você consideraria perdida demais. O chamado de Deus não depende do passado da pessoa." },
+   
+     { apiId:"ZEC.4.7",           theme:"Graça",     ref:"Zacarias 4:7",
+       ctx:"Zorobabel estava reconstruindo o Templo com recursos mínimos e muita oposição. E Deus diz: o monte de obstáculos na sua frente vai virar planície. E a pedra final vai ser colocada com aclamações de 'Graça! Graça!' — não por força nem por poder, mas pelo Espírito de Deus. O que parece impossível cede diante da graça." },
+   
+     { apiId:"2CO.12.9",          theme:"Graça",     ref:"2 Coríntios 12:9",
+       ctx:"Deus responde ao pedido de Paulo: Minha graça te basta. Não te basta parcialmente — te basta completamente. O poder de Deus se completa na sua fraqueza. Isso inverte tudo. A sua limitação não é um obstáculo para Deus — é o espaço exato onde a graça mais brilha." },
+   
+     { apiId:"ROM.11.6",          theme:"Graça",     ref:"Romanos 11:6",
+       ctx:"Paulo faz um argumento lógico que não tem saída: se é pela graça, não é pelas obras. Porque se fosse pelas obras, a graça deixaria de ser graça. Os dois sistemas são incompatíveis. Ou você confia no que você faz, ou você confia no que Deus faz. A salvação é 100% graça — o que deixa nenhum espaço para orgulho." },
+   
+     /* ── 08. ORAÇÃO (12) ── */
+     { apiId:"MAT.6.9",           theme:"Oração",    ref:"Mateus 6:9",
+       ctx:"Jesus estava ensinando contra a hipocrisia religiosa — pessoas que oravam para aparecer, não para se comunicar com Deus. E ele dá um modelo: começa com 'Pai nosso' — intimidade familiar com Deus. A oração cristã não é protocolo religioso. É conversa com um Pai que conhece, ouve e responde." },
+   
+     { apiId:"PHP.4.6",           theme:"Oração",    ref:"Filipenses 4:6",
+       ctx:"Paulo diz: não se preocupem com nada — mas em tudo apresentem seus pedidos a Deus em oração, com ação de graças. A antídoto para a ansiedade não é a força de vontade. É a oração. Transformar o que te agita em conversa com Deus. E a paz que vem depois ultrapassa todo o entendimento." },
+   
+     { apiId:"1TH.5.17",          theme:"Oração",    ref:"1 Tessalonicenses 5:17",
+       ctx:"Orai sem cessar — o mandato mais curto do Novo Testamento. Não significa ajoelhar em oração 24 horas. Significa viver com o coração voltado para Deus o tempo todo. Uma consciência contínua da presença d'Ele. Uma conversa que nunca fecha de vez. É mais um estilo de vida do que uma prática isolada." },
+   
+     { apiId:"LUK.18.1",          theme:"Oração",    ref:"Lucas 18:1",
+       ctx:"Jesus contou a parábola da viúva persistente especificamente para ensinar que devemos orar sempre e não desanimar. A viúva não tinha poder — só persistência. E ela venceu. Jesus usa isso para dizer: se até um juiz injusto cede à persistência, quanto mais o Pai celeste responde aos que clamam a Ele." },
+   
+     { apiId:"PSA.62.8",          theme:"Oração",    ref:"Salmos 62:8",
+       ctx:"Davi convida: derramai diante d'Ele o vosso coração. Não a versão editada, não a oração bonita e bem estruturada — o coração inteiro. Com raiva, com dúvida, com medo, com gratidão. Deus pode lidar com tudo o que você está sentindo. A oração mais honesta é a que Deus mais aprecia." },
+   
+     { apiId:"ROM.8.26",          theme:"Oração",    ref:"Romanos 8:26",
+       ctx:"Há momentos em que você não sabe nem como orar. A dor é tão grande que as palavras não saem. Paulo diz: o próprio Espírito Santo intercede por você com gemidos que não se expressam em palavras. Você não está sozinho nem quando sua oração não tem forma. O Espírito fala ao Pai o que você não consegue articular." },
+   
+     { apiId:"JHN.17.21",         theme:"Oração",    ref:"João 17:21",
+       ctx:"Na maior oração de Jesus registrada na Bíblia, o que ele pede para os discípulos é unidade — a mesma unidade que existe entre Ele e o Pai. E o propósito dessa unidade é que o mundo creia. A forma como os cristãos se tratam uns aos outros tem peso missionário. A oração de Jesus era pela Igreja que você faz parte." },
+   
+     { apiId:"DAN.6.10",          theme:"Oração",    ref:"Daniel 6:10",
+       ctx:"Daniel soube que havia um decreto proibindo a oração sob pena de morte. E foi até o quarto dele, abriu a janela em direção a Jerusalém, e orou três vezes como sempre fazia. A oração de Daniel não era emergência — era hábito. E nenhuma lei humana era capaz de fechar essa porta para ele." },
+   
+     { apiId:"MAT.7.7",           theme:"Oração",    ref:"Mateus 7:7",
+       ctx:"Jesus usa três imagens de ação contínua: pedir, buscar, bater. No original grego estão no tempo presente contínuo — continue pedindo, continue buscando, continue batendo. A oração persistente não está forçando a mão de Deus — está formando o caráter de quem ora. Deus responde, mas também forma quem espera." },
+   
+     { apiId:"PSA.50.15",         theme:"Oração",    ref:"Salmos 50:15",
+       ctx:"Deus diz diretamente: chama a mim no dia da angústia. Não: tente resolver sozinho. Não: mostre que você é forte. Clame a Mim. E Ele promete: Eu te livrarei. A oração no momento mais difícil não é fraqueza — é exatamente o que Deus pediu. E quando Ele te livrar, você vai glorificá-Lo." },
+   
+     { apiId:"1JN.5.14",          theme:"Oração",    ref:"1 João 5:14",
+       ctx:"João diz que a confiança na oração está ligada a orar segundo a vontade de Deus. Não é uma limitação — é um convite para conhecer o coração de Deus. Quanto mais você conhece quem Deus é, mais suas orações se alinham com o que Ele quer, e mais você experimenta respostas. A oração eficaz cresce do relacionamento." },
+   
+     { apiId:"ISA.65.24",         theme:"Oração",    ref:"Isaías 65:24",
+       ctx:"Deus faz uma promessa impressionante: antes que eles chamem, Eu responderei. Ainda estão falando, e Eu já ouvi. Isso retrata um Pai que conhece os filhos tão bem que entende a necessidade antes de ser pedida. Você nunca está orando para alguém que está distraído. Deus já ouviu antes de você terminar de falar." },
+   
+     /* ── 09. PERDÃO (12) ── */
+     { apiId:"1JN.1.9",           theme:"Perdão",    ref:"1 João 1:9",
+       ctx:"João escreve para dois tipos de pessoas: as que negavam ter pecado, e as que achavam que eram irrecuperáveis. E ele diz para os dois: se confessarmos nossos pecados, Deus é fiel e justo para perdoar. Não condescendente — fiel e justo. O perdão está disponível. Basta ser honesto diante de Deus." },
+   
+     { apiId:"PSA.103.12",        theme:"Perdão",    ref:"Salmos 103:12",
+       ctx:"Davi usa a maior distância que conseguia imaginar: o oriente e o ocidente nunca se encontram. É assim que Deus remove os seus pecados de você. Não esconde, não ignora — remove, para uma distância impossível de alcançar. Quando Deus perdoa, o pecado deixa de ter jurisdição sobre você." },
+   
+     { apiId:"ISA.43.25",         theme:"Perdão",    ref:"Isaías 43:25",
+       ctx:"Deus diz: Eu sou o que apaga as tuas transgressões — por amor de Mim mesmo. Não por você ter se corrigido o suficiente. Não por você ter se punido o suficiente. Por amor de Si mesmo — porque é do caráter de Deus perdoar. E Ele acrescenta: não me lembrarei dos teus pecados. Isso não é esquecimento — é absolvição." },
+   
+     { apiId:"MAT.18.21-MAT.18.22", theme:"Perdão", ref:"Mateus 18:21-22",
+       ctx:"Pedro achou que estava sendo generoso ao propor perdoar sete vezes. Jesus respondeu: setenta vezes sete. Não é uma matemática — é um princípio. O perdão cristão não tem teto. Isso é difícil. É humanamente impossível sem a graça de Deus. Mas é o padrão do reino — porque é o padrão de Como Deus nos perdoa." },
+   
+     { apiId:"LUK.23.34",         theme:"Perdão",    ref:"Lucas 23:34",
+       ctx:"No pior momento da história — pregado numa cruz — Jesus olhou para os que o estavam matando e disse: Pai, perdoa-lhes, pois não sabem o que fazem. Esse é o padrão mais alto de perdão que existe. E Jesus não estava falando apenas para impressionar — Ele estava mostrando como o Pai age com todos nós." },
+   
+     { apiId:"EPH.4.32",          theme:"Perdão",    ref:"Efésios 4:32",
+       ctx:"Paulo conecta o perdão que você oferece com o perdão que você recebeu. Perdoe um ao outro assim como Deus vos perdoou em Cristo. Não é força de vontade — é memória. Quando você recorda a dimensão do que foi perdoado em você, a capacidade de perdoar o outro começa a fazer sentido." },
+   
+     { apiId:"COL.3.13",          theme:"Perdão",    ref:"Colossenses 3:13",
+       ctx:"Paulo assume que dentro de uma comunidade cristã haverá razões reais para ressentimento — e ainda assim instrui a perdoar. Não minimizar a ofensa. Não fingir que não doeu. Mas absorvê-la — assim como Cristo absorveu o pecado de todos nós. O perdão é o que mantém a comunidade funcionando." },
+   
+     { apiId:"MIC.7.18",          theme:"Perdão",    ref:"Miqueias 7:18",
+       ctx:"Miqueias exclama: qual Deus como Tu, que perdoa a iniquidade? A resposta é: nenhum. Nenhuma divindade do mundo antigo perdoava assim. A misericórdia não esgota Deus — Ele se deleita nela. O perdão não é a exceção do caráter de Deus. É o centro d'Ele." },
+   
+     { apiId:"HEB.8.12",          theme:"Perdão",    ref:"Hebreus 8:12",
+       ctx:"O escritor cita Jeremias 31 para mostrar que a nova aliança com Deus inclui uma promessa: dos teus pecados não me lembrarei mais. Isso é um veredicto legal definitivo. Não um sentimento de Deus variável com o dia. É uma declaração permanente da nova aliança selada pelo sangue de Cristo." },
+   
+     { apiId:"LUK.15.22",         theme:"Perdão",    ref:"Lucas 15:22",
+       ctx:"O pai na parábola do filho pródigo nem espera o filho terminar de confessar. Ele já está mandando trazer a melhor roupa, o anel e as sandálias. A roupa é honra restaurada. O anel é autoridade devolvida. As sandálias mostram que ele é filho, não escravo. O perdão de Deus não é apenas esquecimento — é restauração completa." },
+   
+     { apiId:"MAT.6.14",          theme:"Perdão",    ref:"Mateus 6:14",
+       ctx:"Jesus conecta perdoar e ser perdoado — não como um contrato, mas como evidência. Quem realmente experimentou o perdão de Deus de forma profunda torna-se naturalmente um perdoador. Se há grande dificuldade em perdoar, talvez a pergunta seja: quanto você entendeu de quanto foi perdoado?" },
+   
+     { apiId:"PRO.17.9",          theme:"Perdão",    ref:"Provérbios 17:9",
+       ctx:"Quem cobre uma transgressão busca o amor — e quem fica repetindo o assunto afasta até os melhores amigos. O perdão não é fazer vista grossa para o mal. É a escolha de não usar a ofensa como arma. É o que constrói relacionamentos duráveis — porque nenhum relacionamento sobrevive sem a capacidade de perdoar." },
+   
+     /* ── 10. CONFIANÇA (12) ── */
+     { apiId:"PSA.37.5",          theme:"Confiança", ref:"Salmos 37:5",
+       ctx:"Davi meditava sobre a prosperidade dos ímpios — algo que sempre causou confusão nos que creem em Deus. E sua resposta é esta: entrega o seu caminho ao Senhor. Não lute para controlar cada resultado. Confie — e ele agirá. Essa não é inércia. É a postura de quem sabe que Deus é melhor estrategista do que ele." },
+   
+     { apiId:"PRO.16.3",          theme:"Confiança", ref:"Provérbios 16:3",
+       ctx:"A sabedoria aqui não proíbe o planejamento — ela o santifica. Confie ao Senhor as suas obras. Coloque seus planos nas mãos de Deus. E eles serão estabelecidos. Não necessariamente como você planejou — mas como Deus projetou. Confiança não elimina a ação; ela redireciona para quem tem a visão completa." },
+   
+     { apiId:"ISA.26.4",          theme:"Confiança", ref:"Isaías 26:4",
+       ctx:"Confiem no Senhor perpetuamente, porque Ele é uma rocha eterna. O mundo ao redor de Isaías estava desmoronando — invasões, exílio, incerteza. E ele aponta para uma fundação que não se move: Deus. Não o governo, não a economia, não os relacionamentos — Deus. Ele é o único em quem a confiança não decepciona." },
+   
+     { apiId:"PSA.56.3",          theme:"Confiança", ref:"Salmos 56:3",
+       ctx:"Davi estava em terreno inimigo, capturado pelos filisteus — com medo de verdade. E ele não finge que o medo não existe. Ele diz: quando estou com medo, confiarei em Ti. Fé e medo coexistem. A confiança em Deus não elimina o medo — ela é o que você faz com ele." },
+   
+     { apiId:"NAH.1.7",           theme:"Confiança", ref:"Naum 1:7",
+       ctx:"Naum anuncia o julgamento da Assíria — o império que havia aterrorizado o mundo antigo com violência extrema. E no meio desse texto de julgamento, uma declaração: o Senhor é bom, é uma fortaleza no dia da angústia, e conhece os que esperam nele. Conhece — relacionalmente, individualmente. Você não é um número." },
+   
+     { apiId:"MIC.7.7",           theme:"Confiança", ref:"Miquéias 7:7",
+       ctx:"Miqueias descreve a falência total das relações humanas — nem os amigos mais íntimos merecem confiança. E diante disso, ele faz uma escolha: mas eu olharei para o Senhor. Esperarei no Deus da minha salvação. Quando tudo ao redor cede, há ainda um ponto fixo que não cede. E esse ponto é Deus." },
+   
+     { apiId:"PSA.91.2",          theme:"Confiança", ref:"Salmos 91:2",
+       ctx:"O Salmo 91 fala de proteção sobrenatural — e o diabo chegou a citá-lo na tentação de Jesus. Mas o que sustenta tudo é essa declaração pessoal: Deus é o meu refúgio e o meu castelo, o meu Deus em quem confio. Não 'um' refugio. 'O meu'. A confiança que protege é pessoal, não genérica." },
+   
+     { apiId:"JER.17.7-JER.17.8", theme:"Confiança", ref:"Jeremias 17:7-8",
+       ctx:"Jeremias contrasta o homem que confia no homem — como arbusto no deserto, sem água — com o que confia em Deus — como árvore plantada à beira do rio. As raízes dessa árvore alcançam a água mesmo quando não chove. A confiança em Deus não é indiferente às circunstâncias — é ancorada em algo mais profundo do que elas." },
+   
+     { apiId:"2TI.1.12",          theme:"Confiança", ref:"2 Timóteo 1:12",
+       ctx:"Paulo escreveu isso da prisão, esperando a execução. E ele diz: eu sei em quem tenho crido, e estou convicto de que Ele é capaz de guardar o que lhe confiei. Não esperança tímida — convicção firme. Esse é o tipo de confiança que só vem de anos de relacionamento com Deus. Paulo sabia quem era o Deus em quem confiava." },
+   
+     { apiId:"PSA.20.7",          theme:"Confiança", ref:"Salmos 20:7",
+       ctx:"No mundo antigo, carros de guerra e cavalos eram o símbolo do poder militar mais avançado. É como se hoje você dissesse: uns confiam nos mísseis, outros nos exércitos. Mas nós nos lembramos do nome do Senhor. A confiança no poder humano sempre tem um limite. A confiança em Deus não tem." },
+   
+     { apiId:"JHN.14.1",          theme:"Confiança", ref:"João 14:1",
+       ctx:"Jesus diz isso na noite em que seria preso e morto — exatamente quando havia todas as razões para o coração se perturbar. E ele não diz 'não se preocupe, vai ficar tudo bem'. Ele diz: credes em Deus, crede também em Mim. A confiança em Cristo não depende das circunstâncias ficarem boas. Ela transcende as circunstâncias." },
+   
+     { apiId:"PSA.9.10",          theme:"Confiança", ref:"Salmos 9:10",
+       ctx:"Os que conhecem o nome do Senhor confiam nele — porque Ele nunca desamparou os que o buscam. Conhecer o nome de Deus não é saber como Ele se chama. É conhecer quem Ele é — Seu caráter, Sua fidelidade, Seu histórico. A confiança sólida é sempre baseada em experiência com Deus, não em sentimento." },
+   
+     /* ── 11. ALEGRIA (12) ── */
+     { apiId:"PHP.4.4",           theme:"Alegria",   ref:"Filipenses 4:4",
+       ctx:"Alegrai-vos no Senhor sempre. Paulo diz isso de dentro da prisão — e repete para garantir que você entendeu. A alegria que ele descreve não está amarrada às circunstâncias porque não vem das circunstâncias. Ela vem do Senhor. Isso a torna disponível em qualquer situação. É uma escolha, não um sentimento esperado." },
+   
+     { apiId:"PSA.16.11",         theme:"Alegria",   ref:"Salmos 16:11",
+       ctx:"Davi descobre o segredo da alegria plena: a presença de Deus. Na Tua presença há plenitude de alegria. Não nos teus presentes, não nas tuas bênçãos — na Tua presença. Quando Pedro cita esse salmo no dia de Pentecostes, ele está apontando para a ressurreição de Jesus como o cumprimento dessa alegria que não termina." },
+   
+     { apiId:"JHN.15.11",         theme:"Alegria",   ref:"João 15:11",
+       ctx:"Jesus disse isso na noite em que ia ser preso. E o que ele quer deixar nos discípulos é a alegria d'Ele — completa. A alegria de Jesus não vinha de tudo estar dando certo. Vinha de fazer a vontade do Pai. É uma alegria que está disponível mesmo quando a vida está doendo." },
+   
+     { apiId:"ISA.61.3",          theme:"Alegria",   ref:"Isaías 61:3",
+       ctx:"Deus opera trocas: coroa no lugar das cinzas, óleo de alegria no lugar do luto, manto de louvor no lugar do espírito angustiado. Isso é o que Jesus veio fazer — e Ele mesmo leu esse texto e declarou que estava sendo cumprido. O luto não é a palavra final. Deus transforma." },
+   
+     { apiId:"PSA.30.5",          theme:"Alegria",   ref:"Salmos 30:5",
+       ctx:"Davi declara: o choro pode durar uma noite, mas a alegria vem pela manhã. A noite tem limite. A dificuldade tem prazo. Isso não nega o sofrimento — mas recusa dar a ele a última palavra. A estrutura da fé é: a noite é real, mas a manhã está garantida. E a manhã traz alegria." },
+   
+     { apiId:"LUK.10.20",         theme:"Alegria",   ref:"Lucas 10:20",
+       ctx:"Os discípulos voltaram eufóricos porque os demônios se submetiam ao nome de Jesus. E Jesus reorienta a alegria deles: não se alegrem por isso — alegrem-se porque os seus nomes estão escritos no céu. O extraordinário passa. A identidade eterna permanece. Alegre-se no que não pode ser tirado." },
+   
+     { apiId:"1PE.1.8",           theme:"Alegria",   ref:"1 Pedro 1:8",
+       ctx:"Pedro escreve para crentes que nunca viram Jesus com os olhos físicos. E descreve uma alegria inexprimível e gloriosa — literalmente impossível de descrever com palavras. A alegria de quem ama e crê em alguém que não viu fisicamente, mas que é mais real do que o que toca. Isso é você." },
+   
+     { apiId:"PSA.98.4",          theme:"Alegria",   ref:"Salmos 98:4",
+       ctx:"O convite ao louvor é universal: toda a terra! A alegria diante de Deus não é apenas emoção privada — é reconhecimento público do Rei. Celebrar a Deus com alegria é ato político tanto quanto espiritual: você está declarando quem governa. E quando você declara isso, a alegria cresce." },
+   
+     { apiId:"NEH.8.10",          theme:"Alegria",   ref:"Neemias 8:10",
+       ctx:"O povo estava chorando ao ouvir a Lei lida em voz alta depois de décadas no exílio. E Esdras os para: a alegria do Senhor é a vossa força. Não a sua alegria — a alegria que vem d'Ele. Uma alegria que não depende de como você está se sentindo porque tem uma fonte sobrenatural." },
+   
+     { apiId:"ROM.14.17",         theme:"Alegria",   ref:"Romanos 14:17",
+       ctx:"Paulo resume o Reino de Deus em três coisas: justiça, paz e alegria no Espírito Santo. A alegria não é acessório do reino — é constitutiva dele. Quando o Espírito está operando numa vida, uma das evidências é alegria. Não felicidade superficial — alegria profunda, produzida por Deus." },
+   
+     { apiId:"PSA.126.5",         theme:"Alegria",   ref:"Salmos 126:5",
+       ctx:"Esse salmo celebra o retorno do exílio. E a imagem é agrícola: quem semeia com lágrimas vai colher com alegria. As temporadas de dor não são desperdiçadas — elas plantam sementes. E as sementes germinam. O sofrimento fiel diante de Deus tem uma promessa de colheita." },
+   
+     { apiId:"JAS.1.2",           theme:"Alegria",   ref:"Tiago 1:2",
+       ctx:"Tiago abre a carta com uma provocação: tende grande alegria quando caírem em provações. Isso parece loucura até você entender o que as provações produzem — paciência, caráter, fé testada. A alegria não é pela dor em si. É pelo que Deus constrói através dela. E quem entende isso pode genuinamente se alegrar." },
+   
+     /* ── 12. PROVIDÊNCIA (12) ── */
+     { apiId:"MAT.6.26",          theme:"Providência", ref:"Mateus 6:26",
+       ctx:"Jesus aponta para os pássaros: eles não plantam nem colhem, e o Pai celestial os alimenta. E você vale muito mais do que eles. Isso não proíbe trabalhar nem planejar — proíbe a ansiedade paralisante que surge quando você esquece que Deus está no controle. Você não precisa carregar o peso do futuro." },
+   
+     { apiId:"PHP.4.19",          theme:"Providência", ref:"Filipenses 4:19",
+       ctx:"Os filipenses haviam apoiado Paulo financeiramente mesmo sendo uma igreja pobre. E Paulo devolve uma promessa: o meu Deus suprirá todas as vossas necessidades segundo as suas riquezas em glória em Cristo Jesus. A medida do suprimento não é o seu salário — é a riqueza de Deus. Isso muda tudo." },
+   
+     { apiId:"GEN.22.14",         theme:"Providência", ref:"Gênesis 22:14",
+       ctx:"Abraão nomeou o lugar onde Deus proveu um carneiro no momento mais crítico de sua vida: Yahweh-Yireh, o Senhor proverá. Esse nome ficou — porque é uma verdade que se confirma repetidamente. Deus vê antes de você ver. Ele provê antes de você entender. E quando Ele provê, você nomeia o lugar e lembra." },
+   
+     { apiId:"ROM.8.32",          theme:"Providência", ref:"Romanos 8:32",
+       ctx:"Paulo usa o maior argumento possível: se Deus não poupou o Próprio Filho, mas o entregou por todos nós, como não nos dará também todas as coisas com Ele? Se Deus já fez o sacrifício supremo, qualquer outra coisa que você precisar Ele certamente vai prover. O maior já foi dado — o menor não vai ser negado." },
+   
+     { apiId:"LUK.12.7",          theme:"Providência", ref:"Lucas 12:7",
+       ctx:"Os pássaros eram vendidos em pares por um centavo. Eram insignificantes. E Jesus diz que Deus cuida de cada um. E acrescenta: até os cabelos da sua cabeça estão contados. Isso não é exagero poético — é declaração de um cuidado providencial que chega ao detalhe mais irrelevante da sua existência." },
+   
+     { apiId:"ISA.58.11",         theme:"Providência", ref:"Isaías 58:11",
+       ctx:"Deus promete guiar continuamente, fartar a alma nos lugares áridos, fortalecer os ossos. E a imagem final é de jardim regado — mesmo em terra seca. A providência de Deus não funciona apenas nos dias fáceis. Ela é especialmente visível nos desertos, quando não há outra explicação para a vida que continua." },
+   
+     { apiId:"DEU.8.3",           theme:"Providência", ref:"Deuteronômio 8:3",
+       ctx:"Deus permitiu que Israel passasse fome no deserto e depois proveu o maná — não para ser cruel, mas para ensinar: o homem não vive só de pão, mas de toda palavra que procede da boca de Deus. A providência física tem um propósito espiritual: ensinar dependência. Jesus citou exatamente isso ao ser tentado." },
+   
+     { apiId:"PSA.145.15-PSA.145.16", theme:"Providência", ref:"Salmos 145:15-16",
+       ctx:"Os olhos de todos esperam em Ti — e Tu lhes dás o sustento a seu tempo. Quando Tu abres a Tua mão, todos se fartam. A abertura da mão de Deus é gesto real de generosidade soberana. Ele não provê de má vontade, não provê com conta-gotas. Ele abre a mão." },
+   
+     { apiId:"PSA.104.27-PSA.104.28", theme:"Providência", ref:"Salmos 104:27-28",
+       ctx:"O Salmo 104 celebra Deus não apenas como Criador, mas como Sustentador contínuo. Todos os seres criados aguardam o Seu suprimento. Deus não criou o mundo e saiu de cena. Ele está ativamente mantendo cada ciclo da natureza, cada criatura, cada vida. A criação inteira depende d'Ele a cada momento." },
+   
+     { apiId:"1KI.17.6",          theme:"Providência", ref:"1 Reis 17:6",
+       ctx:"Deus alimentou Elias usando corvos — aves que os judeus consideravam impuras. Ele não se limitou aos meios convencionais. Quando Deus decide prover, Ele usa o que e quem Ele quiser. Às vezes a provisão vem de onde você menos espera. O que importa não é o canal — é a fonte." },
+   
+     { apiId:"PSA.34.9",          theme:"Providência", ref:"Salmos 34:9",
+       ctx:"Davi escreve esse salmo depois de fingir ser louco para se salvar de um rei inimigo. E mesmo em um momento de estratégia humana, ele olha para trás e vê: nada faltou aos que temem a Deus. Não é ausência de dificuldade. É ausência de falta verdadeira. Quem teme ao Senhor tem suficiência em Deus." },
+   
+     { apiId:"2CO.9.10",          theme:"Providência", ref:"2 Coríntios 9:10",
+       ctx:"Aquele que dá semente ao semeador e pão para comer vai também multiplicar a sua semente. A providência de Deus não é só para consumo pessoal — é para capacitar a generosidade. Quando você doa, você não diminui o que tem. Você abre o ciclo de uma provisão que Deus multiplica." },
+   
+     /* ── 13. ARREPENDIMENTO (12) ── */
+     { apiId:"2CH.7.14",          theme:"Arrependimento", ref:"2 Crônicas 7:14",
+       ctx:"Essa é a resposta de Deus a Salomão após a dedicação do Templo. E ela continua válida hoje: se o meu povo se humilhar, orar, buscar a Minha face e se converter dos seus maus caminhos — Eu ouvirei, perdoarei e sararei a sua terra. Quatro condições. Três promessas. O arrependimento coletivo muda nações." },
+   
+     { apiId:"LUK.15.7",          theme:"Arrependimento", ref:"Lucas 15:7",
+       ctx:"Jesus diz que há mais alegria no céu por um pecador que se arrepende do que por noventa e nove justos que não precisam de arrependimento. O céu celebra o retorno de cada pessoa. Isso mostra o coração de Deus — Ele não está te esperando de braços cruzados. Ele está aguardando com alegria o seu retorno." },
+   
+     { apiId:"ACT.3.19",          theme:"Arrependimento", ref:"Atos 3:19",
+       ctx:"Pedro prega depois de um milagre de cura no Templo. E o convite é: arrependei-vos e convertei-vos para que os vossos pecados sejam apagados. Apagados — como um registro cancelado. E além do perdão, há algo mais: tempos de refrigério da presença do Senhor. O arrependimento não apenas remove o passado — abre o presente para Deus." },
+   
+     { apiId:"PSA.51.10",         theme:"Arrependimento", ref:"Salmos 51:10",
+       ctx:"Davi orou isso depois de um dos maiores pecados da Bíblia — adultério e assassinato. E sua oração não é 'me corrija' ou 'me discipline'. É: cria em mim um coração puro. Ele sabia que não tinha como se consertar por dentro. Precisava de uma criação nova. E o Deus que criou o universo pode recriar um coração." },
+   
+     { apiId:"JOL.2.13",          theme:"Arrependimento", ref:"Joel 2:13",
+       ctx:"Joel faz um contraste cortante: rasgue o seu coração, não as suas vestes. Rasgar vestes era o gesto externo de luto — fácil de imitar, fácil de usar como show. Deus não quer o gesto. Quer o coração. O arrependimento verdadeiro é invisível para os homens mas completamente visível para Deus." },
+   
+     { apiId:"EZK.18.30",         theme:"Arrependimento", ref:"Ezequiel 18:30",
+       ctx:"Ezequiel fala para um povo que achava que estava condenado pelo pecado dos antepassados. E Deus interrompe: cada geração pode se arrepender. Você não está preso no pecado dos seus pais nem no seu próprio passado. O arrependimento é a porta de saída que está sempre aberta." },
+   
+     { apiId:"ISA.55.7",          theme:"Arrependimento", ref:"Isaías 55:7",
+       ctx:"Deus convida o ímpio a abandonar o seu caminho e os seus pensamentos — e a se voltar para Ele. E promete: Ele muito perdoará. Não um pouco. Não com reservas. Muito. O perdão de Deus é abundante, multiplicado. Não tem racionamento. Quem volta genuinamente encontra um Deus que perdoa além da medida esperada." },
+   
+     { apiId:"LUK.19.8",          theme:"Arrependimento", ref:"Lucas 19:8",
+       ctx:"Zaqueu não foi confrontado diretamente por Jesus sobre seus crimes financeiros. Jesus apenas foi à sua casa. E o encontro com Jesus o transformou tão radicalmente que ele espontaneamente decidiu devolver quatro vezes o que havia tomado injustamente. O arrependimento verdadeiro sempre produz ação concreta." },
+   
+     { apiId:"REV.3.19",          theme:"Arrependimento", ref:"Apocalipse 3:19",
+       ctx:"Jesus fala para a Igreja de Laodiceia — a mais fria, a mais acomodada das sete igrejas. E diz: Eu repreendo e disciplino os que amo. Então sê zeloso e arrepende-te. A disciplina de Deus não é rejeição — é amor que recusa deixar você onde você está. O arrependimento é urgente. E é possível agora." },
+   
+     { apiId:"HOS.6.1",           theme:"Arrependimento", ref:"Oséias 6:1",
+       ctx:"Oséias escreve para um Israel em colapso moral. E o convite é: vinde, tornemos para o Senhor. Não 'tente melhorar' — volte. O arrependimento na Bíblia é basicamente uma volta. Uma mudança de direção. E Oséias usa imagens de cura: Deus nos feriu para nos curar. O diagnóstico honesto é o começo do tratamento." },
+   
+     { apiId:"ACT.17.30",         theme:"Arrependimento", ref:"Atos 17:30",
+       ctx:"Paulo prega no Areópago de Atenas — o centro intelectual do mundo antigo. E declara: Deus anuncia agora a todos os homens em todo lugar que se arrependam. Universal. Sem exceção geográfica, étnica ou cultural. O chamado ao arrependimento é para toda a humanidade, porque o Criador tem autoridade sobre toda a criação." },
+   
+     { apiId:"LAM.3.40",          theme:"Arrependimento", ref:"Lamentações 3:40",
+       ctx:"No meio do livro mais sombrio do Antigo Testamento, o autor convida a algo simples e radical: sondemos os nossos caminhos, provemo-los, e tornemos para o Senhor. Antes de olhar para cima, olhe para dentro. O arrependimento honesto começa com autoavaliação corajosa — disposto a enxergar o que precisa mudar." },
+   
+     /* ── 14. SERVIÇO (12) ── */
+     { apiId:"MRK.10.45",         theme:"Serviço",   ref:"Marcos 10:45",
+       ctx:"Jesus define grandeza de uma forma que o mundo nunca entendeu: o maior é o que serve. Ele mesmo veio não para ser servido, mas para servir — e dar a Sua vida em resgate. Isso é modelo, não discurso. Quem quer ser grande no reino de Deus precisa começar se perguntando: a quem posso servir hoje?" },
+   
+     { apiId:"GAL.5.13",          theme:"Serviço",   ref:"Gálatas 5:13",
+       ctx:"Paulo combate dois erros: o legalismo que escraviza, e a libertinagem que usa a liberdade para pecar. A liberdade cristã tem um propósito — servir uns aos outros pelo amor. Você não foi liberto para fazer o que quiser. Foi liberto para finalmente poder amar sem medo, sem obrigação, sem cálculo." },
+   
+     { apiId:"1PE.4.10",          theme:"Serviço",   ref:"1 Pedro 4:10",
+       ctx:"Todo dom que você tem não é seu — é de Deus, para ser administrado em favor dos outros. Pedro chama isso de despenseiro da multiforme graça de Deus. Você não é dono dos seus talentos. É gerente. E o dono espera que você os use para o bem dos que estão ao redor." },
+   
+     { apiId:"ROM.12.11",         theme:"Serviço",   ref:"Romanos 12:11",
+       ctx:"No que requer diligência, não sejais negligentes. Sede fervorosos no espírito, servindo ao Senhor. O serviço a Deus não é tarefa para fazer de qualquer jeito. É expressão de amor. E o amor não dá o que sobrou — dá o melhor. Seja zeloso, não preguiçoso, no que Deus colocou nas suas mãos para fazer." },
+   
+     { apiId:"LUK.22.27",         theme:"Serviço",   ref:"Lucas 22:27",
+       ctx:"Na última ceia, Jesus pergunta quem é maior — o que está à mesa ou o que serve? E então diz: Eu estou no meio de vocês como o que serve. O Filho de Deus, a mesa posta, os discípulos sentados — e Jesus servindo. Isso é o padrão mais alto de liderança que existe. Grandeza e serviço são a mesma coisa no reino." },
+   
+     { apiId:"HEB.6.10",          theme:"Serviço",   ref:"Hebreus 6:10",
+       ctx:"Deus não é injusto para se esquecer da sua obra e do trabalho do amor que você demonstrou em Seu nome. Cada ato de serviço aos irmãos é registrado. Você pode estar servindo em silêncio, sem reconhecimento humano. Mas Deus vê. E Ele não esquece." },
+   
+     { apiId:"JOS.24.15",         theme:"Serviço",   ref:"Josué 24:15",
+       ctx:"O discurso final de Josué inclui uma das declarações mais memoráveis da Bíblia: quanto a mim e à minha casa, serviremos ao Senhor. Não foi dito num dia fácil — foi dito diante do povo inteiro, como desafio e como compromisso. Liderar começa por declarar publicamente a quem você serve." },
+   
+     { apiId:"ISA.58.6-ISA.58.7", theme:"Serviço",   ref:"Isaías 58:6-7",
+       ctx:"Deus rejeita o jejum religioso sem impacto social. O jejum que Ele escolhe é prático: libertar oprimidos, alimentar famintos, hospedar sem-teto. O serviço ao necessitado não é ação social distante da espiritualidade — é ato de adoração. É onde a fé se torna real e visível." },
+   
+     { apiId:"MAT.25.40",         theme:"Serviço",   ref:"Mateus 25:40",
+       ctx:"Jesus se identifica com os mais marginalizados: famintos, estrangeiros, presos, doentes. Quando você os serve, está servindo a Jesus. Os que serviram nem perceberam — porque não estavam fazendo cálculo de retorno. Serviço genuíno não calcula audiência. É amor que age sem esperar ser visto." },
+   
+     { apiId:"EPH.6.7",           theme:"Serviço",   ref:"Efésios 6:7",
+       ctx:"Paulo fala a escravos no mundo romano — pessoas sem escolha sobre quem servir ou como. E transforma a motivação: sirvam de boa vontade como ao Senhor, não como aos homens. Quando o seu trabalho é oferecido a Cristo, mesmo a tarefa mais humilde ganha dignidade e significado eterno." },
+   
+     { apiId:"JHN.12.26",         theme:"Serviço",   ref:"João 12:26",
+       ctx:"Jesus define servir como seguir — não apenas executar tarefas, mas orientar toda a vida em direção a Ele. E acrescenta: onde Eu estou, lá estará também o meu servo. Servir a Cristo te leva para perto d'Ele. E a promessa final: meu Pai honrará quem me serve. O servo fiel tem o reconhecimento do Pai." },
+   
+     { apiId:"ROM.12.7",          theme:"Serviço",   ref:"Romanos 12:7",
+       ctx:"Se o seu dom é o ministério — sirva com excelência. Paulo não diz 'sirva como puder'. Diz: seja diligente no ministério. Seja cuidadoso no ensino. O serviço a Deus merece o seu melhor. Não o que sobrou depois de você fazer tudo o que queria. Mas o que você intencionalmente reservou para Deus e para os outros." },
+   
+     /* ── 15. BÊNÇÃO (12) ── */
+     { apiId:"NUM.6.24-NUM.6.26", theme:"Bênção",    ref:"Números 6:24-26",
+       ctx:"Essa é a bênção sacerdotal mais antiga da Bíblia — gravada em prata séculos antes de Cristo, é o texto bíblico mais antigo já encontrado pela arqueologia. Deus mesmo prescreveu que os sacerdotes a pronunciassem sobre o povo. Quando você ouve essas palavras, você está recebendo o que Deus mandou falar sobre você." },
+   
+     { apiId:"EPH.1.3",           theme:"Bênção",    ref:"Efésios 1:3",
+       ctx:"Paulo diz que Deus já nos abençoou com todas as bênçãos espirituais em Cristo. Não vai abençoar — já abençoou. Você não está esperando que Deus abra a torneira das bênçãos. A torneira já está aberta. Em Cristo, você já tem acesso a tudo que o céu oferece. A questão é se você está recebendo o que já é seu." },
+   
+     { apiId:"DEU.28.2",          theme:"Bênção",    ref:"Deuteronômio 28:2",
+       ctx:"Moisés descreve as bênçãos da aliança com uma imagem vívida: elas virão sobre você e te alcançarão. Não é você correndo atrás das bênçãos — são elas que te perseguem quando você obedece a Deus. A obediência não ganha a salvação, mas abre canais pelos quais o favor de Deus flui na sua vida." },
+   
+     { apiId:"MAL.3.10",          theme:"Bênção",    ref:"Malaquias 3:10",
+       ctx:"Esse é o único lugar da Bíblia onde Deus convida o ser humano a testá-Lo. Traga os dízimos — e prove se Eu não abrirei as janelas dos céus. A generosidade é um teste de confiança. Quando você coloca Deus primeiro financeiramente, você está declarando que crê que Ele é fiel. E Ele aceita esse teste." },
+   
+     { apiId:"PSA.1.1-PSA.1.2",   theme:"Bênção",    ref:"Salmos 1:1-2",
+       ctx:"O Saltério inteiro abre com uma declaração de bem-aventurança. O homem que não segue o conselho dos ímpios, que se deleita na lei do Senhor — esse é bem-aventurado. A bênção não é um evento isolado. É a qualidade de uma vida inteira orientada para Deus. É o fruto de uma escolha diária." },
+   
+     { apiId:"PRO.10.22",         theme:"Bênção",    ref:"Provérbios 10:22",
+       ctx:"A bênção do Senhor enriquece, e não acrescenta dor com ela. Existe uma diferença entre o que você consegue por força própria — que vem com ansiedade, medo de perder, exaustão — e o que Deus providencia. A bênção de Deus vem com paz. Vem com suficiência. Vem sem o peso que a ambição humana carrega." },
+   
+     { apiId:"PSA.67.1",          theme:"Bênção",    ref:"Salmos 67:1",
+       ctx:"O salmista pede a bênção de Deus — mas com propósito missionário: para que o Teu caminho seja conhecido na terra entre todas as nações. A bênção não é terminal. É instrumental. Você é abençoado para ser bênção. O favor de Deus na sua vida é um sinal que aponta para Ele, não um prêmio para ficar guardado." },
+   
+     { apiId:"PRO.3.33",          theme:"Bênção",    ref:"Provérbios 3:33",
+       ctx:"A bênção de Deus repousa sobre a morada dos justos. Não apenas sobre os indivíduos — sobre o lar. Quando uma casa é entregue a Deus, o ambiente inteiro muda. A maneira como as pessoas se tratam, as decisões que são tomadas, a forma como os filhos crescem. A bênção de Deus tem alcance coletivo." },
+   
+     { apiId:"GAL.3.14",          theme:"Bênção",    ref:"Gálatas 3:14",
+       ctx:"Paulo conecta a promessa a Abraão com a chegada do Espírito Santo. A bênção que Deus prometeu a Abraão — que em você serão benditas todas as nações — chegou em Cristo. E o conteúdo final dessa bênção é o próprio Espírito Santo. Você não está recebendo menos do que Abraão foi prometido — está recebendo mais." },
+   
+     { apiId:"DEU.11.26-DEU.11.27", theme:"Bênção", ref:"Deuteronômio 11:26-27",
+       ctx:"Deus coloca diante do povo bênção e maldição — e a diferença está na obediência. Não como sistema de compra e venda, mas como resultado natural de escolhas. Quando você alinha a vida com a vontade de Deus, você entra no fluxo do que Ele pensou para você desde o início." },
+   
+     { apiId:"1PE.3.9",           theme:"Bênção",    ref:"1 Pedro 3:9",
+       ctx:"Não retribuam mal por mal, nem injúria por injúria — mas bendigam. Pedro escreve para cristãos sendo perseguidos. A resposta de Cristo a quem te maltrata não é retaliação. É bênção. Isso é totalmente sobrenatural. E é o que separa o cristão do mundo — uma reação que não faz sentido sem o poder de Deus." },
+   
+     { apiId:"PSA.115.13",        theme:"Bênção",    ref:"Salmos 115:13",
+       ctx:"Deus abençoará os que O temem — tanto os pequenos como os grandes. A bênção de Deus não tem lista de espera baseada em posição social. Ela vem do temor, não do status. Qualquer pessoa que tema ao Senhor genuinamente tem acesso ao mesmo favor que os grandes homens de fé da Bíblia tiveram." },
+   
+     /* ── 16. SANTIDADE (12) ── */
+     { apiId:"1PE.1.15-1PE.1.16", theme:"Santidade", ref:"1 Pedro 1:15-16",
+       ctx:"Pedro cita o Levítico: sede santos, porque Eu sou santo. Isso parece impossível — e é, sem a graça de Deus. Mas Pedro não está pedindo perfeição moral pelo esforço humano. Está dizendo: o Deus que chamou você é santo, e o chamado inclui uma transformação que reflete o caráter d'Ele. Santidade é consequência de pertencer a Deus." },
+   
+     { apiId:"ROM.12.1",          theme:"Santidade", ref:"Romanos 12:1",
+       ctx:"Paulo faz o apelo mais radical: ofereça o seu corpo como sacrifício vivo e santo. Não o seu dinheiro, não suas horas — o seu corpo. E chama isso de culto racional. Toda a vida cristã, do momento em que acorda até dormir, é adoração quando entregue a Deus. A santidade não fica dentro da Igreja — vai para a rua com você." },
+   
+     { apiId:"HEB.12.14",         theme:"Santidade", ref:"Hebreus 12:14",
+       ctx:"O autor é direto: sem santificação ninguém verá o Senhor. A santidade não é opcional para quem quer chegar até Deus. Mas o caminho para a santidade não é esforço religioso — é o processo de Deus trabalhando em você continuamente. Santificação é progressiva. Você não precisa estar no final do processo para estar no caminho certo." },
+   
+     { apiId:"1JN.3.3",           theme:"Santidade", ref:"1 João 3:3",
+       ctx:"Todo aquele que tem a esperança de ver Cristo se purifica, assim como Ele é puro. A esperança do retorno de Cristo não produz acomodação — produz motivação. Quando você espera o encontro com Jesus, você quer se parecer mais com Ele. A esperança escatológica tem impacto ético no presente." },
+   
+     { apiId:"2CO.7.1",           theme:"Santidade", ref:"2 Coríntios 7:1",
+       ctx:"Paulo convida: purifiquemo-nos de toda a imundícia da carne e do espírito, aperfeiçoando a santidade no temor de Deus. A santidade é processo ativo — Paulo usa 'aperfeiçoando', não 'tendo alcançado'. É algo que cresce. E o que a alimenta é o temor de Deus — o reconhecimento de quem Ele é e do que nos custou." },
+   
+     { apiId:"EPH.4.24",          theme:"Santidade", ref:"Efésios 4:24",
+       ctx:"Paulo usa a imagem de vestuário: vos revestis do novo homem, criado segundo Deus em justiça e santidade. A santidade tem aspecto intencional — você deliberadamente se veste com o que Cristo produziu em você. É uma escolha diária de se alinhar com quem você foi feito para ser em Cristo." },
+   
+     { apiId:"PSA.24.3-PSA.24.4", theme:"Santidade", ref:"Salmos 24:3-4",
+       ctx:"Quem pode subir ao monte do Senhor? Quem tem mãos inocentes e coração puro. Esse é o padrão — e Jesus o elevou no Sermão do Monte. Não é uma exigência que te afasta de Deus. É uma descrição de quem Deus está formando em você. Você não precisa ser isso antes de vir a Ele. Mas Ele vai transformar você nisso." },
+   
+     { apiId:"1TH.4.3",           theme:"Santidade", ref:"1 Tessalonicenses 4:3",
+       ctx:"Paulo declara diretamente: a vontade de Deus é a vossa santificação. Você não precisa ficar tentando descobrir a vontade de Deus para a sua vida — parte dela está explícita aqui. Deus quer que você seja santificado. Esse não é um detalhe do plano d'Ele. É o centro." },
+   
+     { apiId:"ISA.6.3",           theme:"Santidade", ref:"Isaías 6:3",
+       ctx:"Os serafins ao redor do trono de Deus proclamam: Santo, Santo, Santo — repetido três vezes, o superlativo máximo em hebraico. Isaías, ao ouvir isso, imediatamente se reconhece como homem de lábios impuros. Encontrar a santidade de Deus de verdade produz isso — não orgulho religioso, mas reconhecimento honesto de quem você é." },
+   
+     { apiId:"LEV.20.26",         theme:"Santidade", ref:"Levítico 20:26",
+       ctx:"Deus diz: Vós sereis santos para mim, porque Eu sou santo, e vos separei dos povos para serdes meus. A santidade não é apenas separação de algo — é separação para Deus. Ser santo é ser de Deus. Pertencer a Ele completamente. É uma identidade de propriedade — você é do Senhor." },
+   
+     { apiId:"JHN.17.17",         theme:"Santidade", ref:"João 17:17",
+       ctx:"Jesus ora pedindo ao Pai: santifica-os na verdade — a Tua Palavra é a verdade. A santidade vem de exposição à Palavra de Deus. Não de esforço moral adicional. Não de mais regras. De encontrar a verdade de Deus e deixar que ela molde você por dentro. A Palavra santifica porque revela quem Deus é e quem você foi criado para ser." },
+   
+     { apiId:"ROM.6.22",          theme:"Santidade", ref:"Romanos 6:22",
+       ctx:"Paulo diz que quem foi liberto do pecado e se tornou servo de Deus tem como fruto a santificação. A santidade é produto orgânico de pertencer a Deus. Não é a condição de entrada — é a consequência da transformação. Como uma árvore boa que produz bons frutos, a vida em Deus naturalmente produz santidade." },
+   
+     /* ── 17. LOUVOR (12) ── */
+     { apiId:"PSA.150.6",         theme:"Louvor",    ref:"Salmos 150:6",
+       ctx:"O Saltério inteiro termina aqui: todo ser que tem fôlego louve ao Senhor. Não apenas os humanos — toda criatura que respira. O louvor é a razão da existência. Você foi criado para louvar. E quando você louva, você está finalmente fazendo exatamente o que foi feito para fazer." },
+   
+     { apiId:"HEB.13.15",         theme:"Louvor",    ref:"Hebreus 13:15",
+       ctx:"O sacrifício de louvor é oferecer o fruto dos lábios que confessam o Seu nome. O Templo de Jerusalém acabou, os sacrifícios animais cessaram — mas o sacrifício de louvor continua. Sua boca oferecendo gratidão e louvor a Deus é um ato sacerdotal. Você é sacerdote quando louva." },
+   
+     { apiId:"PSA.34.1",          theme:"Louvor",    ref:"Salmos 34:1",
+       ctx:"Davi escreve isso em um dos momentos mais perigosos da sua vida — fugindo, disfarçado, com medo. E diz: bendirei ao Senhor em todo o tempo, o Seu louvor estará sempre nos meus lábios. O louvor contínuo não é negação da dificuldade — é decisão de onde você vai fixar os olhos no meio dela." },
+   
+     { apiId:"EPH.5.19-EPH.5.20", theme:"Louvor",    ref:"Efésios 5:19-20",
+       ctx:"Paulo descreve a comunidade cristã como uma comunidade cantante — salmos, hinos, cânticos espirituais. E acrescenta: dando sempre graças por tudo. Por tudo. Não apenas pelos dias bons. A gratidão constante transforma a percepção da realidade. Quando você agradece em tudo, você começa a enxergar a mão de Deus em tudo." },
+   
+     { apiId:"REV.5.12",          theme:"Louvor",    ref:"Apocalipse 5:12",
+       ctx:"O louvor eterno no trono de Deus é direcionado ao Cordeiro que foi morto. Sete atributos — número da perfeição. E o que recebe toda essa honra não é um guerreiro vitorioso — é um Cordeiro sacrificado. O poder no reino de Deus é exercido através do sacrifício. E o louvor eterno celebra exatamente isso." },
+   
+     { apiId:"PSA.22.3",          theme:"Louvor",    ref:"Salmos 22:3",
+       ctx:"Esse é o salmo que Jesus citou na Cruz: Deus meu, Deus meu, por que me abandonaste? E no meio desse lamento, o versículo 3 declara: Tu és santo, Tu que habitas entre os louvores de Israel. Mesmo no abandono aparente, o louvor cria o espaço habitado por Deus. Louve — e Deus habita ali." },
+   
+     { apiId:"ISA.43.21",         theme:"Louvor",    ref:"Isaías 43:21",
+       ctx:"Deus diz: o povo que formei para mim publicará o meu louvor. A existência da Igreja tem um propósito fundamental: proclamar quem Deus é. Louvar não é apenas devoção privada — é missão. Quando você louva, você está cumprindo o propósito para o qual foi criado e chamado." },
+   
+     { apiId:"PSA.100.4",         theme:"Louvor",    ref:"Salmos 100:4",
+       ctx:"Entrai pelas Suas portas com ação de graças e nos Seus átrios com louvor. O louvor era o que os peregrinos cantavam ao se aproximar do Templo em Jerusalém. Entrar na presença de Deus com gratidão não é protocolo — é a postura certa de quem entendeu quem é Ele e o que Ele fez." },
+   
+     { apiId:"ROM.11.36",         theme:"Louvor",    ref:"Romanos 11:36",
+       ctx:"Depois de onze capítulos de teologia densa, Paulo explode em louvor: Porque d'Ele, por meio d'Ele e para Ele são todas as coisas. A ele seja a glória para sempre. A teologia mais profunda sempre termina em adoração. Quando você realmente entende quem Deus é, a resposta não é argumento — é louvor." },
+   
+     { apiId:"PSA.63.3",          theme:"Louvor",    ref:"Salmos 63:3",
+       ctx:"Davi escreve isso no deserto da Judeia, com sede e em perigo. E declara: a Tua benevolência vale mais do que a vida. Por isso meus lábios Te louvarão. Essa é a hierarquia de valores de quem encontrou Deus de verdade. A bondade de Deus supera o valor da própria vida. E o louvor é a resposta natural." },
+   
+     { apiId:"1CH.16.34",         theme:"Louvor",    ref:"1 Crônicas 16:34",
+       ctx:"Esse refrão — rendei graças ao Senhor, porque Ele é bom, porque a Sua benignidade dura para sempre — era cantado repetidamente pelos levitas no Templo. A repetição não era vazio — era fixação profunda. Até virar reflexo da alma. Deus é bom. Sempre. Essa é a verdade mais estável que existe." },
+   
+     { apiId:"PSA.8.1",           theme:"Louvor",    ref:"Salmos 8:1",
+       ctx:"Davi olha para o céu estrelado e exclama: Ó Senhor, como é admirável o Teu nome em toda a terra! A contemplação da grandeza de Deus não diminui o humano — ela o reposiciona. Você não é grande sozinho, mas você foi criado para administrar a criação de um Deus grandioso. O louvor começa quando você enxerga quem Ele é." },
+   
+     /* ── 18. PROPÓSITO (12) ── */
+     { apiId:"JER.1.5",           theme:"Propósito", ref:"Jeremias 1:5",
+       ctx:"Deus diz a Jeremias: antes que eu te formasse no ventre, eu te conheci. Antes de existir, você já era intenção de Deus. Sua vida não foi acidente. Você tem um propósito que antecede o seu nascimento. Isso muda completamente como você enxerga a sua existência — você não precisa inventar sentido. Ele já foi colocado em você." },
+   
+     { apiId:"EPH.2.10",          theme:"Propósito", ref:"Efésios 2:10",
+       ctx:"Somos criação de Deus — feitura d'Ele — criados em Cristo para boas obras que Deus preparou de antemão para que andássemos nelas. Seu propósito não é algo que você inventa — é um caminho que Deus já preparou. A vida cristã é descobrir e caminhar nesse propósito, não criar um do zero." },
+   
+     { apiId:"ROM.8.29",          theme:"Propósito", ref:"Romanos 8:29",
+       ctx:"O propósito final de quem Deus conhece de antemão é ser conformado à imagem do Filho. Não ir para o céu apenas — se tornar parecido com Jesus. Toda a sua história, incluindo as partes difíceis, está sendo usada por Deus para moldar você nessa direção. O propósito mais profundo é transformação de caráter." },
+   
+     { apiId:"PSA.57.2",          theme:"Propósito", ref:"Salmos 57:2",
+       ctx:"Davi clama ao Deus que por ele tudo consuma. Deus não apenas começa — Ele termina o que começa. O propósito que Ele colocou em você não vai ficar pela metade. Mesmo quando tudo parece sem sentido, Deus está trabalhando para cumprir o propósito específico que pensou para a sua vida." },
+   
+     { apiId:"PHP.1.6",           theme:"Propósito", ref:"Filipenses 1:6",
+       ctx:"Paulo está convicto: Aquele que começou em vocês a boa obra vai completá-la até o dia de Cristo Jesus. Deus não abandona os projetos que começa. A transformação que Ele iniciou em você vai ser concluída. Você pode estar no meio do processo — mas há um artesão trabalhando que não larga o que pegou até terminar." },
+   
+     { apiId:"ISA.46.10",         theme:"Propósito", ref:"Isaías 46:10",
+       ctx:"Deus anuncia o fim desde o princípio. Não é bravata — é soberania. O propósito d'Ele permanecerá. O que Ele determinou será cumprido. Isso não elimina a sua responsabilidade — mas oferece uma segurança profunda: o propósito de Deus para a Sua criação não pode ser sabotado por nenhuma força humana ou espiritual." },
+   
+     { apiId:"ACT.17.28",         theme:"Propósito", ref:"Atos 17:28",
+       ctx:"Paulo cita poetas gregos pagãos para dizer: nele vivemos, nos movemos e existimos. Toda busca humana por sentido, toda inquietação por algo maior — tudo isso é eco do Criador plantado dentro da criatura. Você foi feito em Deus e para Deus. Por isso nada mais preenche completamente." },
+   
+     { apiId:"GEN.1.27",          theme:"Propósito", ref:"Gênesis 1:27",
+       ctx:"Deus criou o ser humano à Sua imagem. No mundo antigo, a imagem do rei era colocada nos territórios conquistados como representação do soberano. Todo ser humano é a imagem viva de Deus — representante do Rei sobre a criação. Isso é o seu propósito mais fundamental: representar Deus onde você está." },
+   
+     { apiId:"1CO.10.31",         theme:"Propósito", ref:"1 Coríntios 10:31",
+       ctx:"Paulo estava respondendo uma questão sobre o que é permitido comer. E chegou a um princípio que abarca tudo: seja lá o que for que você faça, faça para a glória de Deus. Isso transforma o cotidiano. Comer, trabalhar, descansar, se relacionar — tudo pode ser propositalmente oferecido a Deus." },
+   
+     { apiId:"2TI.1.9",           theme:"Propósito", ref:"2 Timóteo 1:9",
+       ctx:"Deus nos salvou e nos chamou com um chamado santo — não de acordo com nossas obras, mas segundo o Seu próprio propósito e graça. O chamado não depende da sua competência nem do seu passado. Ele vem do propósito soberano de Deus, fundamentado na graça. Você foi chamado antes de merecer qualquer coisa." },
+   
+     { apiId:"PSA.138.8",         theme:"Propósito", ref:"Salmos 138:8",
+       ctx:"O Senhor consumará o que me diz respeito. Deus não esquece os Seus projetos. Você é obra das mãos d'Ele — e Ele não abandona o que fez com as Suas próprias mãos. Mesmo quando você não enxerga progresso, Deus está completando o que começou. A oração final de Davi — não abandones a obra das Tuas mãos — é uma certeza." },
+   
+     { apiId:"PRO.19.21",         theme:"Propósito", ref:"Provérbios 19:21",
+       ctx:"Muitos planos existem no coração do homem — mas o propósito do Senhor prevalece. Seus planos têm valor. Sua iniciativa importa. Mas há uma sabedoria superior que organiza tudo. Quando você submete seus planos a Deus, você não perde a autoria — você se conecta com o Arquiteto que tem a planta completa." },
+   
+     /* ── 19. CURA (12) ── */
+     { apiId:"PSA.147.3",         theme:"Cura",      ref:"Salmos 147:3",
+       ctx:"Deus sara os que têm o coração quebrantado e cura as suas feridas. Esse salmo foi escrito no contexto do retorno do exílio — um povo inteiro em trauma. A cura de Deus não é só física. Ela alcança o coração partido, a dor que não tem palavras. Deus é médico de almas tanto quanto de corpos." },
+   
+     { apiId:"ISA.53.5",          theme:"Cura",      ref:"Isaías 53:5",
+       ctx:"Isaías profetizou sobre alguém que seria traspassado pelas transgressões dos outros — e que pelas Suas feridas nós seríamos sarados. Isso foi escrito séculos antes da crucificação de Jesus. E o Novo Testamento afirma: isso é Jesus. A cura que você precisa — espiritual, emocional, às vezes física — foi comprada na Cruz." },
+   
+     { apiId:"PSA.34.18",         theme:"Cura",      ref:"Salmos 34:18",
+       ctx:"Perto está o Senhor dos que têm o coração quebrantado. Não é quando você está bem, não é quando você tem tudo resolvido — quando você está partido. É aí que Deus se aproxima mais. Isso é o oposto do que o mundo faz. O mundo se afasta do que está quebrado. Deus se move na direção." },
+   
+     { apiId:"JER.30.17",         theme:"Cura",      ref:"Jeremias 30:17",
+       ctx:"Deus diz: Eu te restituirei a saúde e curarei as tuas feridas. Esse texto foi escrito para um povo que havia sido destruído e que ninguém mais se importava em curar. E Deus aparece exatamente onde nenhum recurso humano alcança. A cura de Deus chega nos casos que os homens já desistiram." },
+   
+     { apiId:"JAS.5.16",          theme:"Cura",      ref:"Tiago 5:16",
+       ctx:"Tiago coloca a cura dentro de um contexto de comunidade e confissão: confessem seus pecados uns aos outros e orem uns pelos outros, para serdes curados. A cura muitas vezes passa pelo relacionamento. Há algo que se cura quando você não está mais escondendo, quando há alguém orando por você. A comunidade cristã tem poder de cura." },
+   
+     { apiId:"EXO.15.26",         theme:"Cura",      ref:"Êxodo 15:26",
+       ctx:"Logo depois de atravessar o Mar Vermelho, Deus se revela com um nome: Yahweh-Rafa — o Senhor que sara. Não apenas que pode sarar — que sara. É parte do Seu nome, do Seu caráter. A cura não é exceção com Deus. É expressão de quem Ele é." },
+   
+     { apiId:"2CH.7.14",          theme:"Cura",      ref:"2 Crônicas 7:14",
+       ctx:"A promessa de Deus inclui sarar a terra. Na cosmovisão hebraica, a saúde da criação está conectada com a fidelidade do povo de Deus. Quando há arrependimento genuíno e busca a Deus, o efeito se espalha além das pessoas — alcança o ambiente, a sociedade, a terra. O arrependimento tem alcance que vai além do individual." },
+   
+     { apiId:"MRK.5.34",          theme:"Cura",      ref:"Marcos 5:34",
+       ctx:"A mulher com fluxo de sangue por doze anos tocou Jesus no meio da multidão. E Ele declarou: filha, a tua fé te salvou, vai em paz. Dois elementos combinados: fé e toque. A cura não foi magia — foi fé ativada pelo contato com Jesus. E Ele não deixou ela sair sem restaurar sua dignidade. Curou o corpo e chamou de filha." },
+   
+     { apiId:"LUK.4.18",          theme:"Cura",      ref:"Lucas 4:18",
+       ctx:"Jesus lê Isaías na sinagoga de Nazaré e declara: hoje esta Escritura se cumpriu. E o cumprimento inclui curar os quebrantados de coração. A missão de Jesus não era apenas espiritual ou apenas física — era integral. Ele veio restaurar o ser humano inteiro. Isso continua sendo a missão d'Ele hoje." },
+   
+     { apiId:"PSA.103.3",         theme:"Cura",      ref:"Salmos 103:3",
+       ctx:"Davi lista os benefícios de Deus e coloca perdão e cura em paralelo. Aquele que perdoa todas as tuas iniquidades e sara todas as tuas enfermidades. O mesmo Deus que cuida da alma cuida do corpo. Essa não é separação — é integração. A saúde espiritual e física pertencem ao mesmo Deus que criou o ser humano inteiro." },
+   
+     { apiId:"ACT.10.38",         theme:"Cura",      ref:"Atos 10:38",
+       ctx:"Pedro resume o ministério de Jesus em poucas palavras: andou por toda parte fazendo o bem e curando todos os oprimidos pelo diabo. A cura no ministério de Jesus era expressão do Seu caráter — bondade em ação. O mesmo Jesus que andou curando continua sendo o Senhor que se importa com o sofrimento humano." },
+   
+     { apiId:"3JN.1.2",           theme:"Cura",      ref:"3 João 1:2",
+       ctx:"João ora que Gaio seja saudável em tudo, assim como a sua alma é saudável. A saúde integral — física e espiritual — é o desejo de Deus para as pessoas. A fé cristã não despreza o corpo. Ela valoriza a pessoa inteira. E a oração de João é modelo: ore pela saúde completa das pessoas que você ama." },
+   
+     /* ── 20. HUMILDADE (12) ── */
+     { apiId:"MIC.6.8",           theme:"Humildade", ref:"Miquéias 6:8",
+       ctx:"Miquéias resume o que Deus realmente quer: que você pratique a justiça, ame a misericórdia e ande humildemente com o seu Deus. Três coisas. E humildade é a que define a qualidade das outras duas. Sem humildade, a justiça vira orgulho, e a misericórdia vira paternalismo. Andar humildemente com Deus é o que calibra tudo." },
+   
+     { apiId:"MAT.11.29",         theme:"Humildade", ref:"Mateus 11:29",
+       ctx:"Jesus se descreve com duas palavras: manso e humilde de coração. Isso não é fraqueza — é a força mais disciplinada que existe. E ele convida: aprenda de mim. A escola da humildade é a pessoa de Jesus. Você não aprende humildade de um livro — aprende observando e seguindo aquele que a encarna perfeitamente." },
+   
+     { apiId:"PHP.2.3",           theme:"Humildade", ref:"Filipenses 2:3",
+       ctx:"Paulo pede que cada um considere os outros superiores a si mesmo. Isso é absurdo para a lógica do mundo — e completamente possível para quem entendeu que Jesus lavou os pés dos discípulos. A humildade que Deus pede não é baixa autoestima — é preferir o outro de forma deliberada, imitando Cristo." },
+   
+     { apiId:"MAT.18.4",          theme:"Humildade", ref:"Mateus 18:4",
+       ctx:"Jesus colocou uma criança no meio dos discípulos que estavam disputando quem era o maior. E disse: quem se humilhar como esta criança, esse é o maior no reino dos céus. Crianças naquela cultura não tinham status. Eram dependentes. E foi exatamente essa dependência — sem pretensão — que Jesus apontou como modelo." },
+   
+     { apiId:"1PE.5.6",           theme:"Humildade", ref:"1 Pedro 5:6",
+       ctx:"Humilhai-vos sob a poderosa mão de Deus para que Ele em tempo oportuno vos exalte. A sequência é clara: humilhação agora, exaltação no tempo de Deus. Isso requer confiança — confiar que Deus exalta no momento certo. Quem tenta se exaltar por conta própria está substituindo o tempo de Deus pelo seu." },
+   
+     { apiId:"JAS.4.6",           theme:"Humildade", ref:"Tiago 4:6",
+       ctx:"Deus resiste aos soberbos mas dá graça aos humildes. A resistência de Deus ao orgulhoso não é sentimento — é postura. Deus não está do lado de quem confia em si mesmo. Mas quem se humilha — reconhece sua dependência, abre mão do controle — recebe graça. Humildade não é estratégia. É o estado natural de quem conhece Deus." },
+   
+     { apiId:"ISA.66.2",          theme:"Humildade", ref:"Isaías 66:2",
+       ctx:"Deus criou os céus e a terra — e diz que eles não O contêm. Mas Ele olha especialmente para o pobre e contrito de espírito e para o que treme à Sua Palavra. O Deus que não cabe no universo se aproxima do que é pequeno e quebrantado. Humildade não passa desapercebida por Deus — ela atrai a Sua presença." },
+   
+     { apiId:"PRO.22.4",          theme:"Humildade", ref:"Provérbios 22:4",
+       ctx:"A recompensa da humildade e do temor do Senhor são riquezas, honra e vida. A humildade é descrita como alinhamento com a realidade — quem é realista sobre Deus e sobre si mesmo toma as decisões melhores. A vida flui melhor quando você não está tentando ser o que não é, nem fingindo ter o que não tem." },
+   
+     { apiId:"LUK.14.11",         theme:"Humildade", ref:"Lucas 14:11",
+       ctx:"Jesus diz isso num jantar onde estava observando as disputas pelos lugares de honra. E estabelece a lei do reino: quem se exalta será humilhado, quem se humilha será exaltado. Não é estratégia para subir socialmente — é descrição da realidade do reino de Deus, onde os valores do mundo estão completamente invertidos." },
+   
+     { apiId:"NUM.12.3",          theme:"Humildade", ref:"Números 12:3",
+       ctx:"A Bíblia descreve Moisés como o homem mais humilde da terra — e isso foi escrito quando ele estava sendo atacado por sua própria família. A humildade de Moisés não era fraqueza — era a base da sua liderança mais eficaz. O líder que não precisa se defender de cada crítica tem energia para liderar." },
+   
+     { apiId:"ROM.12.16",         theme:"Humildade", ref:"Romanos 12:16",
+       ctx:"Paulo instrui: não ambicioneis coisas elevadas, mas acomodai-vos às que são humildes. Não sejais sábios no vosso próprio conceito. Quando você para de tentar parecer grande, começa a ser útil de verdade. Humildade libera você para servir onde é necessário, não apenas onde você vai ser visto." },
+   
+     { apiId:"MAT.23.12",         theme:"Humildade", ref:"Mateus 23:12",
+       ctx:"Jesus diz isso criticando os fariseus que amavam títulos e honrarias. A lei do reino se repete: quem se exalta será humilhado, quem se humilha será exaltado. A exaltação que vem de Deus só chega depois que você se posiciona em humildade. As duas coisas não coexistem — você escolhe qual caminho vai tomar." },
+   
+     /* ── 21. SOFRIMENTO (12) ── */
+     { apiId:"ROM.8.18",          theme:"Sofrimento", ref:"Romanos 8:18",
+       ctx:"Paulo não minimiza o sofrimento presente — mas o coloca em perspectiva. As aflições de agora não se comparam com a glória que será revelada. Ele está comparando peso com peso — e a glória futura pesa infinitamente mais. Isso não faz o sofrimento desaparecer, mas muda completamente como você o carrega." },
+   
+     { apiId:"2CO.4.17",          theme:"Sofrimento", ref:"2 Coríntios 4:17",
+       ctx:"Paulo chama de 'leve e momentâneo' o mesmo sofrimento que em outro lugar lista como açoites, naufrágio e perseguição. Não é negação — é comparação com a escala da eternidade. O sofrimento que parece interminável daqui é momentâneo quando medido pelo peso eterno que está produzindo." },
+   
+     { apiId:"1PE.4.12-1PE.4.13", theme:"Sofrimento", ref:"1 Pedro 4:12-13",
+       ctx:"Pedro diz: não se espantem com o fogo ardente que está no meio de vocês como se fosse algo estranho. O sofrimento não é sinal de abandono — é convite para participar dos sofrimentos de Cristo. Quem participa do sofrimento d'Ele também vai participar da Sua glória. A Cruz precede a coroa." },
+   
+     { apiId:"JOB.1.21",          theme:"Sofrimento", ref:"Jó 1:21",
+       ctx:"Em um só dia, Jó perdeu filhos, propriedades e saúde. E sua primeira resposta foi adoração: nu saí e nu voltarei. O Senhor deu, o Senhor tomou. Seja bendito o nome do Senhor. Isso não é negação do luto — é fé que mantém Deus como Senhor mesmo quando Ele age de forma que não entendemos." },
+   
+     { apiId:"PSA.23.4",          theme:"Sofrimento", ref:"Salmos 23:4",
+       ctx:"Ainda que eu ande pelo vale da sombra da morte, não temerei mal algum, porque Tu estás comigo. Davi não diz que vai desviar do vale — diz que vai atravessá-lo sem medo. Porque Deus está dentro do vale com ele. A presença de Deus no sofrimento é mais poderosa do que a ausência do sofrimento." },
+   
+     { apiId:"HEB.12.11",         theme:"Sofrimento", ref:"Hebreus 12:11",
+       ctx:"Nenhuma disciplina parece agradável no momento — parece só tristeza. Mas depois produz fruto de paz e de justiça. 'Depois' — isso requer perspectiva de tempo. O que Deus está fazendo no sofrimento não é visível no meio d'ele. O fruto aparece depois. Deus é um Pai que disciplina com amor, não com crueldade." },
+   
+     { apiId:"ISA.43.2",          theme:"Sofrimento", ref:"Isaías 43:2",
+       ctx:"Quando você passar pelas águas, Eu serei com você. Não: você não vai passar pelas águas. A promessa não é isenção — é companhia. Deus não promete que o fogo não vai existir. Ele promete que você não vai se queimar sozinho. Isso é mais valioso do que a ausência da provação." },
+   
+     { apiId:"PSA.46.2-PSA.46.3", theme:"Sofrimento", ref:"Salmos 46:2-3",
+       ctx:"Mesmo que a terra mude e as montanhas se movam para o mar, não temeremos. O salmista não está descrevendo ausência de perigo — está descrevendo uma estabilidade que não depende das circunstâncias. A âncora não está nas circunstâncias. Está em Deus. E Deus não se move." },
+   
+     { apiId:"ROM.5.3-ROM.5.4",   theme:"Sofrimento", ref:"Romanos 5:3-4",
+       ctx:"Paulo se gloria nas tribulações — não porque as tribulações são boas, mas pelo que elas produzem. A cadeia é: tribulação → perseverança → caráter provado → esperança. O sofrimento não é o objetivo — é o processo. E Deus usa esse processo para produzir em você algo que não pode ser fabricado de outra forma." },
+   
+     { apiId:"2CO.12.10",         theme:"Sofrimento", ref:"2 Coríntios 12:10",
+       ctx:"Paulo diz: quando sou fraco, então sou forte. Isso resume toda a teologia do sofrimento no Novo Testamento. A fraqueza humana é o espaço onde o poder de Cristo mais brilha. Quando você já não tem mais nada próprio para depender, você descobre que Cristo é suficiente. E suficiência d'Ele é mais do que você jamais teve." },
+   
+     { apiId:"PSA.30.11",         theme:"Sofrimento", ref:"Salmos 30:11",
+       ctx:"Tu mudaste o meu pranto em folguedo, desataste o meu saco e me cingiste de alegria. Davi testemunha de uma transformação real — de luto para dança. Isso não é negação do sofrimento passado. É o testemunho de que Deus transforma o que parecia permanente. O sofrimento não tem a última palavra quando Deus está na história." },
+   
+     { apiId:"REV.21.3-REV.21.4", theme:"Sofrimento", ref:"Apocalipse 21:3-4",
+       ctx:"A visão final da Bíblia mostra Deus morando com os seres humanos e enxugando cada lágrima. Não um Deus distante observando — um Pai se aproximando e cuidando pessoalmente. E não haverá mais morte, nem pranto, nem dor. Esse é o destino da história. Todo sofrimento presente tem prazo de validade." },
+   
+     /* ── 22. SALVAÇÃO (12) ── */
+     { apiId:"ACT.4.12",          theme:"Salvação",  ref:"Atos 4:12",
+       ctx:"Pedro diz ao Sinédrio — o tribunal religioso mais poderoso de Israel: em nenhum outro há salvação, porque não há outro nome debaixo do céu dado entre os homens pelo qual devamos ser salvos. Isso foi dito com coragem diante dos que podiam prendê-lo. A exclusividade do evangelho não é intolerância — é fidelidade à verdade." },
+   
+     { apiId:"ROM.10.9",          theme:"Salvação",  ref:"Romanos 10:9",
+       ctx:"Paulo é direto: se confessares com a boca que Jesus é Senhor, e creres no coração que Deus O ressuscitou dentre os mortos, serás salvo. Dois elementos: confissão pública e crença interna. A salvação não é evento privado escondido no coração — ela se declara com a boca. 'Jesus é Senhor' é afirmação que muda tudo." },
+   
+     { apiId:"LUK.19.10",         theme:"Salvação",  ref:"Lucas 19:10",
+       ctx:"Depois de encontrar Zaqueu — o cobrador de impostos mais odiado da cidade — Jesus declara: o Filho do Homem veio buscar e salvar o perdido. Não esperar os perdidos chegarem. Buscar. Jesus vai atrás. Ele está ativo na busca por quem está longe. Nenhuma pessoa está perdida demais para que Jesus não a procure." },
+   
+     { apiId:"EPH.2.5",           theme:"Salvação",  ref:"Efésios 2:5",
+       ctx:"Paulo descreve a condição humana sem Cristo como morta — não ferida, não doente, não fraca. Morta. E a salvação é ressurreição: Deus nos deu vida em Cristo. Isso muda o diagnóstico. Você não precisa de ajuda para melhorar — precisa de vida nova. E foi exatamente isso que Deus deu." },
+   
+     { apiId:"JHN.3.36",          theme:"Salvação",  ref:"João 3:36",
+       ctx:"João usa o tempo presente para ambos os lados: quem crê no Filho tem a vida eterna agora — não vai ter, tem. E quem rejeita o Filho tem a ira de Deus permanecendo sobre ele agora. A salvação não é questão só futura — é realidade presente. A eternidade começa hoje, de um jeito ou de outro." },
+   
+     { apiId:"TIT.3.5",           theme:"Salvação",  ref:"Tito 3:5",
+       ctx:"Ele nos salvou não pelas obras de justiça que fizemos, mas segundo a Sua misericórdia, pelo banho regenerador e renovador do Espírito Santo. Dois aspectos da salvação: regeneração — nascer de novo — e renovação — transformação contínua. A salvação não é só evento passado. É também processo presente do Espírito em você." },
+   
+     { apiId:"ISA.12.2",          theme:"Salvação",  ref:"Isaías 12:2",
+       ctx:"Isaías canta: Deus é a minha salvação. 'Salvação' em hebraico é Yeshua — o mesmo nome de Jesus. Sem saber, Isaías estava cantando o nome do Salvador que viria séculos depois. O Deus que Isaías confiava é o mesmo que mandou Jesus. O plano da salvação não foi improviso — foi projeto eterno de Deus." },
+   
+     { apiId:"HEB.7.25",          theme:"Salvação",  ref:"Hebreus 7:25",
+       ctx:"Jesus pode salvar completamente os que se aproximam de Deus por meio d'Ele, porque vive sempre para interceder por eles. A salvação não tem garantia de prazo limitado — ela é mantida pela intercessão permanente de Cristo. Você não precisa ter medo de perder o que Ele mesmo está sustentando." },
+   
+     { apiId:"ROM.1.16",          theme:"Salvação",  ref:"Romanos 1:16",
+       ctx:"Não me envergonho do evangelho de Cristo — porque ele é o poder de Deus para salvação de todo aquele que crê. Paulo não se envergonha porque conhece o resultado. O evangelho não é apenas mensagem — é poder. Poder que efetivamente salva, efetivamente transforma, efetivamente muda vidas." },
+   
+     { apiId:"2TI.3.15",          theme:"Salvação",  ref:"2 Timóteo 3:15",
+       ctx:"Paulo lembra a Timóteo das Escrituras que ele aprendeu desde criança — e que são capazes de torná-lo sábio para a salvação pela fé em Cristo. As Escrituras têm um propósito: conduzir a Cristo. Toda a Bíblia aponta para Jesus. E quem é conduzido até Ele encontra a salvação que estava no coração do texto desde o início." },
+   
+     { apiId:"PSA.118.14",        theme:"Salvação",  ref:"Salmos 118:14",
+       ctx:"O Senhor é a minha força e o meu cântico e se tornou a minha salvação. Esse versículo foi cantado por Moisés depois de atravessar o Mar Vermelho — e é citado de várias formas ao longo da Bíblia. É a declaração mais antiga e mais repetida de quem experimentou a salvação de Deus: Ele é força, cântico e salvação." },
+   
+     { apiId:"1TI.2.4",           theme:"Salvação",  ref:"1 Timóteo 2:4",
+       ctx:"Deus quer que todos os homens sejam salvos e cheguem ao pleno conhecimento da verdade. Isso revela o coração de Deus: Ele quer salvar a todos. Não apenas um grupo, não apenas os que merecem — todos. A missão de pregar o evangelho tem urgência porque Deus está genuinamente esperando que cada pessoa chegue até Ele." },
+   
+     /* ── 23. PALAVRA DE DEUS (12) ── */
+     { apiId:"2TI.3.16-2TI.3.17", theme:"Palavra de Deus", ref:"2 Timóteo 3:16-17",
+       ctx:"Toda a Escritura é inspirada por Deus e útil para ensinar, repreender, corrigir e instruir na justiça. A Bíblia não é apenas história antiga ou literatura religiosa — é Palavra soprada por Deus, com autoridade e poder. O objetivo não é ter cristãos eruditos. É formar pessoas de Deus aptas para toda boa obra." },
+   
+     { apiId:"PSA.119.105",       theme:"Palavra de Deus", ref:"Salmos 119:105",
+       ctx:"Lâmpada para os meus pés é a Tua Palavra e luz para o meu caminho. A lâmpada ilumina o próximo passo — o que você precisa fazer agora. A luz revela o caminho mais longo — para onde você está indo. A Palavra de Deus opera nas duas escalas: a decisão imediata e a direção de vida." },
+   
+     { apiId:"ISA.55.11",         theme:"Palavra de Deus", ref:"Isaías 55:11",
+       ctx:"A Palavra que sai da boca de Deus não voltará vazia — ela realizará o que Ele quer e prosperará naquilo para que foi enviada. A Palavra de Deus tem poder próprio. Quando você planta a Palavra em uma vida, em um coração, em uma situação — ela trabalha. Não depende da sua competência para produzir resultado." },
+   
+     { apiId:"JHN.1.1",           theme:"Palavra de Deus", ref:"João 1:1",
+       ctx:"No princípio era o Verbo — a Palavra — e a Palavra estava com Deus, e a Palavra era Deus. João usa a linguagem de Gênesis 1 de propósito. A Palavra que criou o mundo é a mesma que se tornou carne em Jesus. A revelação máxima de Deus não é um texto — é uma Pessoa. E a Bíblia inteira aponta para essa Pessoa." },
+   
+     { apiId:"MAT.24.35",         theme:"Palavra de Deus", ref:"Mateus 24:35",
+       ctx:"Jesus declara: o céu e a terra passarão, mas as Minhas palavras não passarão. A criação inteira é temporária. As palavras de Jesus são eternas. Isso dá peso diferente ao que Jesus disse. Não são instruções de uma época passada — são palavras de vida que continuam válidas enquanto existir qualquer coisa." },
+   
+     { apiId:"HEB.4.12",          theme:"Palavra de Deus", ref:"Hebreus 4:12",
+       ctx:"A Palavra de Deus é viva e eficaz, mais afiada do que qualquer espada de dois gumes, penetrando até a divisão da alma e do espírito. A Bíblia não é texto morto — ela é viva. Quando você lê a Palavra com o coração aberto, ela não apenas informa — ela cirurgia. Alcança onde nenhum conselho humano chega." },
+   
+     { apiId:"ROM.10.17",         theme:"Palavra de Deus", ref:"Romanos 10:17",
+       ctx:"A fé vem pelo ouvir, e o ouvir pela Palavra de Cristo. Fé não nasce do esforço humano — nasce da exposição à Palavra. É por isso que pregar importa. É por isso que ler a Bíblia importa. A Palavra é a semente. Onde ela é plantada com fidelidade, a fé germina." },
+   
+     { apiId:"JER.15.16",         theme:"Palavra de Deus", ref:"Jeremias 15:16",
+       ctx:"Jeremias diz: foram achadas as Tuas palavras, e eu as comi. As Tuas palavras foram para mim o gozo e a alegria do meu coração. Comer a Palavra — não apenas ler, mas assimilar, digerir, deixar entrar fundo. A Bíblia que você leu de verdade, que entrou dentro de você — essa transforma. A que ficou na superfície, não." },
+   
+     { apiId:"COL.3.16",          theme:"Palavra de Deus", ref:"Colossenses 3:16",
+       ctx:"A Palavra de Cristo habite em vós ricamente. Não visitando de vez em quando — habitando. Com abundância. Paulo está descrevendo uma comunidade saturada da Palavra, onde as pessoas ensinam umas às outras a partir do que aprenderam. A Palavra não é só para o devocional pessoal — é para a vida da comunidade." },
+   
+     { apiId:"PSA.19.7",          theme:"Palavra de Deus", ref:"Salmos 19:7",
+       ctx:"A lei do Senhor é perfeita e restaura a alma. O testemunho do Senhor é fiel e dá sabedoria ao simples. A Palavra não é exclusiva de teólogos e estudiosos. Ela dá sabedoria ao simples — a quem é humilde o suficiente para recebê-la. A Palavra democratiza o acesso a Deus." },
+   
+     { apiId:"MAT.4.4",           theme:"Palavra de Deus", ref:"Mateus 4:4",
+       ctx:"Jesus, com fome depois de quarenta dias de jejum, é tentado a transformar pedras em pão. E responde: não só de pão viverá o homem, mas de toda palavra que procede da boca de Deus. Jesus escolheu a Palavra acima da necessidade física. Isso mostra que há uma fome mais profunda do que a do corpo — e a Palavra é o que a sacia." },
+   
+     { apiId:"PRO.30.5",          theme:"Palavra de Deus", ref:"Provérbios 30:5",
+       ctx:"Toda palavra de Deus é pura, é escudo para os que nele confiam. Pura — sem mistura de erro, sem impureza de motivo. A Palavra de Deus não precisa de correção nem de atualização. Ela resiste ao teste do tempo porque vem de quem está acima do tempo. E quem confia nela tem proteção que vai além do que os olhos enxergam." },
+   
+     /* ── 24. FAMÍLIA (12) ── */
+     { apiId:"JOS.24.15",         theme:"Família",   ref:"Josué 24:15",
+       ctx:"Josué faz sua declaração pública no final da vida: quanto a mim e à minha casa, serviremos ao Senhor. Liderança familiar começa com posição clara de quem é o Senhor da casa. Não como ditadura religiosa — como compromisso de vida. Quando o líder declara publicamente a quem serve, dá direção a toda a família." },
+   
+     { apiId:"PRO.22.6",          theme:"Família",   ref:"Provérbios 22:6",
+       ctx:"Instrua o menino no caminho em que deve andar — e quando envelhecer não se desviará dele. A palavra 'instrua' carrega a ideia de dedicação. A instrução que fica não é só o que foi ensinado na sala de aula dominical — é o que foi demonstrado na vida diária, no jeito de tratar as pessoas, no modo de falar de Deus." },
+   
+     { apiId:"EPH.6.4",           theme:"Família",   ref:"Efésios 6:4",
+       ctx:"Paulo instrui os pais: não irritem seus filhos, mas criem-nos na disciplina e na admonição do Senhor. Dois lados: o que não fazer — não provocar — e o que fazer — criar com intencionalidade espiritual. A pedagogia cristã combina limite com amor, disciplina com instrução. Não é uma, nem a outra — é as duas juntas." },
+   
+     { apiId:"DEU.6.6-DEU.6.7",   theme:"Família",   ref:"Deuteronômio 6:6-7",
+       ctx:"A fé transmitida às gerações seguintes não é programa formal — é conversa integrada à vida. Quando você senta em casa, quando anda pelo caminho, quando deita, quando levanta. A instrução espiritual mais eficaz não é o que acontece no culto de domingo — é o que acontece na cozinha, no carro, nas decisões diárias." },
+   
+     { apiId:"PSA.127.3",         theme:"Família",   ref:"Salmos 127:3",
+       ctx:"Filhos são herança do Senhor, o fruto do ventre é a Sua recompensa. Seus filhos não são sua propriedade — são herança confiada por Deus. Isso muda completamente como você pensa a paternidade e a maternidade. Você não está criando para si — está cuidando do que pertence a Deus e que Ele confiou a você." },
+   
+     { apiId:"RUT.1.16",          theme:"Família",   ref:"Rute 1:16",
+       ctx:"Rute diz a Noemi: onde você for, eu irei; onde você pousar, eu pousarei; o seu povo é o meu povo e o seu Deus é o meu Deus. Uma moabita escolhendo a sogra viúva e empobrecida. Esse é um dos retratos mais belos de lealdade familiar na Bíblia — e Rute se torna ancestral de Jesus. A fidelidade tem consequências eternas." },
+   
+     { apiId:"COL.3.18-COL.3.19", theme:"Família",   ref:"Colossenses 3:18-19",
+       ctx:"Paulo instrui os dois lados do casamento. A submissão da esposa tem um qualificador: como convém no Senhor. E o mandamento ao marido é mais exigente do que parece: amai vossas mulheres e não as trateis com aspereza. Amor ativo e ausência de dureza. O padrão para o marido cristão é o amor de Cristo pela Igreja." },
+   
+     { apiId:"PRO.31.25",         theme:"Família",   ref:"Provérbios 31:25",
+       ctx:"A mulher descrita em Provérbios 31 é revestida de força e de glória, e ri-se do dia de amanhã. Essa confiança não é ingenuidade — é resultado de uma vida bem construída e uma fé real. Ela pode rir do futuro porque sabe que está nas mãos de Deus. Isso é a mulher que a Bíblia valoriza." },
+   
+     { apiId:"EPH.5.25",          theme:"Família",   ref:"Efésios 5:25",
+       ctx:"Maridos, amai vossas mulheres assim como Cristo amou a Igreja e a Si mesmo se entregou por ela. O padrão do amor conjugal cristão é a Cruz. Não um sentimento romântico que vai e vem — uma entrega que persiste quando é difícil, quando não é recíproca, quando custa. Esse é o amor que o marido cristão é chamado a ter." },
+   
+     { apiId:"GEN.2.24",          theme:"Família",   ref:"Gênesis 2:24",
+       ctx:"Por isso, deixará o homem o pai e a mãe e se unirá à sua mulher, e serão ambos uma só carne. Jesus citou esse versículo como fundamento da indissolubilidade do casamento. O casamento cria uma nova unidade — uma carne — que tem precedência sobre qualquer outra lealdade. É a aliança humana mais profunda que existe." },
+   
+     { apiId:"PSA.78.4",          theme:"Família",   ref:"Salmos 78:4",
+       ctx:"Não esconderemos de nossos filhos os louvores do Senhor e a Sua força. Contar às gerações seguintes o que Deus fez não é opcional — é missão familiar. Seu testemunho pessoal de como Deus agiu na sua vida é o patrimônio mais valioso que você pode deixar para seus filhos. Eles precisam ouvir isso de você." },
+   
+     { apiId:"MAL.4.6",           theme:"Família",   ref:"Malaquias 4:6",
+       ctx:"As últimas palavras do Antigo Testamento antes de 400 anos de silêncio: Ele voltará o coração dos pais para os filhos e o coração dos filhos para os pais. A ruptura geracional é uma das marcas do pecado. E a restauração começa em casa — corações reconciliados entre gerações. Lucas aplica isso a João Batista preparando o caminho de Jesus." },
+   
+     /* ── 25. IDENTIDADE (12) ── */
+     { apiId:"PSA.139.13-PSA.139.14", theme:"Identidade", ref:"Salmos 139:13-14",
+       ctx:"Tu me fizeste de modo assombroso e maravilhoso. Você não foi resultado de um processo impessoal. Deus formou cada detalhe de você com intenção. Antes de você saber o seu nome, Deus te conhecia. Isso não é autoestima baseada em realizações — é identidade baseada em quem te criou e por que te fez." },
+   
+     { apiId:"GAL.3.28",          theme:"Identidade", ref:"Gálatas 3:28",
+       ctx:"Em Cristo não há judeu nem grego, não há escravo nem livre, não há homem nem mulher — porque todos vocês são um em Cristo Jesus. A identidade mais profunda não é etnia, não é status social, não é gênero. É Cristo. Isso não apaga as diferenças — impede que elas criem hierarquia entre os filhos de Deus." },
+   
+     { apiId:"1JN.3.1",           theme:"Identidade", ref:"1 João 3:1",
+       ctx:"Vejam que grande amor o Pai nos deu — que formos chamados filhos de Deus. E somos. João se espanta com isso. Não é título honorário. É realidade ontológica. Você é filho de Deus não por mérito — por amor. E João acrescenta: e somos. Presente. Agora. Não no futuro — agora." },
+   
+     { apiId:"COL.1.13-COL.1.14", theme:"Identidade", ref:"Colossenses 1:13-14",
+       ctx:"Deus nos trasladou do poder das trevas e nos transportou para o reino do Filho do Seu amor. Você não melhorou de reino — foi transferido. Não reformado — realocado. Sua identidade não é mais definida pelo que você era antes. Você pertence ao reino de Cristo. Isso muda tudo sobre quem você é." },
+   
+     { apiId:"2CO.5.17",          theme:"Identidade", ref:"2 Coríntios 5:17",
+       ctx:"Se alguém está em Cristo, é uma nova criação. As coisas antigas já passaram — eis que tudo se fez novo. Isso não é motivação de autoajuda — é declaração teológica. Você não é uma versão melhorada do que era. Você é criação nova. A identidade antiga não define mais quem você é. Cristo define." },
+   
+     { apiId:"ROM.8.16",          theme:"Identidade", ref:"Romanos 8:16",
+       ctx:"O próprio Espírito testifica com o nosso espírito que somos filhos de Deus. A certeza da sua identidade como filho não vem de argumento ou raciocínio — vem do testemunho interno do Espírito Santo. Quando você ora e sente no coração que está falando com um Pai, isso é o Espírito confirmando quem você é." },
+   
+     { apiId:"EPH.1.4",           theme:"Identidade", ref:"Efésios 1:4",
+       ctx:"Deus nos elegeu em Cristo antes da fundação do mundo. Antes de o mundo existir, antes de você existir, Deus pensou em você e escolheu você. Sua identidade não começa no seu nascimento — começa na eternidade de Deus. Isso é maior do que qualquer rótulo que o mundo colocou em você." },
+   
+     { apiId:"JER.31.3",          theme:"Identidade", ref:"Jeremias 31:3",
+       ctx:"Deus fala com intensidade pessoal surpreendente: Eu te amei com amor eterno, por isso te atraí com benignidade. O amor de Deus por você não começou quando você respondeu a Ele — é eterno. Anterior à sua existência. E esse amor que veio primeiro continua atraindo, continuamente, com gentileza." },
+   
+     { apiId:"1PE.2.9",           theme:"Identidade", ref:"1 Pedro 2:9",
+       ctx:"Mas vocês são raça eleita, sacerdócio real, nação santa, povo adquirido. Pedro aplica quatro títulos que eram de Israel no Antigo Testamento a crentes gentios. Você não é cidadão de segunda classe no reino de Deus. Você é eleito, é sacerdote, é santo, foi comprado. Essa é a sua identidade — não o que o mundo diz sobre você." },
+   
+     { apiId:"EPH.1.11",          theme:"Identidade", ref:"Efésios 1:11",
+       ctx:"Em Cristo fomos feitos herança — porção herdada por Deus. Não apenas você herda Deus. Deus te possui como Sua herança. Você é o que Deus escolheu ter, valorizar, preservar para sempre. Isso não é linguagem de escravo — é linguagem de tesouro. Você é o tesouro de Deus." },
+   
+     { apiId:"ROM.8.1",           theme:"Identidade", ref:"Romanos 8:1",
+       ctx:"Nenhuma condenação há para os que estão em Cristo Jesus. Nenhuma. Não 'pouca condenação'. Não 'menos condenação'. Nenhuma. Isso é um veredicto legal permanente pronunciado sobre você. Você não está no banco dos réus. Em Cristo, o processo acabou com absolvição total." },
+   
+     { apiId:"JHN.15.15",         theme:"Identidade", ref:"João 15:15",
+       ctx:"Jesus muda o vocabulário com os discípulos: já não vos chamo servos — chamo-vos amigos. Amigos do Rei têm acesso privilegiado ao que está nos planos do Rei. Jesus compartilhou com os discípulos o que ouviu do Pai. Você não é apenas servo que obedece — é amigo que conhece o coração d'Ele." },
+   
+     /* ── 26. MISSÃO (12) ── */
+     { apiId:"MAT.28.19-MAT.28.20", theme:"Missão", ref:"Mateus 28:19-20",
+       ctx:"Jesus encerra o Evangelho de Mateus com toda a autoridade proclamada — e então dá o mandato: ide, fazei discípulos de todas as nações. A missão não é opcional nem é de alguns especialistas — é de todos os que O seguem. E a promessa que a acompanha: eis que estou convosco todos os dias. Você não vai sozinho." },
+   
+     { apiId:"ACT.1.8",           theme:"Missão",    ref:"Atos 1:8",
+       ctx:"Você receberá poder quando o Espírito Santo vier sobre vocês, e serão Minhas testemunhas. O poder da missão não é talento natural nem treinamento — é o Espírito Santo. E o alcance é concêntrico: Jerusalém, Judeia, Samaria, até os confins da terra. O evangelho não para — ele se expande em ondas." },
+   
+     { apiId:"2CO.5.20",          theme:"Missão",    ref:"2 Coríntios 5:20",
+       ctx:"Somos embaixadores em nome de Cristo — como se Deus exortasse por nosso meio. Um embaixador representa o seu país onde está. Você representa o Reino de Deus onde você está. E a mensagem que você carrega é a mais urgente que existe: sejam reconciliados com Deus. É um convite, não uma acusação." },
+   
+     { apiId:"MRK.16.15",         theme:"Missão",    ref:"Marcos 16:15",
+       ctx:"Ide por todo o mundo e pregai o evangelho a toda criatura. A missão não tem fronteira nem exceção. Todo o mundo. Toda criatura. Nenhuma barreira cultural, geográfica ou social limita o alcance do evangelho. E o evangelho é para todo ser humano — porque todo ser humano foi criado por Deus e precisa de reconciliação com Ele." },
+   
+     { apiId:"PRO.11.30",         theme:"Missão",    ref:"Provérbios 11:30",
+       ctx:"O fruto do justo é árvore de vida, e o que ganha almas é sábio. A missão mais eficaz não começa com programa evangelístico — começa com uma vida justa que produz fruto visível. Uma vida que faz as pessoas perguntarem o que você tem. Quando a sua vida é árvore de vida, as pessoas se aproximam naturalmente." },
+   
+     { apiId:"LUK.24.47",         theme:"Missão",    ref:"Lucas 24:47",
+       ctx:"Jesus instrui: seria pregado o arrependimento para remissão dos pecados a todas as nações — começando por Jerusalém. A missão começa onde você está. Não quando você tiver tudo certo, não quando chegar ao campo missionário. Começa onde você está hoje, com as pessoas ao seu redor." },
+   
+     { apiId:"ROM.10.14",         theme:"Missão",    ref:"Romanos 10:14",
+       ctx:"Paulo constrói a lógica da missão de trás para frente: invocar depende de crer, crer depende de ouvir, ouvir depende de alguém pregar. A missão não é atividade extra — é elo essencial entre o Deus que salva e o ser humano que precisa de salvação. Sem alguém indo, alguém pregando — a corrente quebra." },
+   
+     { apiId:"ISA.52.7",          theme:"Missão",    ref:"Isaías 52:7",
+       ctx:"Quão formosos sobre os montes são os pés do que anuncia boas novas! Paulo cita isso em Romanos para mostrar que os pregadores do evangelho estão cumprindo a profecia de Isaías. Anunciar boas novas de paz, de salvação, de que Deus reina — isso é o que torna os pés do mensageiro formosos aos olhos de Deus." },
+   
+     { apiId:"MAT.5.14",          theme:"Missão",    ref:"Mateus 5:14",
+       ctx:"Vós sois a luz do mundo. Jesus não diz: tornem-se luz. Diz: vocês são. A identidade missionária precede o mandato. Você não precisa se tornar missionário — você é luz. A pergunta não é se vai brilhar. É se vai remover o que está bloqueando a luz que já está em você." },
+   
+     { apiId:"EZK.33.11",         theme:"Missão",    ref:"Ezequiel 33:11",
+       ctx:"Deus declara com um juramento: não tenho prazer na morte do ímpio, mas em que o ímpio se converta do seu caminho e viva. Esse é o coração de Deus por quem está longe. Ele não está esperando para julgar — está esperando para receber. A missão reflete o desejo de Deus, não a nossa obrigação religiosa." },
+   
+     { apiId:"JHN.20.21",         theme:"Missão",    ref:"João 20:21",
+       ctx:"Jesus diz: assim como o Pai Me enviou, Eu também vos envio. A missão dos discípulos é modelada pela missão do Filho — que saiu do céu, se tornou humano, viveu entre as pessoas, as serviu com autoridade. O modelo da encarnação é o modelo da missão. Entrar no mundo das pessoas, não convidá-las para o seu mundo." },
+   
+     { apiId:"1CO.9.22",          theme:"Missão",    ref:"1 Coríntios 9:22",
+       ctx:"Paulo se fez tudo para todos, para por todos os meios salvar alguns. Ele não abandona o evangelho — mas abandona preferências pessoais para chegar onde as pessoas estão. A mensagem é inflexível. O método é adaptável. Isso é sabedoria missionária: não mudar o que você tem a dizer, mas mudar como você diz para quem precisa ouvir." },
+   
+     /* ── 27. CRIAÇÃO (12) ── */
+     { apiId:"GEN.1.1",           theme:"Criação",   ref:"Gênesis 1:1",
+       ctx:"No princípio, Deus criou os céus e a terra. Dez palavras em hebraico que fundamentam a cosmovisão cristã: o universo tem um criador pessoal. Não é eterno, não é divino em si mesmo — foi criado por Alguém que existia antes d'ele e que existe além d'ele. Isso tem implicações para tudo — ciência, ética, identidade, propósito." },
+   
+     { apiId:"PSA.19.1",          theme:"Criação",   ref:"Salmos 19:1",
+       ctx:"Os céus proclamam a glória de Deus, e o firmamento anuncia a obra das Suas mãos. A criação é discurso de Deus — eloquência sem palavras. Quando você olha para um céu estrelado, um oceano, uma montanha, você está lendo a linguagem de Deus sobre Si mesmo. A beleza do cosmos é evidência do Criador." },
+   
+     { apiId:"JHN.1.3",           theme:"Criação",   ref:"João 1:3",
+       ctx:"Todas as coisas foram feitas por intermédio d'Ele, e sem Ele nada do que foi feito se fez. João apresenta Jesus como o agente da criação. Não apenas Salvador — Criador. Isso significa que a mesma inteligência que projetou o DNA e as estrelas é a que entrou na história para redimir o que havia sido quebrado." },
+   
+     { apiId:"COL.1.16-COL.1.17", theme:"Criação",   ref:"Colossenses 1:16-17",
+       ctx:"Nele foram criadas todas as coisas, e Ele é antes de todas as coisas, e todas as coisas subsistem por Ele. Três relacionamentos: Cristo como origem, como prioridade e como sustentação da criação. O universo não está se sustentando sozinho — está sendo sustentado ativamente por Cristo a cada momento." },
+   
+     { apiId:"PSA.24.1",          theme:"Criação",   ref:"Salmos 24:1",
+       ctx:"Do Senhor é a terra e a sua plenitude. Tudo o que existe pertence ao Criador. Isso muda radicalmente como você enxerga suas posses, seu dinheiro, seus dons. Você não é dono — é mordomia. Cuida do que pertence a Deus. E quem administra bem o que é de Deus recebe mais para administrar." },
+   
+     { apiId:"REV.4.11",          theme:"Criação",   ref:"Apocalipse 4:11",
+       ctx:"Digno és, Senhor, de receber a glória e a honra e o poder, porque Tu criaste todas as coisas, e por Tua vontade existem e foram criadas. No céu, o louvor à criação é contínuo. Porque existir é resultado da vontade de Deus. Cada coisa que existe — incluindo você — é expressão do querer de Deus." },
+   
+     { apiId:"ISA.40.28",         theme:"Criação",   ref:"Isaías 40:28",
+       ctx:"O Deus eterno, o Criador dos fins da terra, não se cansa, nem se fatiga. Isaías faz isso para encorajar o povo exilado que estava exausto. O Criador do universo não tem limite de energia. Ele não fica cansado de você. Não fica sobrecarregado com os seus pedidos. Sua necessidade não esgota a capacidade d'Ele." },
+   
+     { apiId:"GEN.2.7",           theme:"Criação",   ref:"Gênesis 2:7",
+       ctx:"O Senhor Deus formou o homem do pó da terra e soprou nas suas narinas o fôlego de vida. Dois materiais: pó e sopro divino. Você é ao mesmo tempo humilde — vem do chão — e precioso — tem o fôlego de Deus. Nenhuma outra criatura recebeu o sopro pessoal de Deus. Você é a obra mais íntima da criação." },
+   
+     { apiId:"ROM.1.20",          theme:"Criação",   ref:"Romanos 1:20",
+       ctx:"Os atributos invisíveis de Deus, desde a criação do mundo, claramente se veem nas coisas criadas. A criação é argumento. Não salva — mas revela. O universo funciona como evidência do poder eterno e da divindade de Deus. Paulo diz que isso é suficiente para que ninguém alegue ignorância total sobre Deus." },
+   
+     { apiId:"PSA.33.6",          theme:"Criação",   ref:"Salmos 33:6",
+       ctx:"Pela palavra do Senhor foram feitos os céus — pelo sopro da Sua boca, todo o exército deles. Deus não lutou para criar. Não suou, não se esforçou — falou. A mesma voz que trouxe o universo à existência fala à sua vida hoje. A Palavra de Deus tem poder criativo. Ela pode criar o que ainda não existe em você." },
+   
+     { apiId:"JER.32.17",         theme:"Criação",   ref:"Jeremias 32:17",
+       ctx:"Jeremias ora enquanto a Babilônia cerca Jerusalém — e compra um terreno. Parece loucura. Mas ele ancora a fé no fundamento mais sólido possível: Tu fizeste o céu e a terra com o Teu grande poder — nada Te é impossível. Quando a situação parece sem saída, volte ao Criador. Quem criou do nada pode criar saída onde não existe." },
+   
+     { apiId:"2CO.5.17",          theme:"Criação",   ref:"2 Coríntios 5:17",
+       ctx:"Se alguém está em Cristo, é uma nova criação. Paulo usa a mesma linguagem de Gênesis — criação. A conversão não é reforma, não é melhoria — é nova criação. O mesmo poder que Deus usou para criar o universo é usado na transformação de uma vida. Cada conversão é um ato criativo de Deus." },
+   
+     /* ── 28. TEMOR DE DEUS (12) ── */
+     { apiId:"PRO.9.10",          theme:"Temor de Deus", ref:"Provérbios 9:10",
+       ctx:"O temor do Senhor é o princípio da sabedoria. Não a educação, não a experiência — o temor do Senhor. Isso não é medo servil de ser punido. É reverência profunda a quem Deus é — Seu caráter, Sua santidade, Seu poder. Quando você enxerga Deus como Ele é, tudo mais se reposiciona. Essa é a fundação da sabedoria." },
+   
+     { apiId:"ECC.12.13",         theme:"Temor de Deus", ref:"Eclesiastes 12:13",
+       ctx:"Ao fim de toda a investigação, o pregador chega à conclusão mais simples: teme a Deus e guarda os Seus mandamentos — porque isso é o dever de todo o homem. Não a filosofia mais elaborada, não a teologia mais sofisticada. No final, é isso. A vida mais sábia é a mais simples: teme a Deus." },
+   
+     { apiId:"PSA.111.10",        theme:"Temor de Deus", ref:"Salmos 111:10",
+       ctx:"O temor do Senhor é o princípio da sabedoria. Todos os que o praticam têm bom entendimento. 'Praticam' — não apenas conceituam. O temor que gera sabedoria não é crença abstrata sobre Deus. É reverência vivida, que orienta as escolhas diárias. Entendimento não é só intelectual — é a sabedoria de quem vive bem." },
+   
+     { apiId:"ACT.9.31",          theme:"Temor de Deus", ref:"Atos 9:31",
+       ctx:"A Igreja primitiva crescia andando no temor do Senhor e no conforto do Espírito Santo. O crescimento não veio de estratégia de marketing ou programa inovador — veio de duas coisas: reverência a Deus e encorajamento do Espírito. O temor do Senhor não trava a Igreja — ela a ordena e a fortalece." },
+   
+     { apiId:"PSA.34.7",          theme:"Temor de Deus", ref:"Salmos 34:7",
+       ctx:"O anjo do Senhor se aquartela em derredor dos que O temem e os livra. O temor de Deus não deixa você exposto — atrai proteção. A reverência a Deus tem implicação prática: quem coloca Deus no centro da vida tem em volta de si o cuidado de Deus. Temer a Deus é a postura mais segura que existe." },
+   
+     { apiId:"ISA.8.13",          theme:"Temor de Deus", ref:"Isaías 8:13",
+       ctx:"Ao Senhor dos Exércitos, a este santificai; a ele, o vosso temor e o vosso espanto. Isaías fala a uma nação aterrorizada com ameaças políticas. O remédio não é coragem humana — é redirecionar o medo. Quando você aprende a temer a Deus genuinamente, os outros medos começam a perder o poder sobre você." },
+   
+     { apiId:"REV.14.7",          theme:"Temor de Deus", ref:"Apocalipse 14:7",
+       ctx:"O anjo anuncia: temei a Deus e dai-lhe glória, porque chegou a hora do Seu julgamento. O temor de Deus no contexto do juízo não é pânico — é reconhecimento correto da realidade: Deus é o Criador soberano, e toda criatura presta contas a Ele. Quem teme a Deus não é surpreendido pelo Seu julgamento." },
+   
+     { apiId:"MAT.10.28",         theme:"Temor de Deus", ref:"Mateus 10:28",
+       ctx:"Jesus ensina uma hierarquia de medos: não temais os que matam o corpo, mas temei a Deus. O medo dos homens paralisa. O temor de Deus liberta — porque quem já teme ao maior não precisa temer os menores da mesma forma. O temor de Deus é o antídoto para o medo humano." },
+   
+     { apiId:"PSA.86.11",         theme:"Temor de Deus", ref:"Salmos 86:11",
+       ctx:"Davi ora: une o meu coração ao temor do Teu nome. Um coração dividido entre Deus e outros senhores não tem paz nem direção. O temor do nome de Deus é o princípio unificador — quando Deus é o centro, toda a vida encontra coerência. Essa é a oração de quem quer parar de viver fragmentado." },
+   
+     { apiId:"HEB.12.28-HEB.12.29", theme:"Temor de Deus", ref:"Hebreus 12:28-29",
+       ctx:"Recebendo um reino que não pode ser abalado, sirvamos a Deus agradavelmente, com reverência e piedoso temor, porque o nosso Deus é um fogo consumidor. Graça e temor não são opostos — são complementos. A graça que salva dirige a um Deus que ainda é fogo consumidor. O temor cristão é reverência de filho — não terror de escravo." },
+   
+     { apiId:"LEV.19.14",         theme:"Temor de Deus", ref:"Levítico 19:14",
+       ctx:"Não amaldiçoarás ao surdo, nem porás tropeço diante do cego — mas temerás ao teu Deus. Deus é a testemunha que o surdo não ouve e o cego não vê. O temor de Deus preenche a lacuna onde a supervisão humana não alcança. Você age corretamente com o vulnerável não porque alguém está vendo — porque Deus está." },
+   
+     { apiId:"PRO.14.26-PRO.14.27", theme:"Temor de Deus", ref:"Provérbios 14:26-27",
+       ctx:"No temor do Senhor há forte confiança, e ele será refúgio para os seus filhos. O temor do Senhor é fonte de vida. O temor de Deus não apenas protege você — protege seus filhos. E é fonte de vida — como nascente em terra árida, que sustenta tudo ao redor. Quem tem o temor de Deus tem uma fonte que não seca." },
+   
+     /* ── 29. ETERNIDADE (12) ── */
+     { apiId:"JHN.3.16",          theme:"Eternidade", ref:"João 3:16",
+       ctx:"Deus amou o mundo de tal maneira que deu o Seu Filho, para que todo aquele que n'Ele crê não pereça, mas tenha a vida eterna. A vida eterna não é apenas duração infinita — é uma qualidade de vida que pertence ao mundo de Deus. Ela começa quando você crê, não quando você morre. A eternidade entra na sua vida agora." },
+   
+     { apiId:"ROM.8.38-ROM.8.39", theme:"Eternidade", ref:"Romanos 8:38-39",
+       ctx:"Paulo lista tudo que poderia separar o crente do amor de Deus — e conclui: nada. Nem morte, nem vida, nem poder algum em toda a criação. A relação com Deus que começa aqui não termina em nenhum ponto do futuro. A eternidade do amor de Deus é a base de toda esperança eterna." },
+   
+     { apiId:"REV.22.20",         theme:"Eternidade", ref:"Apocalipse 22:20",
+       ctx:"Últimas palavras de Jesus na Bíblia: certamente, venho em breve. E a resposta da Igreja: Amém, vem, Senhor Jesus. A eternidade não é destino vago no futuro — é um encontro aguardado com uma Pessoa. Toda a história caminha para esse momento. O crente vive com essa expectativa ativa, não apenas passiva." },
+   
+     { apiId:"PSA.90.2",          theme:"Eternidade", ref:"Salmos 90:2",
+       ctx:"Antes que os montes nascessem, de eternidade a eternidade, Tu és Deus. Moisés contempla a eternidade de Deus contra a brevidade da vida humana. Deus não entrou no tempo — o tempo entrou em Deus. Ele existia antes de tudo e existirá além de tudo. Sua permanência é o fundamento mais seguro que existe." },
+   
+     { apiId:"MAT.25.46",         theme:"Eternidade", ref:"Mateus 25:46",
+       ctx:"Jesus usa a mesma palavra — eterno — para descrever tanto o castigo quanto a vida dos justos. A eternidade é real dos dois lados. Isso dá peso às escolhas presentes. A vida que você vive hoje tem consequências que vão muito além do tempo que você tem aqui. A eternidade começa na escolha que você faz agora." },
+   
+     { apiId:"2CO.4.18",          theme:"Eternidade", ref:"2 Coríntios 4:18",
+       ctx:"As coisas que se veem são temporais; as que não se veem são eternas. Paulo convida a um reajuste de foco: olhe para o que não muda. Não negar o que é visível — mas não deixar o temporário ser mais pesado do que o eterno. A sabedoria da eternidade muda o que você prioriza hoje." },
+   
+     { apiId:"1JN.2.17",          theme:"Eternidade", ref:"1 João 2:17",
+       ctx:"O mundo passa, e a sua concupiscência; mas aquele que faz a vontade de Deus permanece para sempre. Tudo o que o mundo oferece tem prazo de validade. A vontade de Deus não tem. Quem constrói a vida sobre o que Deus quer está construindo sobre o único fundamento que não será demolido." },
+   
+     { apiId:"HEB.13.8",          theme:"Eternidade", ref:"Hebreus 13:8",
+       ctx:"Jesus Cristo é o mesmo ontem, e hoje, e eternamente. O escritor diz isso no contexto de líderes que morreram — a mudança é real. Mas Jesus não muda. Em um mundo de instabilidade total, Ele é o ponto fixo. A sua fé não está depositada numa instituição que pode falhar ou numa pessoa que pode mudar. Está em Quem é eterno." },
+   
+     { apiId:"PSA.103.17",        theme:"Eternidade", ref:"Salmos 103:17",
+       ctx:"A misericórdia do Senhor é desde a eternidade até a eternidade para com os que O temem. O amor fiel de Deus existia antes de você e existirá depois. Não é sentimento oscilante — tem dimensão eterna e cobertura geracional. A misericórdia que recebeu hoje é a mesma que o fará chegar ao destino eterno." },
+   
+     { apiId:"ISA.57.15",         theme:"Eternidade", ref:"Isaías 57:15",
+       ctx:"O Alto e o Sublime que habita a eternidade — Ele também habita com o contrito e abatido de espírito. O paradoxo mais surpreendente: Deus infinito e eterno se aproxima especificamente do que é pequeno e quebrado. Sua grandeza não O afasta de você — ela faz com que Ele possa se aproximar sem ser destruidor." },
+   
+     { apiId:"JHN.17.3",          theme:"Eternidade", ref:"João 17:3",
+       ctx:"A vida eterna é esta: que te conheçam a Ti, o único Deus verdadeiro, e a Jesus Cristo, a quem enviaste. Jesus define a vida eterna não como lugar — como relacionamento. Conhecer Deus. Não conhecer sobre Ele — conhecer a Ele. A eternidade é esse relacionamento crescendo sem limite por tempo infinito." },
+   
+     { apiId:"ECC.3.11",          theme:"Eternidade", ref:"Eclesiastes 3:11",
+       ctx:"Deus pôs a eternidade no coração do homem. Por isso nenhum prazer finito satisfaz completamente. Há uma inquietação que não vai embora enquanto você não está em Deus — porque você foi feito para algo que transcende o tempo. A saudade do eterno que você sente é evidência de que foi criado para mais do que isso aqui." },
+   
+     /* ── 30. MISERICÓRDIA (12) ── */
+     { apiId:"PSA.103.8",         theme:"Misericórdia", ref:"Salmos 103:8",
+       ctx:"O Senhor é misericordioso e piedoso, longânimo e grande em benignidade. Esse é o credo mais antigo sobre o caráter de Deus — pronunciado por Ele mesmo a Moisés no Sinai. 'Lento para a ira' — ao contrário da impaciência humana. A misericórdia não é exceção ao caráter de Deus. É o centro d'Ele." },
+   
+     { apiId:"LAM.3.22-LAM.3.23", theme:"Misericórdia", ref:"Lamentações 3:22-23",
+       ctx:"Do livro mais trágico do Antigo Testamento vem uma das promessas mais poderosas: as misericórdias do Senhor se renovam a cada manhã. O escritor está entre as ruínas de Jerusalém. E mesmo aí ele encontra razão para esperança. A misericórdia de Deus não é capital finito que se esgota. Cada manhã é recomeço garantido." },
+   
+     { apiId:"MAT.5.7",           theme:"Misericórdia", ref:"Mateus 5:7",
+       ctx:"Bem-aventurados os misericordiosos, porque eles alcançarão misericórdia. A misericórdia cria um ciclo: quem a pratica recebe mais. Não como transação — como princípio do reino. Quando você escolhe misericórdia onde poderia escolher julgamento, você está sintonizando sua vida com o coração de Deus." },
+   
+     { apiId:"TIT.3.5",           theme:"Misericórdia", ref:"Tito 3:5",
+       ctx:"Deus nos salvou não pelas obras de justiça que fizemos, mas segundo a Sua misericórdia. A salvação não é calculada pelo que você fez — é medida pela generosidade de Deus. A misericórdia precede e supera toda contabilidade moral. Isso não é permissão para o pecado — é motivação para a gratidão." },
+   
+     { apiId:"LUK.10.37",         theme:"Misericórdia", ref:"Lucas 10:37",
+       ctx:"Na parábola do bom samaritano, Jesus pergunta: quem foi próximo? E a resposta é: o que usou de misericórdia. E então: vai e faz o mesmo. A misericórdia cristã não é sentimento — é ação. Não é compaixão à distância — é ir, parar, cuidar. Jesus usa o verbo mais prático do Evangelho: vai e faz." },
+   
+     { apiId:"MIC.6.8",           theme:"Misericórdia", ref:"Miqueias 6:8",
+       ctx:"Deus pede três coisas: praticar a justiça, amar a misericórdia e andar humildemente. 'Amar a misericórdia' — não apenas praticá-la por obrigação, mas amá-la. Quando você ama a misericórdia, não precisa ser lembrado de praticá-la. Ela vira instinto de quem foi transformado pelo amor de Deus." },
+   
+     { apiId:"EXO.34.6-EXO.34.7", theme:"Misericórdia", ref:"Êxodo 34:6-7",
+       ctx:"Deus se revela a Moisés após o pecado do bezerro de ouro — o pior momento da história de Israel. E o que Ele revela? Que é compassivo, piedoso, longânimo, grande em misericórdia e fidelidade. No momento de máxima ruptura, Deus aparece com Sua identidade mais fundamental: misericórdia. Esse credo é repetido mais de 20 vezes no Antigo Testamento." },
+   
+     { apiId:"EPH.2.4-EPH.2.5",   theme:"Misericórdia", ref:"Efésios 2:4-5",
+       ctx:"Mas Deus, sendo rico em misericórdia, pelo Seu grande amor com que nos amou, mesmo quando estávamos mortos em nossas transgressões, nos deu vida juntamente com Cristo. A misericórdia age no pior momento — não quando você melhorou, não quando fez por merecer. Ela age quando você está morto. Isso é misericórdia." },
+   
+     { apiId:"HEB.4.16",          theme:"Misericórdia", ref:"Hebreus 4:16",
+       ctx:"Cheguemos com confiança ao trono da graça, para que misericórdia e graça nos sejam dadas como socorro na hora oportuna. Misericórdia e graça estão disponíveis no trono de Deus — não racionadas, não condicionadas ao merecimento. E na hora certa, não tardia. Aproxime-se. Com confiança, não com medo." },
+   
+     { apiId:"PSA.136.1",         theme:"Misericórdia", ref:"Salmos 136:1",
+       ctx:"Louvai ao Senhor, porque Ele é bom — porque a Sua misericórdia dura para sempre. Essa resposta — a Sua misericórdia dura para sempre — é repetida 26 vezes no mesmo salmo. Não é repetição vazia. É fixação deliberada. Quando essa verdade entra fundo, ela muda como você enfrenta qualquer situação." },
+   
+     { apiId:"PSA.23.6",          theme:"Misericórdia", ref:"Salmos 23:6",
+       ctx:"Bondade e misericórdia me seguirão todos os dias da minha vida. 'Seguirão' no hebraico é um verbo de perseguição — como um predador rastreando uma presa. A misericórdia de Deus não segue passivamente à distância — ela persegue, rastreia, não desiste. A misericórdia de Deus é agressivamente proativa na sua vida." },
+   
+     { apiId:"ROM.9.15",          theme:"Misericórdia", ref:"Romanos 9:15",
+       ctx:"Deus diz: terei misericórdia de quem Me aprazer. A misericórdia é ato livre de Deus — não coagido por mérito, não forçado por demanda. Ela flui do caráter d'Ele, não do desempenho do crente. Isso não é arbitrariedade — é garantia de que a misericórdia de Deus é inesgotável, porque não depende de você." },
+   ];
+   /* ──────────────────────────────────────────────────────────
+   ESTADO DA APLICAÇÃO
+   ──────────────────────────────────────────────────────────*/
+let currentTheme   = "Todos";
+let currentVersion = "41a6caa722a21d88-01";
+let pool           = [...verses];
+let idx            = 0;
+let isLoading      = false;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    populateThemes();
-    loadDark();
+/* ──────────────────────────────────────────────────────────
+   INICIALIZAÇÃO
+   ──────────────────────────────────────────────────────────*/
+document.addEventListener("DOMContentLoaded", () => {
+  populateThemes();
+  populateVersions();
+  loadDark();
+  applyFilter();
+
+  document.getElementById("themeFilter").addEventListener("change", (e) => {
+    currentTheme = e.target.value;
     applyFilter();
-    
-    document.getElementById('themeFilter').addEventListener('change', (e) => {
-      currentTheme = e.target.value;
-      applyFilter();
-    });
   });
 
-  function populateThemes() {
-    const select = document.getElementById('themeFilter');
-    const uniqueThemes = [...new Set(verses.map(v => v.theme))];
-    uniqueThemes.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t;
-      opt.textContent = t;
-      select.appendChild(opt);
-    });
-  }
-
-  function applyFilter() {
-    if (currentTheme === "Todos") {
-      pool = [...verses];
-    } else {
-      pool = verses.filter(v => v.theme === currentTheme);
-    }
-    idx = 0;
-    if(pool.length > 0) {
-      show(pool[idx]);
-    }
-    updateNav();
-  }
-
-  /* ── Renderização Avançada ── */
-  function show(item) {
-    if (!item) return;
-    document.getElementById('verseRef').textContent = item.ref;
-    document.getElementById('verseTheme').textContent = item.theme;
-    document.getElementById('verseText').textContent = item.text;
-    document.getElementById('verseCtx').textContent = item.ctx || "Reflexão analítica estruturada para guia diário.";
-    
-    // Calcula o dia real de acordo com a posição imutável no ano (1 a 365)
-    const realDay = verses.findIndex(v => v.ref === item.ref) + 1;
-    document.getElementById('dayNum').textContent = realDay;
-  }
-
-  function updateNav() {
-    if(pool.length === 0) return;
-    document.getElementById('navIndex').textContent = `${idx + 1} / ${pool.length}`;
-    
-    // Atualiza a barra de preenchimento linear
-    const pct = ((idx + 1) / pool.length) * 100;
-    document.getElementById('progressFill').style.width = `${pct}%`;
-  }
-
-  function go(dir) {
-    if (pool.length === 0) return;
-    idx += dir;
-    if (idx < 0) idx = pool.length - 1;
-    if (idx >= pool.length) idx = 0;
+  document.getElementById("versionSelect").addEventListener("change", (e) => {
+    currentVersion = e.target.value;
     show(pool[idx]);
-    updateNav();
+  });
+});
+
+/* ──────────────────────────────────────────────────────────
+   POPULAR SELETORES
+   ──────────────────────────────────────────────────────────*/
+function populateThemes() {
+  const sel   = document.getElementById("themeFilter");
+  const temas = [...new Set(verses.map(v => v.theme))];
+  temas.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    sel.appendChild(opt);
+  });
+}
+
+function populateVersions() {
+  const sel = document.getElementById("versionSelect");
+  BIBLE_VERSIONS.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v.id;
+    opt.textContent = v.name;
+    sel.appendChild(opt);
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
+   FILTRO E NAVEGAÇÃO
+   ──────────────────────────────────────────────────────────*/
+function applyFilter() {
+  pool = currentTheme === "Todos"
+    ? [...verses]
+    : verses.filter(v => v.theme === currentTheme);
+  idx = 0;
+  if (pool.length > 0) show(pool[idx]);
+  updateNav();
+}
+
+function go(dir) {
+  if (pool.length === 0) return;
+  idx += dir;
+  if (idx < 0)            idx = pool.length - 1;
+  if (idx >= pool.length) idx = 0;
+  show(pool[idx]);
+  updateNav();
+}
+
+function goRandom() {
+  if (pool.length <= 1) return;
+  let newIdx;
+  do { newIdx = Math.floor(Math.random() * pool.length); }
+  while (newIdx === idx);
+  idx = newIdx;
+  show(pool[idx]);
+  updateNav();
+}
+
+/* ──────────────────────────────────────────────────────────
+   BUSCAR VERSÍCULO NA API.BIBLE
+   ──────────────────────────────────────────────────────────*/
+async function fetchVerse(apiId, bibleId) {
+  const isPassage = apiId.includes("-");
+  const path = isPassage ? `passages/${apiId}` : `verses/${apiId}`;
+
+  const res = await fetch(
+    `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${bibleId}/${path}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false`
+  );
+
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const json = await res.json();
+  return (json.data?.content ?? "").trim();
+}
+
+/* ──────────────────────────────────────────────────────────
+   EXIBIR VERSÍCULO
+   ──────────────────────────────────────────────────────────*/
+async function show(item) {
+  if (!item || isLoading) return;
+  isLoading = true;
+
+  const textEl = document.getElementById("verseText");
+  textEl.classList.add("loading");
+  textEl.textContent = "Carregando...";
+
+  document.getElementById("verseRef").textContent   = item.ref;
+  document.getElementById("verseTheme").textContent = item.theme;
+  document.getElementById("verseCtx").textContent   = item.ctx;
+
+  const realDay = verses.findIndex(v => v.apiId === item.apiId && v.theme === item.theme) + 1;
+  document.getElementById("dayNum").textContent = realDay;
+
+  try {
+    const text = await fetchVerse(item.apiId, currentVersion);
+    textEl.textContent = text;
+  } catch (err) {
+    console.error("Erro ao buscar versículo:", err);
+    textEl.textContent = "Não foi possível carregar o versículo.";
+  } finally {
+    textEl.classList.remove("loading");
+    isLoading = false;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   NAVEGAÇÃO: BARRA DE PROGRESSO
+   ──────────────────────────────────────────────────────────*/
+function updateNav() {
+  if (pool.length === 0) return;
+  document.getElementById("navIndex").textContent = `${idx + 1} / ${pool.length}`;
+  const pct = ((idx + 1) / pool.length) * 100;
+  document.getElementById("progressFill").style.width = `${pct}%`;
+}
+
+/* ──────────────────────────────────────────────────────────
+   COPIAR VERSÍCULO
+   ──────────────────────────────────────────────────────────*/
+function copyToClipboard() {
+  const txt       = document.getElementById("verseText").textContent;
+  const ref       = document.getElementById("verseRef").textContent;
+  const formatted = `"${txt}" - ${ref}`;
+
+  navigator.clipboard.writeText(formatted).then(() => {
+    const btn    = document.querySelector(".copy-btn");
+    const status = document.getElementById("copyStatus");
+    btn.classList.add("success");
+    status.textContent = "Copiado!";
+    setTimeout(() => {
+      btn.classList.remove("success");
+      status.textContent = "Copiar";
+    }, 1800);
+  }).catch(err => console.error("Erro ao copiar:", err));
+}
+
+/* ──────────────────────────────────────────────────────────
+   MODO ESCURO / CLARO
+   ──────────────────────────────────────────────────────────*/
+function toggleDark() {
+  document.body.classList.toggle("light");
+  const isLight = document.body.classList.contains("light");
+  document.getElementById("modeIcon").textContent = isLight ? "☀" : "☽";
+  localStorage.setItem("devocional-mode", isLight ? "light" : "dark");
+}
+
+function loadDark() {
+  const saved = localStorage.getItem("devocional-mode");
+  if (saved === "light") {
+    document.body.classList.add("light");
+    document.getElementById("modeIcon").textContent = "☀";
+  } else {
+    document.body.classList.remove("light");
+    document.getElementById("modeIcon").textContent = "☽";
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   MODAL — LER CAPÍTULO COMPLETO (contexto do versículo)
+   ──────────────────────────────────────────────────────────*/
+let contextBook      = "JHN";
+let contextChapter   = 3;
+let contextHighVerse = null;
+
+async function openContextModal() {
+  const item = pool[idx];
+  if (!item) return;
+
+  const baseId = item.apiId.includes("-") ? item.apiId.split("-")[0] : item.apiId;
+  const parts  = baseId.split(".");
+
+  contextBook      = parts[0];
+  contextChapter   = parseInt(parts[1]) || 1;
+  contextHighVerse = baseId;
+
+  document.getElementById("contextModal").classList.add("open");
+  await loadContextChapter();
+}
+
+async function loadContextChapter() {
+  const chapterId = `${contextBook}.${contextChapter}`;
+  const body      = document.getElementById("contextBody");
+  const title     = document.getElementById("contextTitle");
+
+  title.textContent = `Capítulo ${contextChapter}`;
+  document.getElementById("contextChapterLabel").textContent = `Cap. ${contextChapter}`;
+  document.getElementById("contextPrev").disabled = contextChapter <= 1;
+  document.getElementById("contextNext").disabled = true;
+
+  body.innerHTML = `<div class="modal-loading">Carregando capítulo...</div>`;
+
+  try {
+    const url = `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chapterId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+
+    document.getElementById("contextNext").disabled = !json.data.next;
+    renderChapter(json.data, contextHighVerse, body);
+  } catch(e) {
+    body.innerHTML = `<p class="modal-error">Não foi possível carregar o capítulo.</p>`;
+  }
+}
+
+function contextGo(dir) {
+  contextChapter += dir;
+  if (contextChapter < 1) contextChapter = 1;
+  contextHighVerse = null;
+  loadContextChapter();
+}
+
+function closeContextModal() {
+  document.getElementById("contextModal").classList.remove("open");
+}
+
+/* ──────────────────────────────────────────────────────────
+   RENDER CAPÍTULO
+   ──────────────────────────────────────────────────────────*/
+function renderChapter(chapterData, highlightId, container) {
+  const items    = chapterData.content || [];
+  const verseMap = {};
+
+  function flatText(nodes) {
+    if (!nodes) return "";
+    if (typeof nodes === "string") return nodes;
+    return nodes.map(n => {
+      if (typeof n === "string") return n;
+      if (n.type === "text" && n.text) return n.text;
+      if (n.items) return flatText(n.items);
+      return "";
+    }).join("");
   }
 
-  function goRandom() {
-    if (pool.length <= 1) return;
-    let newIdx;
-    do {
-      newIdx = Math.floor(Math.random() * pool.length);
-    } while (newIdx === idx);
-    
-    idx = newIdx;
-    show(pool[idx]);
-    updateNav();
-  }
-
-  /* ── SISTEMA DE CÓPIA INTELIGENTE (FORMATO ESPECÍFICO) ── */
-  function copyToClipboard() {
-    const txt = document.getElementById('verseText').textContent;
-    const ref = document.getElementById('verseRef').textContent;
-    
-    // String gerada rigorosamente no formato: "Texto." - Referência
-    const formattedText = `"${txt}" - ${ref}`;
-    
-    navigator.clipboard.writeText(formattedText).then(() => {
-      const btn = document.querySelector('.copy-btn');
-      const status = document.getElementById('copyStatus');
-      
-      btn.classList.add('success');
-      status.textContent = 'Copiado!';
-      
-      setTimeout(() => {
-        btn.classList.remove('success');
-        status.textContent = 'Copiar';
-      }, 1800);
-    }).catch(err => {
-      console.error('Falha ao interagir com o clipboard: ', err);
-    });
-  }
-
-  /* ── Dark Mode Limpo e Guardado ── */
-  function toggleDark() {
-    document.body.classList.toggle('light');
-    const isLight = document.body.classList.contains('light');
-    document.getElementById('modeIcon').textContent = isLight ? '☀' : '☽';
-    localStorage.setItem('devocional-mode', isLight ? 'light' : 'dark');
-  }
-
-  function loadDark() {
-    const savedMode = localStorage.getItem('devocional-mode');
-    if (savedMode === 'light') {
-      document.body.classList.add('light');
-      document.getElementById('modeIcon').textContent = '☀';
-    } else {
-      document.body.classList.remove('light');
-      document.getElementById('modeIcon').textContent = '☽';
+  function collectVerses(nodes) {
+    if (!Array.isArray(nodes)) return;
+    for (const node of nodes) {
+      if (node.name === "verse-span" && node.attrs?.verseId) {
+        const vid = node.attrs.verseId;
+        verseMap[vid] = (verseMap[vid] || "") + flatText(node.items);
+      } else if (node.items) {
+        collectVerses(node.items);
+      }
     }
   }
+
+  collectVerses(items);
+
+  const entries = Object.entries(verseMap);
+
+  if (entries.length === 0) {
+    container.innerHTML = `<p style="color:var(--text-secondary);line-height:1.9">${chapterData.content ?? ""}</p>`;
+    return;
+  }
+
+  const html = entries.map(([vid, text]) => {
+    const verseNum    = vid.split(".")[2] || "";
+    const isHighlight = highlightId && vid === highlightId;
+    return `
+      <div class="chapter-verse ${isHighlight ? "verse-highlight" : ""}" data-id="${vid}" data-verse="${verseNum}">
+        <span class="verse-num">${verseNum}</span>
+        <span class="verse-words">${text.trim()}</span>
+      </div>`;
+  }).join("");
+
+  container.innerHTML = `<div class="chapter-verses">${html}</div>`;
+
+  setTimeout(() => {
+    const target = container.querySelector(".verse-highlight") ?? container.querySelector(".chapter-verse");
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 100);
+}
+
+/* ──────────────────────────────────────────────────────────
+   LEITOR DE BÍBLIA LIVRE
+   ──────────────────────────────────────────────────────────*/
+const BOOKS_PT = [
+  ["GEN","Gênesis"],["EXO","Êxodo"],["LEV","Levítico"],["NUM","Números"],["DEU","Deuteronômio"],
+  ["JOS","Josué"],["JDG","Juízes"],["RUT","Rute"],["1SA","1 Samuel"],["2SA","2 Samuel"],
+  ["1KI","1 Reis"],["2KI","2 Reis"],["1CH","1 Crônicas"],["2CH","2 Crônicas"],["EZR","Esdras"],
+  ["NEH","Neemias"],["EST","Ester"],["JOB","Jó"],["PSA","Salmos"],["PRO","Provérbios"],
+  ["ECC","Eclesiastes"],["SNG","Cantares"],["ISA","Isaías"],["JER","Jeremias"],["LAM","Lamentações"],
+  ["EZK","Ezequiel"],["DAN","Daniel"],["HOS","Oséias"],["JOL","Joel"],["AMO","Amós"],
+  ["OBA","Obadias"],["JON","Jonas"],["MIC","Miquéias"],["NAM","Naum"],["HAB","Habacuque"],
+  ["ZEP","Sofonias"],["HAG","Ageu"],["ZEC","Zacarias"],["MAL","Malaquias"],
+  ["MAT","Mateus"],["MRK","Marcos"],["LUK","Lucas"],["JHN","João"],["ACT","Atos"],
+  ["ROM","Romanos"],["1CO","1 Coríntios"],["2CO","2 Coríntios"],["GAL","Gálatas"],
+  ["EPH","Efésios"],["PHP","Filipenses"],["COL","Colossenses"],["1TH","1 Tessalonicenses"],
+  ["2TH","2 Tessalonicenses"],["1TI","1 Timóteo"],["2TI","2 Timóteo"],["TIT","Tito"],
+  ["PHM","Filemom"],["HEB","Hebreus"],["JAS","Tiago"],["1PE","1 Pedro"],["2PE","2 Pedro"],
+  ["1JN","1 João"],["2JN","2 João"],["3JN","3 João"],["JUD","Judas"],["REV","Apocalipse"]
+];
+
+const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL"];
+const NT_BOOKS = ["MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
+
+let readerBook       = "JHN";
+let readerChapter    = 1;
+let readerVerse      = null;
+let selectorChapters = [];
+let selectorVerses   = [];
+
+function openBibleReader() {
+  const item = pool[idx];
+  if (item) {
+    const base = item.apiId.includes("-") ? item.apiId.split("-")[0] : item.apiId;
+    const p    = base.split(".");
+    readerBook    = p[0];
+    readerChapter = parseInt(p[1]) || 1;
+    readerVerse   = base;
+  }
+
+  document.getElementById("bibleModal").classList.add("open");
+  renderBookPanel();
+}
+
+function closeBibleReader() {
+  document.getElementById("bibleModal").classList.remove("open");
+}
+
+/* ── Painel: Livros ── */
+function renderBookPanel() {
+  const body = document.getElementById("readerBody");
+  const refBtn = document.getElementById("readerRefBtn");
+  if (refBtn) refBtn.style.display = "none";
+
+  const bookGrid = (ids, label) => {
+    const items = ids.map(id => {
+      const name   = BOOKS_PT.find(b => b[0] === id)?.[1] ?? id;
+      const active = id === readerBook ? "panel-btn--active" : "";
+      return `<button class="panel-btn ${active}" onclick="selectBook('${id}')">${name}</button>`;
+    }).join("");
+    return `
+      <div class="panel-section">
+        <span class="panel-testament-label">${label}</span>
+        <div class="panel-grid panel-grid--books">${items}</div>
+      </div>`;
+  };
+
+  body.innerHTML = `
+    <div class="reader-panel">
+      <div class="panel-breadcrumb">
+        <span class="panel-crumb panel-crumb--active">Livro</span>
+        <span class="panel-crumb-sep">›</span>
+        <span class="panel-crumb">Capítulo</span>
+        <span class="panel-crumb-sep">›</span>
+        <span class="panel-crumb">Versículo</span>
+      </div>
+      ${bookGrid(OT_BOOKS, "Antigo Testamento")}
+      ${bookGrid(NT_BOOKS, "Novo Testamento")}
+    </div>
+  `;
+}
+
+/* ── Seleciona livro → busca capítulos ── */
+async function selectBook(bookId) {
+  readerBook    = bookId;
+  readerChapter = 1;
+  readerVerse   = null;
+
+  const body = document.getElementById("readerBody");
+  body.innerHTML = `<div class="modal-loading">Carregando capítulos...</div>`;
+
+  try {
+    const res = await fetch(
+      `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/books/${bookId}/chapters`
+    );
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+    selectorChapters = (json.data || []).filter(c => c.number !== "intro");
+    renderChapterPanel();
+  } catch(e) {
+    body.innerHTML = `<p class="modal-error">Erro ao carregar capítulos.</p>`;
+  }
+}
+
+/* ── Painel: Capítulos ── */
+function renderChapterPanel() {
+  const body     = document.getElementById("readerBody");
+  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
+
+  const items = selectorChapters.map(c => {
+    const active = parseInt(c.number) === readerChapter ? "panel-btn--active" : "";
+    return `<button class="panel-btn panel-btn--num ${active}" onclick="selectChapter(${c.number})">${c.number}</button>`;
+  }).join("");
+
+  body.innerHTML = `
+    <div class="reader-panel">
+      <div class="panel-breadcrumb">
+        <button class="panel-crumb panel-crumb--link" onclick="renderBookPanel()">Livro</button>
+        <span class="panel-crumb-sep">›</span>
+        <span class="panel-crumb panel-crumb--active">${bookName}</span>
+        <span class="panel-crumb-sep">›</span>
+        <span class="panel-crumb">Capítulo</span>
+      </div>
+      <div class="panel-section">
+        <span class="panel-section-label">Capítulo</span>
+        <div class="panel-grid panel-grid--nums">${items}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ── Seleciona capítulo → busca versículos ── */
+async function selectChapter(num) {
+  readerChapter = parseInt(num);
+
+  const body = document.getElementById("readerBody");
+  body.innerHTML = `<div class="modal-loading">Carregando versículos...</div>`;
+
+  try {
+    const chId = `${readerBook}.${readerChapter}`;
+    const res  = await fetch(
+      `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}/verses`
+    );
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+    selectorVerses = (json.data || [])
+      .filter(v => v.id && !v.id.endsWith(".intro"))
+      .map(v => ({ ...v, number: v.number ?? v.id.split(".")[2] }));
+    renderVersePanel();
+  } catch(e) {
+    body.innerHTML = `<p class="modal-error">Erro ao carregar versículos.</p>`;
+  }
+}
+
+/* ── Painel: Versículos ── */
+function renderVersePanel() {
+  const body     = document.getElementById("readerBody");
+  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
+
+  const items = selectorVerses.map(v =>
+    `<button class="panel-btn panel-btn--num" onclick="selectVerse('${v.number}')">${v.number}</button>`
+  ).join("");
+
+  body.innerHTML = `
+    <div class="reader-panel">
+      <div class="panel-breadcrumb">
+        <button class="panel-crumb panel-crumb--link" onclick="renderBookPanel()">Livro</button>
+        <span class="panel-crumb-sep">›</span>
+        <button class="panel-crumb panel-crumb--link" onclick="renderChapterPanel()">${bookName}</button>
+        <span class="panel-crumb-sep">›</span>
+        <span class="panel-crumb panel-crumb--active">Cap. ${readerChapter}</span>
+      </div>
+      <div class="panel-section">
+        <span class="panel-section-label">
+          Versículo — ou <button class="panel-link" onclick="selectVerse(null)">abrir do início</button>
+        </span>
+        <div class="panel-grid panel-grid--nums">${items}</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ── Atualiza o label de referência no header do modal ── */
+function updateReaderRefLabel() {
+  const el = document.getElementById("readerRefLabel");
+  if (!el) return;
+  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
+  const verseNum = readerVerse ? readerVerse.split(".")[2] : null;
+  el.textContent = verseNum
+    ? `${bookName} ${readerChapter}:${verseNum}`
+    : `${bookName} ${readerChapter}`;
+}
+
+/* ── Seleciona versículo → abre leitura ── */
+function selectVerse(num) {
+  readerVerse = num ? `${readerBook}.${readerChapter}.${num}` : null;
+  loadReaderChapter();
+}
+
+/* ── Carrega e renderiza capítulo ── */
+async function loadReaderChapter() {
+  const body = document.getElementById("readerBody");
+  const chId = `${readerBook}.${readerChapter}`;
+
+  updateReaderRefLabel();
+  const refBtn = document.getElementById("readerRefBtn");
+  if (refBtn) refBtn.style.display = "flex";
+  body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
+
+  try {
+    const res = await fetch(
+      `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`
+    );
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+
+    renderChapter(json.data, readerVerse ?? "", body);
+  } catch(e) {
+    body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique a chave da API.</p>`;
+  }
+}
+
+/* ── Navegar capítulos após leitura aberta ── */
+function readerGo(dir) {
+  readerChapter += dir;
+  if (readerChapter < 1) readerChapter = 1;
+  readerVerse = null;
+  loadReaderChapter();
+}
+
+/* ── Troca livro pelo select do header ── */
+function readerBookChanged() {
+  readerBook    = document.getElementById("readerBookSelect").value;
+  readerChapter = 1;
+  readerVerse   = null;
+  selectBook(readerBook);
+}
+
+/* ── Popula select do header (mantido para compatibilidade) ── */
+function populateBookSelect() {
+  const sel = document.getElementById("readerBookSelect");
+  if (!sel) return;
+  sel.innerHTML = "";
+  BOOKS_PT.forEach(([id, name]) => {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = name;
+    if (id === readerBook) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
