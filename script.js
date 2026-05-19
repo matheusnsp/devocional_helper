@@ -5,6 +5,11 @@
    ──────────────────────────────────────────────────────────*/
    const BIBLE_API_KEY = ""; // não precisa mais
 
+/* ── Remove aspas tipográficas da API ── */
+function stripQuotes(text) {
+  return text.replace(/[“”„‟‘’]/g, "");
+}
+
 /* ──────────────────────────────────────────────────────────
    CACHE LOCAL (localStorage)
    Evita chamadas repetidas à API — limite de 5k/mês
@@ -1299,7 +1304,7 @@ async function show(item) {
 
   try {
     const text = await fetchVerse(item.apiId, currentVersion);
-    textEl.textContent = text;
+    textEl.textContent = stripQuotes(text);
   } catch (err) {
     console.error("Erro ao buscar versículo:", err);
     textEl.textContent = "Não foi possível carregar o versículo.";
@@ -1461,7 +1466,7 @@ function renderChapter(chapterData, highlightId, container) {
     return `
       <div class="chapter-verse ${isHighlight ? "verse-highlight" : ""}" data-id="${vid}" data-verse="${verseNum}">
         <span class="verse-num">${verseNum}</span>
-        <span class="verse-words">${text.trim()}</span>
+        <span class="verse-words">${stripQuotes(text.trim().replace(/^\d+\s*/, ""))}</span>
       </div>`;
   }).join("");
 
