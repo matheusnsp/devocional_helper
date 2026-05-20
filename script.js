@@ -1,9 +1,7 @@
 /* ──────────────────────────────────────────────────────────
-   CONFIGURAÇÃO DA API.BIBLE
-   Cadastre-se gratuitamente em https://scripture.api.bible
-   e substitua pela sua chave abaixo.
+   YOUVERSION API — proxy via Vercel (/api/bible)
+   A App Key fica segura como variável de ambiente no Vercel.
    ──────────────────────────────────────────────────────────*/
-   const BIBLE_API_KEY = ""; // não precisa mais
 
 /* ── Remove aspas tipográficas da API ── */
 function capitalizeFirst(text) {
@@ -13,16 +11,16 @@ function capitalizeFirst(text) {
 }
 
 function stripQuotes(text) {
-  return text.replace(/[“”„‟‘’]/g, "");
+  return text.replace(/[""„‟'']/g, "");
 }
 
 /* ──────────────────────────────────────────────────────────
    CACHE LOCAL (localStorage)
-   Evita chamadas repetidas à API — limite de 5k/mês
+   Evita chamadas repetidas à API
    Chave: URL completa da requisição
    TTL: 30 dias (em ms)
    ──────────────────────────────────────────────────────────*/
-const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 dias
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 const CACHE_PREFIX = "bibleCache:";
 
 function cacheGet(url) {
@@ -42,7 +40,6 @@ function cacheSet(url, data) {
   try {
     localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ ts: Date.now(), data }));
   } catch (e) {
-    // localStorage cheio — limpa entradas antigas e tenta de novo
     clearOldCache();
     try { localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ ts: Date.now(), data })); } catch {}
   }
@@ -50,37 +47,42 @@ function cacheSet(url, data) {
 
 function clearOldCache() {
   const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
-  // Remove os 20% mais antigos
   const entries = keys.map(k => {
     try { return { k, ts: JSON.parse(localStorage.getItem(k)).ts }; } catch { return { k, ts: 0 }; }
   }).sort((a, b) => a.ts - b.ts);
   entries.slice(0, Math.max(1, Math.floor(entries.length * 0.2))).forEach(e => localStorage.removeItem(e.k));
 }
 
+/* cachedFetch — redireciona para o proxy Vercel (/api/bible)
+   que mantém a App Key segura no servidor */
+function toProxyUrl(originalUrl) {
+  // Extrai o path e query da URL da YouVersion
+  // ex: https://api.youversion.com/v1/bibles/212/passages/JHN.3.16?format=text
+  //  → /api/bible?path=/v1/bibles/212/passages/JHN.3.16&format=text
+  const u = new URL(originalUrl);
+  const params = new URLSearchParams(u.searchParams);
+  params.set("path", u.pathname);
+  return `/api/bible?${params.toString()}`;
+}
+
 async function cachedFetch(url) {
-  const cached = cacheGet(url);
+  const proxyUrl = toProxyUrl(url);
+  const cached = cacheGet(proxyUrl);
   if (cached) return cached;
-  const res = await fetch(url);
+  const res = await fetch(proxyUrl);
   if (!res.ok) throw new Error(res.status);
   const json = await res.json();
-  cacheSet(url, json);
+  cacheSet(proxyUrl, json);
   return json;
 }
 
+/* IDs de versões disponíveis na YouVersion API */
+const BIBLE_VERSIONS = [
+  { id: 212,  name: "ARC — Almeida Revista e Corrigida",  lang: "pt" },
+  { id: 1608, name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
+  { id: 1840, name: "NAA — Nova Almeida Atualizada",      lang: "pt" },
+];
 
-   /* IDs de versões disponíveis na API.Bible */
-   const BIBLE_VERSIONS = [
-    { id: "41a6caa722a21d88-01", name: "NVT — Nova Versão Transformadora", lang: "pt" },
-    { id: "78a9f6124f344018-01", name: "NIV — New International Version", lang: "en" },
-  ];
-  
-   
-   /* ──────────────────────────────────────────────────────────
-      MAPEAMENTO DE REFERÊNCIAS → ID DA API.BIBLE
-      Formato: "BOOK.CHAPTER.VERSE"  (padrão USFM da API)
-      Para versículos compostos (ex: Rom 8:38-39), usamos
-      passages endpoint: "ROM.8.38-ROM.8.39"
-      ──────────────────────────────────────────────────────────*/
    const verses = [
    
      /* ── 01. AMOR (12) ── */
@@ -1208,11 +1210,12 @@ async function cachedFetch(url) {
      { apiId:"HEB.9.12",           theme:"Redenção",   ref:"Hebreus 9:12",
        ctx:"O sumo sacerdote entrava no lugar santíssimo uma vez por ano, com sangue alheio — e precisava repetir isso todo ano. Cristo entrou uma única vez, com o Seu próprio sangue, e obteve redenção eterna. Não anual. Não renovável. Não condicional. Eterna. O que os sacrifícios do Antigo Testamento apenas simbolizavam, Cristo cumpriu de uma vez por todas." },
    ];
-   /* ──────────────────────────────────────────────────────────
+
+/* ──────────────────────────────────────────────────────────
    ESTADO DA APLICAÇÃO
    ──────────────────────────────────────────────────────────*/
 let currentTheme   = "Todos";
-let currentVersion = "41a6caa722a21d88-01";
+let currentVersion = 212; // ARC por padrão (ID numérico YouVersion)
 let pool           = [...verses];
 let idx            = 0;
 let isLoading      = false;
@@ -1221,10 +1224,11 @@ let isLoading      = false;
    INICIALIZAÇÃO
    ──────────────────────────────────────────────────────────*/
 document.addEventListener("DOMContentLoaded", () => {
+  loadDark();
   populateThemes();
   populateVersions();
-  loadDark();
   applyFilter(true);
+  updateNav();
 
   document.getElementById("themeFilter").addEventListener("change", (e) => {
     currentTheme = e.target.value;
@@ -1232,7 +1236,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("versionSelect").addEventListener("change", (e) => {
-    currentVersion = e.target.value;
+    currentVersion = parseInt(e.target.value);
     show(pool[idx]);
   });
 });
@@ -1311,16 +1315,21 @@ function goRandom() {
 }
 
 /* ──────────────────────────────────────────────────────────
-   BUSCAR VERSÍCULO NA API.BIBLE
+   BUSCAR VERSÍCULO NA YOUVERSION API
+   Endpoint: GET /v1/bibles/{bible_id}/passages/{passage_id}
+   Retorna: { id, content, reference }
    ──────────────────────────────────────────────────────────*/
 async function fetchVerse(apiId, bibleId) {
-  const isPassage = apiId.includes("-");
-  const path = isPassage ? `passages/${apiId}` : `verses/${apiId}`;
+  /* YouVersion não suporta range com traço no mesmo formato da API.Bible.
+     Para passagens compostas (ex: ROM.8.38-ROM.8.39), usamos o primeiro versículo
+     como âncora e buscamos a passagem concatenada com + */
+  const passageId = apiId.includes("-")
+    ? apiId.replace("-", "+")  // ex: "ROM.8.38+ROM.8.39"
+    : apiId;
 
-  const json = await cachedFetch(
-    `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${bibleId}/${path}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false`
-  );
-  return (json.data?.content ?? "").trim();
+  const url = `https://api.youversion.com/v1/bibles/${bibleId}/passages/${passageId}?format=text`;
+  const json = await cachedFetch(url);
+  return (json.content ?? "").trim();
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -1550,23 +1559,21 @@ async function openContextModal() {
 }
 
 async function loadContextChapter() {
-  const chapterId = `${contextBook}.${contextChapter}`;
-  const body      = document.getElementById("contextBody");
-  const title     = document.getElementById("contextTitle");
+  const body  = document.getElementById("contextBody");
+  const title = document.getElementById("contextTitle");
 
   title.textContent = `Capítulo ${contextChapter}`;
   document.getElementById("contextChapterLabel").textContent = `Cap. ${contextChapter}`;
   document.getElementById("contextPrev").disabled = contextChapter <= 1;
-  document.getElementById("contextNext").disabled = true;
+  document.getElementById("contextNext").disabled = false;
 
   body.innerHTML = `<div class="modal-loading">Carregando capítulo...</div>`;
 
   try {
-    const url = `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chapterId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`;
+    const passageId = `${contextBook}.${contextChapter}`;
+    const url = `https://api.youversion.com/v1/bibles/${currentVersion}/passages/${passageId}?format=html&include_headings=true&include_notes=false`;
     const json = await cachedFetch(url);
-
-    document.getElementById("contextNext").disabled = !json.data.next;
-    renderChapter(json.data, contextHighVerse, body);
+    renderChapterFromHtml(json.content ?? "", contextHighVerse, body);
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Não foi possível carregar o capítulo.</p>`;
   }
@@ -1585,68 +1592,48 @@ function closeContextModal() {
 }
 
 /* ──────────────────────────────────────────────────────────
-   RENDER CAPÍTULO
+   RENDER CAPÍTULO — parser do HTML da YouVersion
+   A API retorna HTML com spans data-usfm para cada versículo
    ──────────────────────────────────────────────────────────*/
-
-/* Estado da seleção de versículos */
 let _selVerseMap   = {};
 let _selVerseOrder = [];
 let _selBookId     = "";
 let _selChapNum    = "";
 let _selectedVids  = new Set();
 
-function renderChapter(chapterData, highlightId, container) {
-  const items    = chapterData.content || [];
-  const verseMap = {};
+function renderChapterFromHtml(htmlContent, highlightId, container) {
+  /* Parse o HTML retornado pela API */
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(`<div id="root">${htmlContent}</div>`, "text/html");
+  const root   = doc.getElementById("root");
 
-  function flatText(nodes) {
-    if (!nodes) return "";
-    if (typeof nodes === "string") return nodes;
-    return nodes.map(n => {
-      if (typeof n === "string") return n;
-      if (n.type === "text" && n.text) return n.text;
-      if (n.items) return flatText(n.items);
-      return "";
-    }).join("");
-  }
+  /* Coleta versículos: a YouVersion usa spans com data-usfm="BOOK.CHAP.VERSE" */
+  const verseEls = root.querySelectorAll("[data-usfm]");
 
-  function collectVerses(nodes) {
-    if (!Array.isArray(nodes)) return;
-    for (const node of nodes) {
-      if (node.name === "verse-span" && node.attrs?.verseId) {
-        const vid = node.attrs.verseId;
-        verseMap[vid] = (verseMap[vid] || "") + flatText(node.items);
-      } else if (node.items) {
-        collectVerses(node.items);
-      }
-    }
-  }
-
-  collectVerses(items);
-
-  const entries = Object.entries(verseMap);
-
-  if (entries.length === 0) {
-    container.innerHTML = `<p style="color:var(--text-secondary);line-height:1.9">${chapterData.content ?? ""}</p>`;
+  /* Fallback: se não tiver data-usfm, exibe o HTML diretamente */
+  if (verseEls.length === 0) {
+    container.innerHTML = `<div class="chapter-verses" style="line-height:1.9">${htmlContent}</div>`;
     return;
   }
 
-  /* Salva mapa global para uso na cópia */
   _selVerseMap   = {};
   _selVerseOrder = [];
   _selectedVids  = new Set();
 
-  /* Salva book/chap — nome resolvido na hora da cópia (BOOKS_PT existe lá) */
-  _selBookId  = entries[0][0].split(".")[0];
-  _selChapNum = entries[0][0].split(".")[1];
+  const firstId = verseEls[0].getAttribute("data-usfm") || "";
+  const parts   = firstId.split(".");
+  _selBookId  = parts[0] || "";
+  _selChapNum = parts[1] || "";
 
-  entries.forEach(([vid, text]) => {
-    const clean = stripQuotes(text.trim().replace(/^\d+\s*/, ""));
-    _selVerseMap[vid]  = clean;
+  verseEls.forEach(el => {
+    const vid  = el.getAttribute("data-usfm");
+    if (!vid) return;
+    const text = stripQuotes((el.textContent || "").trim());
+    _selVerseMap[vid]  = text;
     _selVerseOrder.push(vid);
   });
 
-  const html = entries.map(([vid, text]) => {
+  const html = _selVerseOrder.map(vid => {
     const verseNum    = vid.split(".")[2] || "";
     const isHighlight = highlightId && vid === highlightId;
     const clean       = _selVerseMap[vid];
@@ -1658,8 +1645,6 @@ function renderChapter(chapterData, highlightId, container) {
   }).join("");
 
   container.innerHTML = `<div class="chapter-verses">${html}</div>`;
-
-  /* Garante que a barra de seleção existe no modal correto */
   _ensureSelectionBar(container);
 
   setTimeout(() => {
@@ -1718,19 +1703,13 @@ function _clearVerseSelection(btn) {
 
 function _copyVerseSelection(btn) {
   if (_selectedVids.size === 0) return;
-
-  /* Ordena pelos índices originais do capítulo */
   const ordered = _selVerseOrder.filter(vid => _selectedVids.has(vid));
-
-  /* Monta referência */
   const _bookName = BOOKS_PT.find(b => b[0] === _selBookId)?.[1] ?? _selBookId;
   const _chapRef  = `${_bookName} ${_selChapNum}`;
   const nums = ordered.map(vid => parseInt(vid.split(".")[2]));
   const min  = Math.min(...nums);
   const max  = Math.max(...nums);
   const ref  = min === max ? `${_chapRef}:${min}` : `${_chapRef}:${min}-${max}`;
-
-  /* Monta o texto final */
   const toSup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
   let formatted;
   if (ordered.length === 1) {
@@ -1742,7 +1721,6 @@ function _copyVerseSelection(btn) {
     }).join("\n");
     formatted = `${lines}\n\n${ref}`;
   }
-
   navigator.clipboard.writeText(formatted).then(() => {
     const lbl = btn.querySelector(".verse-sel-copy-label");
     if (lbl) { lbl.textContent = "Copiado!"; setTimeout(() => { lbl.textContent = "Copiar"; }, 1800); }
@@ -1750,6 +1728,7 @@ function _copyVerseSelection(btn) {
     setTimeout(() => btn.classList.remove("verse-sel-btn--success"), 1800);
   }).catch(err => console.error("Erro ao copiar:", err));
 }
+
 
 /* ──────────────────────────────────────────────────────────
    LEITOR DE BÍBLIA LIVRE
@@ -1774,6 +1753,17 @@ const BOOKS_PT = [
 const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL"];
 const NT_BOOKS = ["MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
 
+/* Mapa estático de capítulos por livro (YouVersion não tem endpoint de chapters listing sem auth prévia) */
+const CHAPTER_COUNTS = {
+  GEN:50,EXO:40,LEV:27,NUM:36,DEU:34,JOS:24,JDG:21,RUT:4,"1SA":31,"2SA":24,
+  "1KI":22,"2KI":25,"1CH":29,"2CH":36,EZR:10,NEH:13,EST:10,JOB:42,PSA:150,PRO:31,
+  ECC:12,SNG:8,ISA:66,JER:52,LAM:5,EZK:48,DAN:12,HOS:14,JOL:3,AMO:9,
+  OBA:1,JON:4,MIC:7,NAM:3,HAB:3,ZEP:3,HAG:2,ZEC:14,MAL:4,
+  MAT:28,MRK:16,LUK:24,JHN:21,ACT:28,ROM:16,"1CO":16,"2CO":13,GAL:6,
+  EPH:6,PHP:4,COL:4,"1TH":5,"2TH":3,"1TI":6,"2TI":4,TIT:3,
+  PHM:1,HEB:13,JAS:5,"1PE":5,"2PE":3,"1JN":5,"2JN":1,"3JN":1,JUD:1,REV:22
+};
+
 let readerBook       = "JHN";
 let readerChapter    = 1;
 let readerVerse      = null;
@@ -1789,7 +1779,6 @@ function openBibleReader() {
     readerChapter = parseInt(p[1]) || 1;
     readerVerse   = base;
   }
-
   document.getElementById("bibleModal").classList.add("open");
   renderBookPanel();
 }
@@ -1799,10 +1788,9 @@ function closeBibleReader() {
   _selectedVids.clear();
 }
 
-
 /* ── Painel: Livros ── */
 function renderBookPanel() {
-  const body = document.getElementById("readerBody");
+  const body   = document.getElementById("readerBody");
   const refBtn = document.getElementById("readerRefBtn");
   if (refBtn) refBtn.style.display = "none";
 
@@ -1834,22 +1822,15 @@ function renderBookPanel() {
   `;
 }
 
-/* ── Seleciona livro → busca capítulos ── */
-async function selectBook(bookId) {
+/* ── Seleciona livro → mostra capítulos (sem API call, usa mapa estático) ── */
+function selectBook(bookId) {
   readerBook    = bookId;
   readerChapter = 1;
   readerVerse   = null;
 
-  const body = document.getElementById("readerBody");
-  body.innerHTML = `<div class="modal-loading">Carregando capítulos...</div>`;
-
-  try {
-    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/books/${bookId}/chapters`);
-    selectorChapters = (json.data || []).filter(c => c.number !== "intro");
-    renderChapterPanel();
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar capítulos.</p>`;
-  }
+  const totalChapters = CHAPTER_COUNTS[bookId] || 1;
+  selectorChapters = Array.from({ length: totalChapters }, (_, i) => ({ number: i + 1 }));
+  renderChapterPanel();
 }
 
 /* ── Painel: Capítulos ── */
@@ -1858,7 +1839,7 @@ function renderChapterPanel() {
   const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
 
   const items = selectorChapters.map(c => {
-    const active = parseInt(c.number) === readerChapter ? "panel-btn--active" : "";
+    const active = c.number === readerChapter ? "panel-btn--active" : "";
     return `<button class="panel-btn panel-btn--num ${active}" onclick="selectChapter(${c.number})">${c.number}</button>`;
   }).join("");
 
@@ -1879,32 +1860,20 @@ function renderChapterPanel() {
   `;
 }
 
-/* ── Seleciona capítulo → busca versículos ── */
-async function selectChapter(num) {
+/* ── Seleciona capítulo → carrega direto (YouVersion retorna tudo no passages endpoint) ── */
+function selectChapter(num) {
   readerChapter = parseInt(num);
-
-  const body = document.getElementById("readerBody");
-  body.innerHTML = `<div class="modal-loading">Carregando versículos...</div>`;
-
-  try {
-    const chId = `${readerBook}.${readerChapter}`;
-    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}/verses`);
-    selectorVerses = (json.data || [])
-      .filter(v => v.id && !v.id.endsWith(".intro"))
-      .map(v => ({ ...v, number: v.number ?? v.id.split(".")[2] }));
-    renderVersePanel();
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar versículos.</p>`;
-  }
+  readerVerse   = null;
+  loadReaderChapter();
 }
 
-/* ── Painel: Versículos ── */
-function renderVersePanel() {
+/* ── Painel: Versículos — gerado dinamicamente após carregar o capítulo ── */
+function renderVersePanel(verseList) {
   const body     = document.getElementById("readerBody");
   const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
 
-  const items = selectorVerses.map(v =>
-    `<button class="panel-btn panel-btn--num" onclick="selectVerse('${v.number}')">${v.number}</button>`
+  const items = verseList.map(v =>
+    `<button class="panel-btn panel-btn--num" onclick="selectVerse(${v})">${v}</button>`
   ).join("");
 
   body.innerHTML = `
@@ -1918,7 +1887,7 @@ function renderVersePanel() {
       </div>
       <div class="panel-section">
         <span class="panel-section-label">
-          Versículo — ou <button class="panel-link" onclick="selectVerse(null)">abrir do início</button>
+          Versículo — ou <button class="panel-link" onclick="loadReaderChapter()">abrir do início</button>
         </span>
         <div class="panel-grid panel-grid--nums">${items}</div>
       </div>
@@ -1926,7 +1895,7 @@ function renderVersePanel() {
   `;
 }
 
-/* ── Atualiza o label de referência no header do modal ── */
+/* ── Atualiza label de referência no header do modal ── */
 function updateReaderRefLabel() {
   const el = document.getElementById("readerRefLabel");
   if (!el) return;
@@ -1937,16 +1906,15 @@ function updateReaderRefLabel() {
     : `${bookName} ${readerChapter}`;
 }
 
-/* ── Seleciona versículo → abre leitura ── */
+/* ── Seleciona versículo ── */
 function selectVerse(num) {
   readerVerse = num ? `${readerBook}.${readerChapter}.${num}` : null;
   loadReaderChapter();
 }
 
-/* ── Carrega e renderiza capítulo ── */
+/* ── Carrega e renderiza capítulo via YouVersion ── */
 async function loadReaderChapter() {
   const body = document.getElementById("readerBody");
-  const chId = `${readerBook}.${readerChapter}`;
 
   updateReaderRefLabel();
   const refBtn = document.getElementById("readerRefBtn");
@@ -1954,11 +1922,12 @@ async function loadReaderChapter() {
   body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
 
   try {
-    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`);
-
-    renderChapter(json.data, readerVerse ?? "", body);
+    const passageId = `${readerBook}.${readerChapter}`;
+    const url = `https://api.youversion.com/v1/bibles/${currentVersion}/passages/${passageId}?format=html&include_headings=true&include_notes=false`;
+    const json = await cachedFetch(url);
+    renderChapterFromHtml(json.content ?? "", readerVerse ?? "", body);
   } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique a chave da API.</p>`;
+    body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique sua App Key.</p>`;
   }
 }
 
@@ -1966,19 +1935,13 @@ async function loadReaderChapter() {
 function readerGo(dir) {
   readerChapter += dir;
   if (readerChapter < 1) readerChapter = 1;
+  const max = CHAPTER_COUNTS[readerBook] || 150;
+  if (readerChapter > max) readerChapter = max;
   readerVerse = null;
   loadReaderChapter();
 }
 
-/* ── Troca livro pelo select do header ── */
-function readerBookChanged() {
-  readerBook    = document.getElementById("readerBookSelect").value;
-  readerChapter = 1;
-  readerVerse   = null;
-  selectBook(readerBook);
-}
-
-/* ── Popula select do header (mantido para compatibilidade) ── */
+/* ── Popula select do header (compatibilidade) ── */
 function populateBookSelect() {
   const sel = document.getElementById("readerBookSelect");
   if (!sel) return;

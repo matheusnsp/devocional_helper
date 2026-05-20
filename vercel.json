@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+        "source": "/api/bible", 
+        "destination": "/api/bible" 
+        }
+    ]
+  }
