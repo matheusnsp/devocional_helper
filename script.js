@@ -6,6 +6,12 @@
    const BIBLE_API_KEY = ""; // não precisa mais
 
 /* ── Remove aspas tipográficas da API ── */
+function capitalizeFirst(text) {
+  if (!text) return text;
+  const t = text.trimStart();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 function stripQuotes(text) {
   return text.replace(/[“”„‟‘’]/g, "");
 }
@@ -1186,6 +1192,21 @@ async function cachedFetch(url) {
    
      { apiId:"ROM.9.15",          theme:"Misericórdia", ref:"Romanos 9:15",
        ctx:"Deus diz: terei misericórdia de quem Me aprazer. A misericórdia é ato livre de Deus — não coagido por mérito, não forçado por demanda. Ela flui do caráter d'Ele, não do desempenho do crente. Isso não é arbitrariedade — é garantia de que a misericórdia de Deus é inesgotável, porque não depende de você." },
+     /* ── 13. REDENÇÃO (5) ── */
+     { apiId:"EPH.1.7",            theme:"Redenção",   ref:"Efésios 1:7",
+       ctx:"Redenção não é um processo gradual — é uma transação completa, consumada no Calvário. Nele temos a redenção pelo Seu sangue, o perdão das transgressões. O sangue de Cristo não cobre o pecado temporariamente, como os sacrifícios do Antigo Testamento — ele o remove de forma definitiva. A palavra 'redenção' vem do mercado de escravos: alguém paga o preço para libertar. Cristo pagou. Você é livre." },
+
+     { apiId:"1PE.1.18-1PE.1.19",  theme:"Redenção",   ref:"1 Pedro 1:18-19",
+       ctx:"Não foi com prata ou ouro que você foi resgatado — essas coisas perdem o valor. Foi com o sangue precioso de Cristo. O preço pago revela o valor de quem foi comprado. Deus não usou o que o mundo considera valioso para te resgatar. Usou o que há de mais precioso no universo inteiro: o próprio Filho. Isso diz algo sobre o quanto você importa para Ele." },
+
+     { apiId:"COL.1.13-COL.1.14",  theme:"Redenção",   ref:"Colossenses 1:13-14",
+       ctx:"A redenção não é apenas perdão — é uma transferência de reino. Deus te tirou do poder das trevas e te transportou para o reino do Filho do Seu amor. Dois movimentos simultâneos: saída e entrada. Você não apenas foi perdoado — foi relocado. Já não está mais sob o domínio do pecado e da morte. Pertence a outro reino, com outro Rei." },
+
+     { apiId:"ROM.3.24-ROM.3.25",  theme:"Redenção",   ref:"Romanos 3:24-25",
+       ctx:"Deus apresentou Cristo como propiciação pelo Seu sangue, mediante a fé. Propiciação significa que a justa ira de Deus contra o pecado foi completamente satisfeita — não ignorada, não postergada, mas plenamente aplacada em Cristo na cruz. A cruz não foi um acidente histórico. Foi o plano eterno de Deus para resolver o problema do pecado de uma vez por todas." },
+
+     { apiId:"HEB.9.12",           theme:"Redenção",   ref:"Hebreus 9:12",
+       ctx:"O sumo sacerdote entrava no lugar santíssimo uma vez por ano, com sangue alheio — e precisava repetir isso todo ano. Cristo entrou uma única vez, com o Seu próprio sangue, e obteve redenção eterna. Não anual. Não renovável. Não condicional. Eterna. O que os sacrifícios do Antigo Testamento apenas simbolizavam, Cristo cumpriu de uma vez por todas." },
    ];
    /* ──────────────────────────────────────────────────────────
    ESTADO DA APLICAÇÃO
@@ -1203,7 +1224,7 @@ document.addEventListener("DOMContentLoaded", () => {
   populateThemes();
   populateVersions();
   loadDark();
-  applyFilter();
+  applyFilter(true);
 
   document.getElementById("themeFilter").addEventListener("change", (e) => {
     currentTheme = e.target.value;
@@ -1243,11 +1264,29 @@ function populateVersions() {
 /* ──────────────────────────────────────────────────────────
    FILTRO E NAVEGAÇÃO
    ──────────────────────────────────────────────────────────*/
-function applyFilter() {
+const LAST_VERSE_KEY = "devocional-lastVerse";
+
+function saveLastVerse(item) {
+  try { localStorage.setItem(LAST_VERSE_KEY, item.apiId); } catch {}
+}
+
+function restoreLastVerse() {
+  try {
+    const saved = localStorage.getItem(LAST_VERSE_KEY);
+    if (!saved) return false;
+    const found = pool.findIndex(v => v.apiId === saved);
+    if (found === -1) return false;
+    idx = found;
+    return true;
+  } catch { return false; }
+}
+
+function applyFilter(restoring = false) {
   pool = currentTheme === "Todos"
     ? [...verses]
     : verses.filter(v => v.theme === currentTheme);
   idx = 0;
+  if (restoring) restoreLastVerse();
   if (pool.length > 0) show(pool[idx]);
   updateNav();
 }
@@ -1296,6 +1335,7 @@ async function show(item) {
   textEl.textContent = "Carregando...";
 
   document.getElementById("verseRef").textContent   = item.ref;
+  saveLastVerse(item);
   document.getElementById("verseTheme").textContent = item.theme;
   document.getElementById("verseCtx").textContent   = item.ctx;
 
@@ -1304,13 +1344,14 @@ async function show(item) {
 
   try {
     const text = await fetchVerse(item.apiId, currentVersion);
-    textEl.textContent = stripQuotes(text);
+    textEl.textContent = capitalizeFirst(stripQuotes(text));
   } catch (err) {
     console.error("Erro ao buscar versículo:", err);
     textEl.textContent = "Não foi possível carregar o versículo.";
   } finally {
     textEl.classList.remove("loading");
     isLoading = false;
+    updateFavBtn();
   }
 }
 
@@ -1328,9 +1369,16 @@ function updateNav() {
    COPIAR VERSÍCULO
    ──────────────────────────────────────────────────────────*/
 function copyToClipboard() {
-  const txt       = document.getElementById("verseText").textContent;
-  const ref       = document.getElementById("verseRef").textContent;
-  const formatted = `"${txt}" - ${ref}`;
+  const txt = document.getElementById("verseText").textContent;
+  const ref = document.getElementById("verseRef").textContent;
+
+  // Separa múltiplos versículos: quebra antes de cada número sobrescrito (exceto o primeiro)
+  const matches = txt.match(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g) || [];
+  const body = matches.length > 1
+    ? txt.replace(/(?<!^)\s*(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n")
+    : txt;
+
+  const formatted = `${body}\n\n${ref}`;
 
   navigator.clipboard.writeText(formatted).then(() => {
     const btn    = document.querySelector(".copy-btn");
@@ -1345,12 +1393,122 @@ function copyToClipboard() {
 }
 
 /* ──────────────────────────────────────────────────────────
+   FAVORITOS
+   ──────────────────────────────────────────────────────────*/
+const FAV_KEY = "devocional-favorites";
+
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveFavorites(favs) {
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch {}
+}
+
+function isCurrentFavorite() {
+  const item = pool[idx];
+  if (!item) return false;
+  return getFavorites().some(f => f.apiId === item.apiId && f.theme === item.theme);
+}
+
+function updateFavBtn() {
+  const btn    = document.getElementById("favBtn");
+  const status = document.getElementById("favStatus");
+  const heart  = btn?.querySelector(".icon-heart");
+  if (!btn) return;
+  const faved = isCurrentFavorite();
+  btn.classList.toggle("fav-btn--active", faved);
+  if (heart) heart.setAttribute("fill", faved ? "currentColor" : "none");
+  if (status) status.textContent = faved ? "Favoritado" : "Favoritar";
+}
+
+function toggleFavorite() {
+  const item = pool[idx];
+  if (!item) return;
+  let favs  = getFavorites();
+  const key = f => f.apiId === item.apiId && f.theme === item.theme;
+  if (favs.some(key)) {
+    favs = favs.filter(f => !key(f));
+  } else {
+    favs.push({ apiId: item.apiId, ref: item.ref, theme: item.theme, ctx: item.ctx });
+  }
+  saveFavorites(favs);
+  updateFavBtn();
+  const btn = document.getElementById("favBtn");
+  btn?.classList.add("fav-btn--pulse");
+  setTimeout(() => btn?.classList.remove("fav-btn--pulse"), 400);
+}
+
+function openFavoritesModal() {
+  document.getElementById("favoritesModal").classList.add("open");
+  renderFavoritesList();
+}
+
+function closeFavoritesModal() {
+  document.getElementById("favoritesModal").classList.remove("open");
+}
+
+function renderFavoritesList() {
+  const body = document.getElementById("favoritesBody");
+  const favs = getFavorites();
+
+  if (favs.length === 0) {
+    body.innerHTML = `
+      <div class="favs-empty">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);margin-bottom:12px"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <p>Nenhum versículo favoritado ainda.</p>
+        <p style="font-size:.8rem;margin-top:4px;color:var(--text-muted)">Toque no coração para guardar os que tocarem seu coração.</p>
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = '<div class="favs-list">' + favs.map((f, i) => `
+    <div class="fav-item">
+      <div class="fav-item__header">
+        <span class="theme-badge" style="font-size:.58rem;padding:6px 12px">${f.theme}</span>
+        <button class="fav-item__remove" onclick="removeFavorite(${i})" title="Remover dos favoritos">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+      </div>
+      <button class="fav-item__ref" onclick="goToFavorite('${f.apiId}','${f.theme.replace(/'/g,"\\'")}');closeFavoritesModal();">${f.ref}</button>
+      <p class="fav-item__ctx">${f.ctx}</p>
+    </div>`
+  ).join("") + '</div>';
+}
+
+function removeFavorite(i) {
+  const favs = getFavorites();
+  favs.splice(i, 1);
+  saveFavorites(favs);
+  renderFavoritesList();
+  updateFavBtn();
+}
+
+function goToFavorite(apiId, theme) {
+  const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
+  if (found === -1) return;
+  if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
+    currentTheme = "Todos";
+    document.getElementById("themeFilter").value = "Todos";
+    pool = [...verses];
+  }
+  const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
+  if (newIdx === -1) return;
+  idx = newIdx;
+  show(pool[idx]);
+  updateNav();
+}
+
+/* ──────────────────────────────────────────────────────────
    MODO ESCURO / CLARO
    ──────────────────────────────────────────────────────────*/
 function toggleDark() {
   document.body.classList.toggle("light");
   const isLight = document.body.classList.contains("light");
   document.getElementById("modeIcon").textContent = isLight ? "☀" : "☽";
+  const lbl = document.getElementById("themeLabel");
+  if (lbl) lbl.textContent = isLight ? "Claro" : "Escuro";
   localStorage.setItem("devocional-mode", isLight ? "light" : "dark");
 }
 
@@ -1359,9 +1517,13 @@ function loadDark() {
   if (saved === "light") {
     document.body.classList.add("light");
     document.getElementById("modeIcon").textContent = "☀";
+    const lbl = document.getElementById("themeLabel");
+    if (lbl) lbl.textContent = "Claro";
   } else {
     document.body.classList.remove("light");
     document.getElementById("modeIcon").textContent = "☽";
+    const lbl = document.getElementById("themeLabel");
+    if (lbl) lbl.textContent = "Escuro";
   }
 }
 
@@ -1419,11 +1581,20 @@ function contextGo(dir) {
 
 function closeContextModal() {
   document.getElementById("contextModal").classList.remove("open");
+  _selectedVids.clear();
 }
 
 /* ──────────────────────────────────────────────────────────
    RENDER CAPÍTULO
    ──────────────────────────────────────────────────────────*/
+
+/* Estado da seleção de versículos */
+let _selVerseMap   = {};
+let _selVerseOrder = [];
+let _selBookId     = "";
+let _selChapNum    = "";
+let _selectedVids  = new Set();
+
 function renderChapter(chapterData, highlightId, container) {
   const items    = chapterData.content || [];
   const verseMap = {};
@@ -1460,22 +1631,124 @@ function renderChapter(chapterData, highlightId, container) {
     return;
   }
 
+  /* Salva mapa global para uso na cópia */
+  _selVerseMap   = {};
+  _selVerseOrder = [];
+  _selectedVids  = new Set();
+
+  /* Salva book/chap — nome resolvido na hora da cópia (BOOKS_PT existe lá) */
+  _selBookId  = entries[0][0].split(".")[0];
+  _selChapNum = entries[0][0].split(".")[1];
+
+  entries.forEach(([vid, text]) => {
+    const clean = stripQuotes(text.trim().replace(/^\d+\s*/, ""));
+    _selVerseMap[vid]  = clean;
+    _selVerseOrder.push(vid);
+  });
+
   const html = entries.map(([vid, text]) => {
     const verseNum    = vid.split(".")[2] || "";
     const isHighlight = highlightId && vid === highlightId;
+    const clean       = _selVerseMap[vid];
     return `
-      <div class="chapter-verse ${isHighlight ? "verse-highlight" : ""}" data-id="${vid}" data-verse="${verseNum}">
+      <div class="chapter-verse ${isHighlight ? "verse-highlight" : ""}" data-id="${vid}" data-verse="${verseNum}" onclick="toggleVerseSelect('${vid}', this)">
         <span class="verse-num">${verseNum}</span>
-        <span class="verse-words">${stripQuotes(text.trim().replace(/^\d+\s*/, ""))}</span>
+        <span class="verse-words">${clean}</span>
       </div>`;
   }).join("");
 
   container.innerHTML = `<div class="chapter-verses">${html}</div>`;
 
+  /* Garante que a barra de seleção existe no modal correto */
+  _ensureSelectionBar(container);
+
   setTimeout(() => {
     const target = container.querySelector(".verse-highlight") ?? container.querySelector(".chapter-verse");
     if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
   }, 100);
+}
+
+/* Injeta a barra flutuante dentro do modal-panel pai */
+function _ensureSelectionBar(container) {
+  const panel = container.closest(".modal-panel");
+  if (!panel) return;
+  if (panel.querySelector(".verse-sel-bar")) return;
+  const bar = document.createElement("div");
+  bar.className = "verse-sel-bar";
+  bar.id = "verseSelBar_" + Date.now();
+  bar.innerHTML = `
+    <span class="verse-sel-label" id="verseSelLabel_${bar.id}">0 versículos</span>
+    <div class="verse-sel-actions">
+      <button class="verse-sel-btn verse-sel-btn--ghost" onclick="_clearVerseSelection(this)">Limpar</button>
+      <button class="verse-sel-btn verse-sel-btn--copy" onclick="_copyVerseSelection(this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span class="verse-sel-copy-label">Copiar</span>
+      </button>
+    </div>`;
+  panel.appendChild(bar);
+}
+
+function toggleVerseSelect(vid, el) {
+  if (_selectedVids.has(vid)) {
+    _selectedVids.delete(vid);
+    el.classList.remove("verse-selected");
+  } else {
+    _selectedVids.add(vid);
+    el.classList.add("verse-selected");
+  }
+  _updateSelectionBar(el.closest(".modal-panel"));
+}
+
+function _updateSelectionBar(panel) {
+  if (!panel) return;
+  const bar   = panel.querySelector(".verse-sel-bar");
+  const label = panel.querySelector(".verse-sel-label");
+  if (!bar || !label) return;
+  const count = _selectedVids.size;
+  bar.classList.toggle("verse-sel-bar--visible", count > 0);
+  label.textContent = count === 1 ? "1 versículo" : `${count} versículos`;
+}
+
+function _clearVerseSelection(btn) {
+  _selectedVids.clear();
+  const panel = btn.closest(".modal-panel");
+  panel.querySelectorAll(".verse-selected").forEach(el => el.classList.remove("verse-selected"));
+  _updateSelectionBar(panel);
+}
+
+function _copyVerseSelection(btn) {
+  if (_selectedVids.size === 0) return;
+
+  /* Ordena pelos índices originais do capítulo */
+  const ordered = _selVerseOrder.filter(vid => _selectedVids.has(vid));
+
+  /* Monta referência */
+  const _bookName = BOOKS_PT.find(b => b[0] === _selBookId)?.[1] ?? _selBookId;
+  const _chapRef  = `${_bookName} ${_selChapNum}`;
+  const nums = ordered.map(vid => parseInt(vid.split(".")[2]));
+  const min  = Math.min(...nums);
+  const max  = Math.max(...nums);
+  const ref  = min === max ? `${_chapRef}:${min}` : `${_chapRef}:${min}-${max}`;
+
+  /* Monta o texto final */
+  const toSup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
+  let formatted;
+  if (ordered.length === 1) {
+    formatted = `"${_selVerseMap[ordered[0]]}" - ${ref}`;
+  } else {
+    const lines = ordered.map(vid => {
+      const n = parseInt(vid.split(".")[2]);
+      return `${toSup(n)} ${_selVerseMap[vid]}`;
+    }).join("\n");
+    formatted = `${lines}\n\n${ref}`;
+  }
+
+  navigator.clipboard.writeText(formatted).then(() => {
+    const lbl = btn.querySelector(".verse-sel-copy-label");
+    if (lbl) { lbl.textContent = "Copiado!"; setTimeout(() => { lbl.textContent = "Copiar"; }, 1800); }
+    btn.classList.add("verse-sel-btn--success");
+    setTimeout(() => btn.classList.remove("verse-sel-btn--success"), 1800);
+  }).catch(err => console.error("Erro ao copiar:", err));
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -1523,7 +1796,9 @@ function openBibleReader() {
 
 function closeBibleReader() {
   document.getElementById("bibleModal").classList.remove("open");
+  _selectedVids.clear();
 }
+
 
 /* ── Painel: Livros ── */
 function renderBookPanel() {
