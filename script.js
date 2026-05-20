@@ -1,10 +1,3 @@
-/* ──────────────────────────────────────────────────────────
-   CONFIGURAÇÃO DA API.BIBLE
-   Cadastre-se gratuitamente em https://scripture.api.bible
-   e substitua pela sua chave abaixo.
-   ──────────────────────────────────────────────────────────*/
-   const BIBLE_API_KEY = ""; // não precisa mais
-
 /* ── Remove aspas tipográficas da API ── */
 function capitalizeFirst(text) {
   if (!text) return text;
@@ -17,61 +10,79 @@ function stripQuotes(text) {
 }
 
 /* ──────────────────────────────────────────────────────────
-   CACHE LOCAL (localStorage)
-   Evita chamadas repetidas à API — limite de 5k/mês
-   Chave: URL completa da requisição
-   TTL: 30 dias (em ms)
+   DADOS LOCAIS DA BÍBLIA
+   O JSON de cada versão é carregado de versoes/<id>.json e
+   mantido em memória. Estrutura esperada:
+   [{ "abbrev": "Gn", "chapters": [["v1","v2",...], ...] }, ...]
    ──────────────────────────────────────────────────────────*/
-const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 dias
-const CACHE_PREFIX = "bibleCache:";
+const _bibleCache = {};   // { "ARA": Promise<data[]> }
 
-function cacheGet(url) {
-  try {
-    const raw = localStorage.getItem(CACHE_PREFIX + url);
-    if (!raw) return null;
-    const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL) {
-      localStorage.removeItem(CACHE_PREFIX + url);
-      return null;
-    }
-    return data;
-  } catch { return null; }
-}
-
-function cacheSet(url, data) {
-  try {
-    localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ ts: Date.now(), data }));
-  } catch (e) {
-    // localStorage cheio — limpa entradas antigas e tenta de novo
-    clearOldCache();
-    try { localStorage.setItem(CACHE_PREFIX + url, JSON.stringify({ ts: Date.now(), data })); } catch {}
+function loadBibleVersion(versionId) {
+  if (!_bibleCache[versionId]) {
+    _bibleCache[versionId] = fetch(`versoes/${versionId}.json`)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
   }
+  return _bibleCache[versionId];
 }
 
-function clearOldCache() {
-  const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
-  // Remove os 20% mais antigos
-  const entries = keys.map(k => {
-    try { return { k, ts: JSON.parse(localStorage.getItem(k)).ts }; } catch { return { k, ts: 0 }; }
-  }).sort((a, b) => a.ts - b.ts);
-  entries.slice(0, Math.max(1, Math.floor(entries.length * 0.2))).forEach(e => localStorage.removeItem(e.k));
+/* Mapeamento USFM (usado nos apiId) → abreviação do JSON */
+const USFM_TO_ABBREV = {
+  GEN:"Gn", EXO:"Ex", LEV:"Lv", NUM:"Nm", DEU:"Dt",
+  JOS:"Js", JDG:"Jz", RUT:"Rt", "1SA":"1Sm", "2SA":"2Sm",
+  "1KI":"1Rs", "2KI":"2Rs", "1CH":"1Cr", "2CH":"2Cr", EZR:"Ed",
+  NEH:"Ne", EST:"Et", JOB:"Jó", PSA:"Sl", PRO:"Pv",
+  ECC:"Ec", SNG:"Ct", ISA:"Is", JER:"Jr", LAM:"Lm",
+  EZK:"Ez", DAN:"Dn", HOS:"Os", JOL:"Jl", AMO:"Am",
+  OBA:"Ob", JON:"Jn", MIC:"Mq", NAM:"Na", HAB:"Hc",
+  ZEP:"Sf", HAG:"Ag", ZEC:"Zc", MAL:"Ml",
+  MAT:"Mt", MRK:"Mc", LUK:"Lc", JHN:"Jo", ACT:"At",
+  ROM:"Rm", "1CO":"1Co", "2CO":"2Co", GAL:"Gl",
+  EPH:"Ef", PHP:"Fp", COL:"Cl", "1TH":"1Ts", "2TH":"2Ts",
+  "1TI":"1Tm", "2TI":"2Tm", TIT:"Tt",
+  PHM:"Fm", HEB:"Hb", JAS:"Tg", "1PE":"1Pe", "2PE":"2Pe",
+  "1JN":"1Jo", "2JN":"2Jo", "3JN":"3Jo", JUD:"Jd", REV:"Ap"
+};
+
+/* Reverso: abreviação do JSON → USFM */
+const ABBREV_TO_USFM = Object.fromEntries(
+  Object.entries(USFM_TO_ABBREV).map(([u, a]) => [a, u])
+);
+
+/* Retorna texto de um versículo ou passagem a partir do JSON local */
+async function fetchVerse(apiId, versionId) {
+  const data = await loadBibleVersion(versionId);
+
+  /* Passagem (ex: "ROM.8.38-ROM.8.39") */
+  if (apiId.includes("-")) {
+    const [startId, endId] = apiId.split("-");
+    const [book, chap, vStart] = startId.split(".");
+    const vEnd = endId.split(".")[2];
+    const abbrev = USFM_TO_ABBREV[book];
+    const bookData = data.find(b => b.abbrev === abbrev);
+    if (!bookData) return "";
+    const chapArr = bookData.chapters[parseInt(chap) - 1] || [];
+    const texts = [];
+    for (let v = parseInt(vStart); v <= parseInt(vEnd); v++) {
+      const t = chapArr[v - 1];
+      if (t) texts.push(t);
+    }
+    return texts.join(" ");
+  }
+
+  /* Versículo simples (ex: "JHN.3.16") */
+  const [book, chap, verse] = apiId.split(".");
+  const abbrev = USFM_TO_ABBREV[book];
+  const bookData = data.find(b => b.abbrev === abbrev);
+  if (!bookData) return "";
+  return bookData.chapters[parseInt(chap) - 1]?.[parseInt(verse) - 1] ?? "";
 }
 
-async function cachedFetch(url) {
-  const cached = cacheGet(url);
-  if (cached) return cached;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(res.status);
-  const json = await res.json();
-  cacheSet(url, json);
-  return json;
-}
 
-
-   /* IDs de versões disponíveis na API.Bible */
+   /* Versões locais disponíveis (arquivo JSON em versoes/<id>.json) */
    const BIBLE_VERSIONS = [
-    { id: "41a6caa722a21d88-01", name: "NVT — Nova Versão Transformadora", lang: "pt" },
-    { id: "78a9f6124f344018-01", name: "NIV — New International Version", lang: "en" },
+    { id: "ARA", name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
+    { id: "ARC", name: "ARC — Almeida Revista e Corrigida", lang: "pt" },
+    { id: "NAA", name: "NAA — Nova Almeida Atualizada", lang: "pt" },
   ];
   
    
@@ -1212,7 +1223,7 @@ async function cachedFetch(url) {
    ESTADO DA APLICAÇÃO
    ──────────────────────────────────────────────────────────*/
 let currentTheme   = "Todos";
-let currentVersion = "41a6caa722a21d88-01";
+let currentVersion = "ARA";
 let pool           = [...verses];
 let idx            = 0;
 let isLoading      = false;
@@ -1310,18 +1321,7 @@ function goRandom() {
   updateNav();
 }
 
-/* ──────────────────────────────────────────────────────────
-   BUSCAR VERSÍCULO NA API.BIBLE
-   ──────────────────────────────────────────────────────────*/
-async function fetchVerse(apiId, bibleId) {
-  const isPassage = apiId.includes("-");
-  const path = isPassage ? `passages/${apiId}` : `verses/${apiId}`;
 
-  const json = await cachedFetch(
-    `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${bibleId}/${path}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false`
-  );
-  return (json.data?.content ?? "").trim();
-}
 
 /* ──────────────────────────────────────────────────────────
    EXIBIR VERSÍCULO
@@ -1562,11 +1562,22 @@ async function loadContextChapter() {
   body.innerHTML = `<div class="modal-loading">Carregando capítulo...</div>`;
 
   try {
-    const url = `https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chapterId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`;
-    const json = await cachedFetch(url);
+    const data   = await loadBibleVersion(currentVersion);
+    const abbrev = USFM_TO_ABBREV[contextBook];
+    const book   = data.find(b => b.abbrev === abbrev);
+    if (!book) throw new Error("Livro não encontrado");
+    const chapArr = book.chapters[contextChapter - 1] || [];
+    const hasNext = contextChapter < book.chapters.length;
 
-    document.getElementById("contextNext").disabled = !json.data.next;
-    renderChapter(json.data, contextHighVerse, body);
+    document.getElementById("contextNext").disabled = !hasNext;
+
+    const content = chapArr.map((text, i) => ({
+      name: "verse-span",
+      attrs: { verseId: `${contextBook}.${contextChapter}.${i + 1}` },
+      items: [{ type: "text", text }]
+    }));
+
+    renderChapter({ content, next: hasNext }, contextHighVerse, body);
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Não foi possível carregar o capítulo.</p>`;
   }
@@ -1834,7 +1845,7 @@ function renderBookPanel() {
   `;
 }
 
-/* ── Seleciona livro → busca capítulos ── */
+/* ── Seleciona livro → monta lista de capítulos a partir do JSON local ── */
 async function selectBook(bookId) {
   readerBook    = bookId;
   readerChapter = 1;
@@ -1844,8 +1855,11 @@ async function selectBook(bookId) {
   body.innerHTML = `<div class="modal-loading">Carregando capítulos...</div>`;
 
   try {
-    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/books/${bookId}/chapters`);
-    selectorChapters = (json.data || []).filter(c => c.number !== "intro");
+    const data   = await loadBibleVersion(currentVersion);
+    const abbrev = USFM_TO_ABBREV[bookId];
+    const book   = data.find(b => b.abbrev === abbrev);
+    if (!book) throw new Error("Livro não encontrado");
+    selectorChapters = book.chapters.map((_, i) => ({ number: String(i + 1) }));
     renderChapterPanel();
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Erro ao carregar capítulos.</p>`;
@@ -1879,7 +1893,7 @@ function renderChapterPanel() {
   `;
 }
 
-/* ── Seleciona capítulo → busca versículos ── */
+/* ── Seleciona capítulo → monta lista de versículos a partir do JSON local ── */
 async function selectChapter(num) {
   readerChapter = parseInt(num);
 
@@ -1887,11 +1901,15 @@ async function selectChapter(num) {
   body.innerHTML = `<div class="modal-loading">Carregando versículos...</div>`;
 
   try {
-    const chId = `${readerBook}.${readerChapter}`;
-    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}/verses`);
-    selectorVerses = (json.data || [])
-      .filter(v => v.id && !v.id.endsWith(".intro"))
-      .map(v => ({ ...v, number: v.number ?? v.id.split(".")[2] }));
+    const data   = await loadBibleVersion(currentVersion);
+    const abbrev = USFM_TO_ABBREV[readerBook];
+    const book   = data.find(b => b.abbrev === abbrev);
+    if (!book) throw new Error("Livro não encontrado");
+    const chapArr = book.chapters[readerChapter - 1] || [];
+    selectorVerses = chapArr.map((_, i) => ({
+      id:     `${readerBook}.${readerChapter}.${i + 1}`,
+      number: String(i + 1)
+    }));
     renderVersePanel();
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Erro ao carregar versículos.</p>`;
@@ -1946,7 +1964,6 @@ function selectVerse(num) {
 /* ── Carrega e renderiza capítulo ── */
 async function loadReaderChapter() {
   const body = document.getElementById("readerBody");
-  const chId = `${readerBook}.${readerChapter}`;
 
   updateReaderRefLabel();
   const refBtn = document.getElementById("readerRefBtn");
@@ -1954,11 +1971,23 @@ async function loadReaderChapter() {
   body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
 
   try {
-    const json = await cachedFetch(`https://bible-proxy.matheusnevessp50.workers.dev/bibles/${currentVersion}/chapters/${chId}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=true`);
+    const data   = await loadBibleVersion(currentVersion);
+    const abbrev = USFM_TO_ABBREV[readerBook];
+    const book   = data.find(b => b.abbrev === abbrev);
+    if (!book) throw new Error("Livro não encontrado");
+    const chapArr = book.chapters[readerChapter - 1] || [];
+    const hasNext = readerChapter < book.chapters.length;
 
-    renderChapter(json.data, readerVerse ?? "", body);
+    /* Monta objeto compatível com renderChapter */
+    const content = chapArr.map((text, i) => ({
+      name: "verse-span",
+      attrs: { verseId: `${readerBook}.${readerChapter}.${i + 1}` },
+      items: [{ type: "text", text }]
+    }));
+
+    renderChapter({ content, next: hasNext }, readerVerse ?? "", body);
   } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique a chave da API.</p>`;
+    body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique o arquivo da versão.</p>`;
   }
 }
 
