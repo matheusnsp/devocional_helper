@@ -78,9 +78,8 @@ async function cachedFetch(url) {
 
 /* IDs de versões disponíveis na YouVersion API */
 const BIBLE_VERSIONS = [
-  { id: 212,  name: "ARC — Almeida Revista e Corrigida",  lang: "pt" },
-  { id: 1608, name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
-  { id: 1840, name: "NAA — Nova Almeida Atualizada",      lang: "pt" },
+  { id: 129, name: "NVI — Nova Versão Internacional", lang: "pt" },
+  { id: 111, name: "NIV — New International Version", lang: "en" },
 ];
 
    const verses = [
@@ -1215,7 +1214,7 @@ const BIBLE_VERSIONS = [
    ESTADO DA APLICAÇÃO
    ──────────────────────────────────────────────────────────*/
 let currentTheme   = "Todos";
-let currentVersion = 212; // ARC por padrão (ID numérico YouVersion)
+let currentVersion = 129; // NVI por padrão (ID numérico YouVersion)
 let pool           = [...verses];
 let idx            = 0;
 let isLoading      = false;
