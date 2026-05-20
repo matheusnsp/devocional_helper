@@ -60,9 +60,9 @@ function toProxyUrl(originalUrl) {
   // ex: https://api.youversion.com/v1/bibles/212/passages/JHN.3.16?format=text
   //  → /api/bible?path=/v1/bibles/212/passages/JHN.3.16&format=text
   const u = new URL(originalUrl);
-  const params = new URLSearchParams(u.searchParams);
-  params.set("path", u.pathname);
-  return `/api/bible?${params.toString()}`;
+  // Monta manualmente para não codificar as barras do path
+  const otherParams = u.searchParams.toString();
+  return `/api/bible?path=${u.pathname}${otherParams ? "&" + otherParams : ""}`;
 }
 
 async function cachedFetch(url) {

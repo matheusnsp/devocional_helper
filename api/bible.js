@@ -10,24 +10,28 @@
    ──────────────────────────────────────────────────────────*/
 
    export default async function handler(req, res) {
-    /* Só aceita GET */
     if (req.method !== "GET") {
       return res.status(405).json({ error: "Method not allowed" });
     }
   
-    const { path, ...queryParams } = req.query;
+    // Lê a URL raw para não perder as barras do path
+    const rawUrl  = req.url; // ex: /api/bible?path=/v1/bibles/212/passages/JHN.3.16&format=text
+    const qStart  = rawUrl.indexOf("?");
+    const qs      = qStart !== -1 ? rawUrl.slice(qStart + 1) : "";
+    const params  = new URLSearchParams(qs);
+    const path    = params.get("path");
   
-    /* Valida que o path existe e aponta para a YouVersion API */
     if (!path || !path.startsWith("/v1/")) {
       return res.status(400).json({ error: "Invalid path" });
     }
   
-    /* Monta query string repassando todos os outros parâmetros */
-    const qs = new URLSearchParams(queryParams).toString();
-    const url = `https://api.youversion.com${path}${qs ? "?" + qs : ""}`;
+    // Remove o 'path' da query e repassa o resto para a YouVersion
+    params.delete("path");
+    const upstreamQs  = params.toString();
+    const upstreamUrl = `https://api.youversion.com${path}${upstreamQs ? "?" + upstreamQs : ""}`;
   
     try {
-      const upstream = await fetch(url, {
+      const upstream = await fetch(upstreamUrl, {
         headers: {
           "X-YVP-App-Key": process.env.YVP_APP_KEY,
           "Accept": "application/json",
@@ -36,7 +40,6 @@
   
       const data = await upstream.json();
   
-      /* Repassa o status code da YouVersion */
       res
         .status(upstream.status)
         .setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800")
