@@ -1277,19 +1277,23 @@ function populateVersions() {
    ──────────────────────────────────────────────────────────*/
 const LAST_VERSE_KEY = "devocional-lastVerse";
 
+/* Retorna o índice do versículo do dia (0-based, baseado no dia do ano) */
+function getDayIndex(poolArr) {
+  const now   = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff  = now - start;
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)); // 1..365
+  return (dayOfYear - 1) % poolArr.length;
+}
+
 function saveLastVerse(item) {
   try { localStorage.setItem(LAST_VERSE_KEY, item.apiId); } catch {}
 }
 
 function restoreLastVerse() {
-  try {
-    const saved = localStorage.getItem(LAST_VERSE_KEY);
-    if (!saved) return false;
-    const found = pool.findIndex(v => v.apiId === saved);
-    if (found === -1) return false;
-    idx = found;
-    return true;
-  } catch { return false; }
+  /* Ao abrir o app, sempre mostra o versículo do dia */
+  idx = getDayIndex(pool);
+  return true;
 }
 
 function applyFilter(restoring = false) {
@@ -1352,6 +1356,7 @@ async function show(item) {
     textEl.classList.remove("loading");
     isLoading = false;
     updateFavBtn();
+    loadRelated(item);
   }
 }
 
@@ -1360,25 +1365,73 @@ async function show(item) {
    ──────────────────────────────────────────────────────────*/
 function updateNav() {
   if (pool.length === 0) return;
-  document.getElementById("navIndex").textContent = `${idx + 1} / ${pool.length}`;
   const pct = ((idx + 1) / pool.length) * 100;
   document.getElementById("progressFill").style.width = `${pct}%`;
+
+  /* Data de hoje formatada */
+  const today = new Date();
+  const label = today.toLocaleDateString("pt-BR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  });
+  document.getElementById("todayDate").textContent = label;
 }
 
 /* ──────────────────────────────────────────────────────────
    COPIAR VERSÍCULO
    ──────────────────────────────────────────────────────────*/
 function copyToClipboard() {
-  const txt = document.getElementById("verseText").textContent;
-  const ref = document.getElementById("verseRef").textContent;
+  const txt  = document.getElementById("verseText").textContent;
+  const ref  = document.getElementById("verseRef").textContent;
+  const item = pool[idx];
 
-  // Separa múltiplos versículos: quebra antes de cada número sobrescrito (exceto o primeiro)
-  const matches = txt.match(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g) || [];
-  const body = matches.length > 1
-    ? txt.replace(/(?<!^)\s*(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n")
-    : txt;
+  const toSup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
 
-  const formatted = `"${body}" - ${ref}`;
+  let formatted;
+
+  // Passagem múltipla: apiId com hífen (ex: "PSA.145.15-PSA.145.16")
+  if (item && item.apiId.includes("-")) {
+    const [startId, endId] = item.apiId.split("-");
+    const vStart = parseInt(startId.split(".")[2]);
+    const vEnd   = parseInt(endId.split(".")[2]);
+
+    // Tenta separar pelo ponto final entre os versículos
+    // Estratégia: divide o texto em frases e distribui pelos números
+    const numVerses = vEnd - vStart + 1;
+    // Separa por ". " mas preservando abreviações comuns — usa split simples em ". "
+    // Para passagens de 2 versículos, tenta achar o ponto que divide
+    let lines;
+    if (numVerses === 2) {
+      // Acha o primeiro ponto final seguido de espaço maiúsculo (provável divisão de versículo)
+      const splitMatch = txt.match(/^(.+?[.!?])\s+([A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇ].*)$/s);
+      if (splitMatch) {
+        lines = [splitMatch[1].trim(), splitMatch[2].trim()];
+      } else {
+        lines = [txt];
+      }
+    } else {
+      lines = [txt];
+    }
+
+    if (lines.length === numVerses) {
+      const body = lines.map((l, i) => `${toSup(vStart + i)} ${l}`).join("\n");
+      formatted = `${body}\n\n${ref}`;
+    } else {
+      // Fallback: texto inteiro sem aspas
+      formatted = `${txt}\n\n${ref}`;
+    }
+
+  // Versículo único com múltiplos sobrescritos no texto
+  } else {
+    const matches = txt.match(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g) || [];
+    if (matches.length > 1) {
+      const body = txt.replace(/(?<!^)\s*(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n");
+      formatted = `${body}\n\n${ref}`;
+    } else {
+      formatted = `"${txt}" - ${ref}`;
+    }
+  }
 
   navigator.clipboard.writeText(formatted).then(() => {
     const btn    = document.querySelector(".copy-btn");
@@ -1392,6 +1445,42 @@ function copyToClipboard() {
   }).catch(err => console.error("Erro ao copiar:", err));
 }
 
+
+
+/* ──────────────────────────────────────────────────────────
+   VERSÍCULOS RELACIONADOS (mesmo tema)
+   ──────────────────────────────────────────────────────────*/
+function loadRelated(item) {
+  const block = document.getElementById("relatedBlock");
+  const list  = document.getElementById("relatedList");
+  if (!block || !list || !item) return;
+
+  const related = verses
+    .filter(v => v.theme === item.theme && v.apiId !== item.apiId)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 2);
+
+  if (related.length === 0) { block.style.display = "none"; return; }
+
+  block.style.display = "block";
+  list.innerHTML = related.map(v => `
+    <button class="related-item" onclick="goToRelated('${v.apiId}','${v.theme.replace(/'/g,"\\'")}')">
+      <span class="related-ref">${v.ref}</span>
+      <span class="related-ctx">${v.ctx.substring(0, 80)}...</span>
+    </button>`
+  ).join("");
+}
+
+function goToRelated(apiId, theme) {
+  const found = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
+  if (found === -1) return;
+  idx = found;
+  show(pool[idx]);
+  updateNav();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ──────────────────────────────────────────────────────────
 /* ──────────────────────────────────────────────────────────
    FAVORITOS
    ──────────────────────────────────────────────────────────*/
@@ -1501,6 +1590,63 @@ function goToFavorite(apiId, theme) {
 }
 
 /* ──────────────────────────────────────────────────────────
+
+/* ──────────────────────────────────────────────────────────
+   BUSCA POR PALAVRA-CHAVE
+   ──────────────────────────────────────────────────────────*/
+function openSearchModal() {
+  document.getElementById("searchModal").classList.add("open");
+  const input = document.getElementById("searchInput");
+  if (input) { input.value = ""; setTimeout(() => input.focus(), 100); }
+  document.getElementById("searchBody").innerHTML = '<p class="search-hint">Digite para buscar entre os ' + verses.length + ' versículos.</p>';
+}
+
+function closeSearchModal() {
+  document.getElementById("searchModal").classList.remove("open");
+}
+
+function onSearchInput() {
+  const q    = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+  const body = document.getElementById("searchBody");
+  if (q.length < 2) {
+    body.innerHTML = '<p class="search-hint">Continue digitando...</p>';
+    return;
+  }
+  const results = verses.filter(v =>
+    v.ref.toLowerCase().includes(q) ||
+    v.theme.toLowerCase().includes(q) ||
+    v.ctx.toLowerCase().includes(q)
+  );
+  if (results.length === 0) {
+    body.innerHTML = '<p class="search-hint">Nenhum resultado encontrado.</p>';
+    return;
+  }
+  body.innerHTML = '<div class="favs-list">' + results.map(v => `
+    <div class="fav-item">
+      <div class="fav-item__header">
+        <span class="theme-badge" style="font-size:.58rem;padding:6px 12px">${v.theme}</span>
+      </div>
+      <button class="fav-item__ref" onclick="goToVerseFromSearch('${v.apiId}','${v.theme.replace(/'/g,"\\'")}');closeSearchModal();">${v.ref}</button>
+      <p class="fav-item__ctx">${v.ctx.substring(0, 120)}...</p>
+    </div>`
+  ).join("") + '</div>';
+}
+
+function goToVerseFromSearch(apiId, theme) {
+  const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
+  if (found === -1) return;
+  if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
+    currentTheme = "Todos";
+    document.getElementById("themeFilter").value = "Todos";
+    pool = [...verses];
+  }
+  const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
+  if (newIdx === -1) return;
+  idx = newIdx;
+  show(pool[idx]);
+  updateNav();
+}
+/* ──────────────────────────────────────────────────────────
    MODO ESCURO / CLARO
    ──────────────────────────────────────────────────────────*/
 function toggleDark() {
@@ -1526,6 +1672,7 @@ function loadDark() {
     if (lbl) lbl.textContent = "Escuro";
   }
 }
+
 
 /* ──────────────────────────────────────────────────────────
    MODAL — LER CAPÍTULO COMPLETO (contexto do versículo)

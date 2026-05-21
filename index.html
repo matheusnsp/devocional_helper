@@ -30,26 +30,43 @@
           </select>
         </div>
       </div>
+
+      <!-- Botão hamburguer: visível apenas em mobile ≤480px -->
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
     </header>
 
-    <div class="action-toolbar">
-      <button class="action-btn" id="btnRandom" onclick="goRandom()">
+    <!-- Backdrop invisível que fecha o menu ao clicar fora -->
+    <div class="hamburger-backdrop" id="hamburgerBackdrop"></div>
+
+    <div class="action-toolbar" id="actionToolbar">
+      <button class="action-btn" id="btnRandom" onclick="goRandom(); closeHamburgerMenu();">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="7" cy="7" r="1"/><circle cx="17" cy="17" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="12" cy="12" r="1"/></svg>
         <span>Aleatório</span>
       </button>
 
       <div class="action-toolbar__divider"></div>
 
-      <button class="action-btn" id="btnBible" onclick="openBibleReader()">
+      <button class="action-btn" id="btnBible" onclick="openBibleReader(); closeHamburgerMenu();">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         <span>Bíblia</span>
       </button>
 
       <div class="action-toolbar__divider"></div>
 
-      <button class="action-btn" id="btnFavList" onclick="openFavoritesModal()">
+      <button class="action-btn" id="btnFavList" onclick="openFavoritesModal(); closeHamburgerMenu();">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <span>Favoritos</span>
+      </button>
+
+      <div class="action-toolbar__divider"></div>
+
+      <button class="action-btn" id="btnSearch" onclick="openSearchModal(); closeHamburgerMenu();">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <span>Buscar</span>
       </button>
 
       <div class="action-toolbar__divider"></div>
@@ -70,12 +87,14 @@
             <div class="card-actions">
               <button class="context-btn" onclick="openContextModal()" title="Ler capítulo completo">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                <span>Abrir Passagem</span>
+                <span>Passagem</span>
               </button>
+              <div class="card-actions__divider"></div>
               <button class="fav-btn" id="favBtn" onclick="toggleFavorite()" title="Favoritar versículo">
                 <svg class="icon-heart" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                 <span id="favStatus">Favoritar</span>
               </button>
+              <div class="card-actions__divider"></div>
               <button class="copy-btn" onclick="copyToClipboard()" title="Copiar Versículo">
                 <svg class="icon-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span id="copyStatus">Copiar</span>
@@ -96,6 +115,13 @@
             <span class="insight-title">Contexto & Análise</span>
             <p class="insight-body" id="verseCtx">...</p>
           </div>
+
+          <div class="related-block" id="relatedBlock" style="display:none">
+            <div class="divider-line"></div>
+            <span class="insight-title" style="margin-bottom:10px;display:block">Versículos Relacionados</span>
+            <div class="related-list" id="relatedList"></div>
+          </div>
+
         </div>
 
       </div>
@@ -113,7 +139,7 @@
         <div class="timeline-bar">
           <div class="timeline-progress" id="progressFill"></div>
         </div>
-        <div class="timeline-counter" id="navIndex">0 / 0</div>
+        <div class="timeline-date" id="todayDate"></div>
       </div>
 
       <button class="nav-arrow-btn" id="btnNext" onclick="go(1)" aria-label="Próximo">
@@ -174,14 +200,73 @@
     </div>
   </div>
 
+  <!-- MODAL: BUSCA -->
+  <div class="modal-overlay" id="searchModal" onclick="handleModalClick(event,'searchModal')">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <span class="modal-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          Buscar Versículos
+        </span>
+        <button class="modal-close" onclick="closeSearchModal()">✕</button>
+      </div>
+      <div class="search-input-wrap">
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar por palavra, referência ou tema..." oninput="onSearchInput()" autocomplete="off" />
+      </div>
+      <div class="modal-body" id="searchBody">
+        <p class="search-hint">Digite para buscar entre os 365 versículos.</p>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
   <script>
     function handleModalClick(e, modalId) {
       if (e.target.id === modalId) {
         if (modalId === 'contextModal') closeContextModal();
         else if (modalId === 'favoritesModal') closeFavoritesModal();
+        else if (modalId === 'searchModal') closeSearchModal();
         else closeBibleReader();
       }
+    }
+
+    /* ── Hamburguer ── */
+    var _hamburgerBtn      = document.getElementById('hamburgerBtn');
+    var _hamburgerToolbar  = document.getElementById('actionToolbar');
+    var _hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
+
+    _hamburgerBtn.addEventListener('click', function() {
+      var isOpen = _hamburgerBtn.classList.contains('is-open');
+      if (isOpen) { closeHamburgerMenu(); } else { openHamburgerMenu(); }
+    });
+
+    _hamburgerBackdrop.addEventListener('click', closeHamburgerMenu);
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeHamburgerMenu();
+    });
+
+    function openHamburgerMenu() {
+      /* Posiciona o dropdown logo abaixo do header, alinhado à direita */
+      var header = document.querySelector('.app-header');
+      var headerRect = header.getBoundingClientRect();
+      var container = document.querySelector('.app-container');
+      var containerRect = container.getBoundingClientRect();
+      _hamburgerToolbar.style.top = (headerRect.bottom - containerRect.top + 8) + 'px';
+      _hamburgerToolbar.style.right = '0px';
+      _hamburgerToolbar.style.position = 'absolute';
+
+      _hamburgerBtn.classList.add('is-open');
+      _hamburgerBtn.setAttribute('aria-expanded', 'true');
+      _hamburgerToolbar.classList.add('is-open');
+      _hamburgerBackdrop.classList.add('is-active');
+    }
+
+    function closeHamburgerMenu() {
+      _hamburgerBtn.classList.remove('is-open');
+      _hamburgerBtn.setAttribute('aria-expanded', 'false');
+      _hamburgerToolbar.classList.remove('is-open');
+      _hamburgerBackdrop.classList.remove('is-active');
     }
   </script>
 </body>
