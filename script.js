@@ -1378,7 +1378,7 @@ function copyToClipboard() {
     ? txt.replace(/(?<!^)\s*(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n")
     : txt;
 
-  const formatted = `${body}\n\n${ref}`;
+  const formatted = `"${body}" - ${ref}`;
 
   navigator.clipboard.writeText(formatted).then(() => {
     const btn    = document.querySelector(".copy-btn");
