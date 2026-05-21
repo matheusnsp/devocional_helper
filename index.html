@@ -22,7 +22,7 @@
       <div class="header-selects">
         <div class="select-custom">
           <select id="themeFilter" aria-label="Filtrar por Tema">
-            <option value="Todos">Todos os Temas</option>
+            <option value="Todos">Temas</option>
           </select>
         </div>
         <div class="select-custom">
@@ -39,10 +39,24 @@
       </button>
     </header>
 
+    <!-- Faixa de selects exclusiva do mobile, abaixo do header -->
+    <div class="mobile-selects-bar">
+      <div class="select-custom">
+        <select id="themeFilterMobile" aria-label="Filtrar por Tema">
+          <option value="Todos">Temas</option>
+        </select>
+      </div>
+      <div class="select-custom">
+        <select id="versionSelectMobile" aria-label="Versão da Bíblia">
+        </select>
+      </div>
+    </div>
+
     <!-- Backdrop invisível que fecha o menu ao clicar fora -->
     <div class="hamburger-backdrop" id="hamburgerBackdrop"></div>
 
     <div class="action-toolbar" id="actionToolbar">
+
       <button class="action-btn" id="btnRandom" onclick="goRandom(); closeHamburgerMenu();">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="7" cy="7" r="1"/><circle cx="17" cy="17" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="12" cy="12" r="1"/></svg>
         <span>Aleatório</span>

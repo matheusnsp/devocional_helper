@@ -249,6 +249,7 @@ body.light {
   transition: var(--transition);
   white-space: nowrap;
   width: auto;
+  text-align: center;
 }
 
 .select-custom select:hover {
@@ -649,6 +650,11 @@ body.light {
   display: none;
 }
 
+/* Selects duplicados para mobile: ocultos no desktop */
+.mobile-selects-bar {
+  display: none;
+}
+
 /* =========================================================
    TABLET
 ========================================================= */
@@ -703,9 +709,24 @@ body.light {
     min-width: 0;
   }
 
-  /* Esconde os selects — ficam só no desktop */
+  /* Esconde os selects do header no mobile */
   .header-selects {
     display: none;
+  }
+
+  /* ── Faixa de selects abaixo do header ── */
+  .mobile-selects-bar {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* .mobile-selects-bar .select-custom {
+    flex: 1;
+  } */
+
+  .mobile-selects-bar .select-custom select {
+    width: 100%;
+    font-size: .68rem;
   }
 
   /* ── Botão hamburguer ── */
@@ -831,15 +852,15 @@ body.light {
 
   .card-actions {
     width: 100%;
-    height: 38px;
+    height: 44px;
   }
 
   .context-btn,
   .fav-btn,
   .copy-btn {
-    font-size: .57rem;
-    padding: 0 8px;
-    gap: 5px;
+    font-size: .58rem;
+    padding: 0 10px;
+    gap: 6px;
   }
 
   .verse-main-text {
@@ -878,10 +899,10 @@ body.light {
 }
 
 /* =========================================================
-   SMALL MOBILE
+   SMALL MOBILE (≤ 320px)
 ========================================================= */
 
-@media (max-width:320px){
+@media (max-width: 320px){
 
   html {
     font-size:15px;
@@ -898,6 +919,32 @@ body.light {
   .app-title {
     font-size:1.2rem;
   }
+
+  /* Esconde o texto dos botões do card, fica só ícone */
+  .context-btn span,
+  .fav-btn span,
+  .copy-btn span {
+    display: none;
+  }
+
+  .context-btn,
+  .fav-btn,
+  .copy-btn {
+    padding: 0 10px;
+    gap: 0;
+  }
+
+  .context-btn svg,
+  .fav-btn svg,
+  .copy-btn svg {
+    width: 16px;
+    height: 16px;
+    opacity: .85;
+  }
+
+  .card-actions {
+    height: 40px;
+  }
 }
 
 /* =========================================================
@@ -911,7 +958,7 @@ body.light {
   border: 1px solid var(--card-border);
   border-radius: 14px;
   overflow: hidden;
-  height: 40px;
+  height: 44px;
   backdrop-filter: blur(16px);
 }
 
@@ -931,17 +978,18 @@ body.light {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
   border: none;
   border-radius: 0;
   background: transparent;
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: .6rem;
-  letter-spacing: .1em;
+  font-size: .62rem;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  padding: 0 12px;
+  padding: 0 16px;
+  height: 44px;
   transition: var(--transition);
   white-space: nowrap;
 }
@@ -966,9 +1014,9 @@ body.light {
 }
 
 /* Favoritar: cor especial no hover e ativo */
-.fav-btn {
+/* .fav-btn {
   padding: 0;
-}
+} */
 
 .fav-btn:hover {
   background: rgba(244,63,94,.08);
@@ -1168,6 +1216,7 @@ body.light {
   gap: 12px;
   flex: 1;
   min-width: 0;
+
 }
 
 .reader-book-select {

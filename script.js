@@ -80,8 +80,11 @@ async function fetchVerse(apiId, versionId) {
 
    /* Versões locais disponíveis (arquivo JSON em versoes/<id>.json) */
    const BIBLE_VERSIONS = [
+    // { id: "ARA", name: "ARA", lang: "pt" },
     { id: "ARA", name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
+    // { id: "ARC", name: "ARC", lang: "pt" },
     { id: "ARC", name: "ARC — Almeida Revista e Corrigida", lang: "pt" },
+    // { id: "NAA", name: "NAA", lang: "pt" },
     { id: "NAA", name: "NAA — Nova Almeida Atualizada", lang: "pt" },
   ];
   
@@ -1237,13 +1240,31 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDark();
   applyFilter(true);
 
+  /* Desktop selects */
   document.getElementById("themeFilter").addEventListener("change", (e) => {
     currentTheme = e.target.value;
+    document.getElementById("themeFilterMobile").value = e.target.value;
     applyFilter();
   });
 
   document.getElementById("versionSelect").addEventListener("change", (e) => {
     currentVersion = e.target.value;
+    document.getElementById("versionSelectMobile").value = e.target.value;
+    show(pool[idx]);
+  });
+
+  /* Mobile selects (espelham os do desktop) */
+  document.getElementById("themeFilterMobile").addEventListener("change", (e) => {
+    currentTheme = e.target.value;
+    document.getElementById("themeFilter").value = e.target.value;
+    closeHamburgerMenu();
+    applyFilter();
+  });
+
+  document.getElementById("versionSelectMobile").addEventListener("change", (e) => {
+    currentVersion = e.target.value;
+    document.getElementById("versionSelect").value = e.target.value;
+    closeHamburgerMenu();
     show(pool[idx]);
   });
 });
@@ -1252,23 +1273,25 @@ document.addEventListener("DOMContentLoaded", () => {
    POPULAR SELETORES
    ──────────────────────────────────────────────────────────*/
 function populateThemes() {
-  const sel   = document.getElementById("themeFilter");
+  const sel       = document.getElementById("themeFilter");
+  const selMobile = document.getElementById("themeFilterMobile");
   const temas = [...new Set(verses.map(v => v.theme))];
   temas.forEach(t => {
     const opt = document.createElement("option");
-    opt.value = t;
-    opt.textContent = t;
+    opt.value = t; opt.textContent = t;
     sel.appendChild(opt);
+    selMobile.appendChild(opt.cloneNode(true));
   });
 }
 
 function populateVersions() {
-  const sel = document.getElementById("versionSelect");
+  const sel       = document.getElementById("versionSelect");
+  const selMobile = document.getElementById("versionSelectMobile");
   BIBLE_VERSIONS.forEach(v => {
     const opt = document.createElement("option");
-    opt.value = v.id;
-    opt.textContent = v.name;
+    opt.value = v.id; opt.textContent = v.name;
     sel.appendChild(opt);
+    selMobile.appendChild(opt.cloneNode(true));
   });
 }
 
@@ -1330,6 +1353,8 @@ function goRandom() {
 /* ──────────────────────────────────────────────────────────
    EXIBIR VERSÍCULO
    ──────────────────────────────────────────────────────────*/
+
+
 async function show(item) {
   if (!item || isLoading) return;
   isLoading = true;
@@ -1371,9 +1396,9 @@ function updateNav() {
   /* Data de hoje formatada */
   const today = new Date();
   const label = today.toLocaleDateString("pt-BR", {
-    weekday: "short",
+    weekday: "long",
     day: "numeric",
-    month: "short"
+    month: "long"
   });
   document.getElementById("todayDate").textContent = label;
 }
@@ -1579,7 +1604,7 @@ function goToFavorite(apiId, theme) {
   if (found === -1) return;
   if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
     currentTheme = "Todos";
-    document.getElementById("themeFilter").value = "Todos";
+    document.getElementById("themeFilter").value = "Todos"; document.getElementById("themeFilterMobile").value = "Todos";
     pool = [...verses];
   }
   const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
@@ -1637,7 +1662,7 @@ function goToVerseFromSearch(apiId, theme) {
   if (found === -1) return;
   if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
     currentTheme = "Todos";
-    document.getElementById("themeFilter").value = "Todos";
+    document.getElementById("themeFilter").value = "Todos"; document.getElementById("themeFilterMobile").value = "Todos";
     pool = [...verses];
   }
   const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
