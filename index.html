@@ -20,15 +20,22 @@
       </div>
 
       <div class="header-selects">
-        <div class="select-custom">
-          <select id="themeFilter" aria-label="Filtrar por Tema">
-            <option value="Todos">Todos os Temas</option>
-          </select>
+        <div class="custom-dropdown" id="themeDropdown">
+          <button class="custom-dropdown__trigger" id="themeDropdownTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="custom-dropdown__label" id="themeDropdownLabel">Todos os Temas</span>
+            <span class="custom-dropdown__arrow">▾</span>
+          </button>
+          <div class="custom-dropdown__panel custom-dropdown__panel--themes" id="themeDropdownPanel" role="listbox"></div>
         </div>
-        <div class="select-custom">
-          <select id="versionSelect" aria-label="Versão da Bíblia">
-          </select>
+        <div class="custom-dropdown custom-dropdown--right" id="versionDropdown">
+          <button class="custom-dropdown__trigger" id="versionDropdownTrigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="custom-dropdown__label" id="versionDropdownLabel">ARA</span>
+            <span class="custom-dropdown__arrow">▾</span>
+          </button>
+          <div class="custom-dropdown__panel custom-dropdown__panel--versions" id="versionDropdownPanel" role="listbox"></div>
         </div>
+        <!-- selects ocultos para compatibilidade com script existente -->
+        <select id="versionSelect" aria-label="Versão da Bíblia" style="display:none"></select>
       </div>
 
       <!-- Botão hamburguer: visível apenas em mobile ≤480px -->
@@ -41,17 +48,25 @@
 
     <!-- Faixa de selects exclusiva do mobile, abaixo do header -->
     <div class="mobile-selects-bar">
-      <div class="select-custom">
-        <select id="themeFilterMobile" aria-label="Filtrar por Tema">
-          <option value="Todos">Temas</option>
-        </select>
+      <div class="custom-dropdown" id="themeDropdownMobile">
+        <button class="custom-dropdown__trigger" id="themeDropdownTriggerMobile" aria-haspopup="listbox" aria-expanded="false">
+          <span class="custom-dropdown__label" id="themeDropdownLabelMobile">Temas</span>
+          <span class="custom-dropdown__arrow">▾</span>
+        </button>
+        <div class="custom-dropdown__panel custom-dropdown__panel--themes" id="themeDropdownPanelMobile" role="listbox"></div>
       </div>
-      <div class="select-custom">
-        <select id="versionSelectMobile" aria-label="Versão da Bíblia">
-        </select>
+      <div class="custom-dropdown custom-dropdown--right" id="versionDropdownMobile">
+        <button class="custom-dropdown__trigger" id="versionDropdownTriggerMobile" aria-haspopup="listbox" aria-expanded="false">
+          <span class="custom-dropdown__label" id="versionDropdownLabelMobile">ARA</span>
+          <span class="custom-dropdown__arrow">▾</span>
+        </button>
+        <div class="custom-dropdown__panel custom-dropdown__panel--versions" id="versionDropdownPanelMobile" role="listbox"></div>
       </div>
+      <!-- selects ocultos para compatibilidade -->
+      <select id="versionSelectMobile" aria-label="Versão da Bíblia" style="display:none"></select>
     </div>
 
+    
     <!-- Backdrop invisível que fecha o menu ao clicar fora -->
     <div class="hamburger-backdrop" id="hamburgerBackdrop"></div>
 
@@ -148,12 +163,11 @@
 
       <div class="timeline-tracker">
         <div class="timeline-meta">
-          <span>Dia <strong id="dayNum">1</strong> de 365</span>
+          <span><strong id="dayNum">1</strong> / <span id="dayTotal">365</span></span>
         </div>
         <div class="timeline-bar">
           <div class="timeline-progress" id="progressFill"></div>
         </div>
-        <div class="timeline-date" id="todayDate"></div>
       </div>
 
       <button class="nav-arrow-btn" id="btnNext" onclick="go(1)" aria-label="Próximo">
@@ -233,6 +247,7 @@
     </div>
   </div>
 
+  <script src="versiculos.js"></script>
   <script src="script.js"></script>
   <script>
     function handleModalClick(e, modalId) {
