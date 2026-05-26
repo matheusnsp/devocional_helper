@@ -412,6 +412,16 @@ body.light {
   flex-shrink: 0;
 }
 
+.theme-badge__sep {
+  opacity: .35;
+  font-size: .55rem;
+  margin: 0 1px;
+}
+
+.theme-badge__extra {
+  opacity: .65;
+}
+
 .copy-btn {
   border: none;
   background: transparent;

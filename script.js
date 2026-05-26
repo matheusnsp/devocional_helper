@@ -441,7 +441,22 @@ async function show(item) {
 
   document.getElementById("verseRef").textContent   = item.ref;
   saveLastVerse(item);
-  document.getElementById("verseTheme").textContent = item.theme;
+
+  /* Coleta todos os temas associados a esse apiId */
+  const allThemesForVerse = [...new Set(
+    verses.filter(v => v.apiId === item.apiId).map(v => v.theme)
+  )];
+  const themeEl = document.getElementById("verseTheme");
+  if (allThemesForVerse.length > 1) {
+    themeEl.innerHTML = allThemesForVerse
+      .map((t, i) => i === 0
+        ? `<span>${t}</span>`
+        : `<span class="theme-badge__extra">${t}</span>`)
+      .join('<span class="theme-badge__sep">·</span>');
+  } else {
+    themeEl.textContent = item.theme;
+  }
+
   document.getElementById("verseCtx").textContent   = item.ctx;
 
   document.getElementById("dayNum").textContent = pool.indexOf(item) + 1;
