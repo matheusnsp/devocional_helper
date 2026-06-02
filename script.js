@@ -27,7 +27,7 @@ function loadBibleVersion(versionId) {
 
 /* Mapeamento USFM (usado nos apiId) → abreviação do JSON */
 const USFM_TO_ABBREV = {
-  GEN:"Gn", EXO:"Ex", LEV:"Lv", NUM:"Nm", DEU:"Dt",
+  GEN:"Gn", EXO:"Êx", LEV:"Lv", NUM:"Nm", DEU:"Dt",
   JOS:"Js", JDG:"Jz", RUT:"Rt", "1SA":"1Sm", "2SA":"2Sm",
   "1KI":"1Rs", "2KI":"2Rs", "1CH":"1Cr", "2CH":"2Cr", EZR:"Ed",
   NEH:"Ne", EST:"Et", JOB:"Jó", PSA:"Sl", PRO:"Pv",
@@ -38,7 +38,7 @@ const USFM_TO_ABBREV = {
   MAT:"Mt", MRK:"Mc", LUK:"Lc", JHN:"Jo", ACT:"At",
   ROM:"Rm", "1CO":"1Co", "2CO":"2Co", GAL:"Gl",
   EPH:"Ef", PHP:"Fp", COL:"Cl", "1TH":"1Ts", "2TH":"2Ts",
-  "1TI":"1Tm", "2TI":"2Tm", TIT:"Tt",
+  "1TI":"1Tn", "2TI":"2Tm", TIT:"Tt",
   PHM:"Fm", HEB:"Hb", JAS:"Tg", "1PE":"1Pe", "2PE":"2Pe",
   "1JN":"1Jo", "2JN":"2Jo", "3JN":"3Jo", JUD:"Jd", REV:"Ap"
 };
