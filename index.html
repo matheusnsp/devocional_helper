@@ -248,54 +248,5 @@
 
   <script src="versiculos.js"></script>
   <script src="script.js"></script>
-  <script>
-    function handleModalClick(e, modalId) {
-      if (e.target.id === modalId) {
-        if (modalId === 'contextModal') closeContextModal();
-        else if (modalId === 'favoritesModal') closeFavoritesModal();
-        else if (modalId === 'searchModal') closeSearchModal();
-        else closeBibleReader();
-      }
-    }
-
-    /* ── Hamburguer ── */
-    var _hamburgerBtn      = document.getElementById('hamburgerBtn');
-    var _hamburgerToolbar  = document.getElementById('actionToolbar');
-    var _hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
-
-    _hamburgerBtn.addEventListener('click', function() {
-      var isOpen = _hamburgerBtn.classList.contains('is-open');
-      if (isOpen) { closeHamburgerMenu(); } else { openHamburgerMenu(); }
-    });
-
-    _hamburgerBackdrop.addEventListener('click', closeHamburgerMenu);
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeHamburgerMenu();
-    });
-
-    function openHamburgerMenu() {
-      /* Posiciona o dropdown logo abaixo do header, alinhado à direita */
-      var header = document.querySelector('.app-header');
-      var headerRect = header.getBoundingClientRect();
-      var container = document.querySelector('.app-container');
-      var containerRect = container.getBoundingClientRect();
-      _hamburgerToolbar.style.top = (headerRect.bottom - containerRect.top + 8) + 'px';
-      _hamburgerToolbar.style.right = '0px';
-      _hamburgerToolbar.style.position = 'absolute';
-
-      _hamburgerBtn.classList.add('is-open');
-      _hamburgerBtn.setAttribute('aria-expanded', 'true');
-      _hamburgerToolbar.classList.add('is-open');
-      _hamburgerBackdrop.classList.add('is-active');
-    }
-
-    function closeHamburgerMenu() {
-      _hamburgerBtn.classList.remove('is-open');
-      _hamburgerBtn.setAttribute('aria-expanded', 'false');
-      _hamburgerToolbar.classList.remove('is-open');
-      _hamburgerBackdrop.classList.remove('is-active');
-    }
-  </script>
 </body>
 </html>
