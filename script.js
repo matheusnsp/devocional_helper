@@ -360,17 +360,6 @@ function initThemeDropdowns() {
   });
 }
 
-function populateVersions() {
-  const sel       = document.getElementById("versionSelect");
-  const selMobile = document.getElementById("versionSelectMobile");
-  BIBLE_VERSIONS.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v.id; opt.textContent = v.name;
-    sel.appendChild(opt);
-    selMobile.appendChild(opt.cloneNode(true));
-  });
-}
-
 /* ──────────────────────────────────────────────────────────
    FILTRO E NAVEGAÇÃO
    ──────────────────────────────────────────────────────────*/
@@ -588,7 +577,6 @@ function goToRelated(apiId, theme) {
 }
 
 /* ──────────────────────────────────────────────────────────
-/* ──────────────────────────────────────────────────────────
    FAVORITOS
    ──────────────────────────────────────────────────────────*/
 const FAV_KEY = "devocional-favorites";
@@ -681,12 +669,15 @@ function removeFavorite(i) {
   updateFavBtn();
 }
 
+/* Vai até um favorito. Se o tema atual não incluir esse versículo,
+   volta o filtro para "Todos" e sincroniza os dropdowns customizados
+   (em vez dos antigos <select id="themeFilter">, que não existem mais). */
 function goToFavorite(apiId, theme) {
   const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
   if (found === -1) return;
   if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
     currentTheme = "Todos";
-    document.getElementById("themeFilter").value = "Todos"; document.getElementById("themeFilterMobile").value = "Todos";
+    syncDropdownUI();
     pool = [...verses];
   }
   const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
@@ -695,8 +686,6 @@ function goToFavorite(apiId, theme) {
   show(pool[idx]);
   updateNav();
 }
-
-/* ──────────────────────────────────────────────────────────
 
 /* ──────────────────────────────────────────────────────────
    BUSCA POR PALAVRA-CHAVE
@@ -739,12 +728,14 @@ function onSearchInput() {
   ).join("") + '</div>';
 }
 
+/* Mesmo ajuste de goToFavorite: sem <select id="themeFilter"> — usa
+   syncDropdownUI() para refletir a troca de tema nos dropdowns novos. */
 function goToVerseFromSearch(apiId, theme) {
   const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
   if (found === -1) return;
   if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
     currentTheme = "Todos";
-    document.getElementById("themeFilter").value = "Todos"; document.getElementById("themeFilterMobile").value = "Todos";
+    syncDropdownUI();
     pool = [...verses];
   }
   const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
@@ -1273,4 +1264,70 @@ function populateBookSelect() {
     if (id === readerBook) opt.selected = true;
     sel.appendChild(opt);
   });
+}
+
+/* ──────────────────────────────────────────────────────────
+   MENU HAMBURGUER (mobile)
+   — movido de um <script> inline no index.html para cá, para
+   manter o HTML livre de JavaScript embutido.
+   ──────────────────────────────────────────────────────────*/
+function handleModalClick(e, modalId) {
+  if (e.target.id === modalId) {
+    if (modalId === 'contextModal') closeContextModal();
+    else if (modalId === 'favoritesModal') closeFavoritesModal();
+    else if (modalId === 'searchModal') closeSearchModal();
+    else closeBibleReader();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const hamburgerBtn      = document.getElementById('hamburgerBtn');
+  const hamburgerToolbar  = document.getElementById('actionToolbar');
+  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
+
+  if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
+
+  hamburgerBtn.addEventListener('click', function() {
+    const isOpen = hamburgerBtn.classList.contains('is-open');
+    if (isOpen) { closeHamburgerMenu(); } else { openHamburgerMenu(); }
+  });
+
+  hamburgerBackdrop.addEventListener('click', closeHamburgerMenu);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeHamburgerMenu();
+  });
+});
+
+function openHamburgerMenu() {
+  const hamburgerBtn      = document.getElementById('hamburgerBtn');
+  const hamburgerToolbar  = document.getElementById('actionToolbar');
+  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
+  if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
+
+  /* Posiciona o dropdown logo abaixo do header, alinhado à direita */
+  const header = document.querySelector('.app-header');
+  const headerRect = header.getBoundingClientRect();
+  const container = document.querySelector('.app-container');
+  const containerRect = container.getBoundingClientRect();
+  hamburgerToolbar.style.top = (headerRect.bottom - containerRect.top + 8) + 'px';
+  hamburgerToolbar.style.right = '0px';
+  hamburgerToolbar.style.position = 'absolute';
+
+  hamburgerBtn.classList.add('is-open');
+  hamburgerBtn.setAttribute('aria-expanded', 'true');
+  hamburgerToolbar.classList.add('is-open');
+  hamburgerBackdrop.classList.add('is-active');
+}
+
+function closeHamburgerMenu() {
+  const hamburgerBtn      = document.getElementById('hamburgerBtn');
+  const hamburgerToolbar  = document.getElementById('actionToolbar');
+  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
+  if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
+
+  hamburgerBtn.classList.remove('is-open');
+  hamburgerBtn.setAttribute('aria-expanded', 'false');
+  hamburgerToolbar.classList.remove('is-open');
+  hamburgerBackdrop.classList.remove('is-active');
 }
