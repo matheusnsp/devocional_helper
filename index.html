@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Devocional Helper</title>
+
+  <!-- PWA: instalável e com leitura offline -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#060709" />
+  <meta name="description" content="Um versículo por dia, com contexto, favoritos e a Bíblia completa para leitura offline." />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Devocional" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -275,5 +285,15 @@
 
   <script src="versiculos.js"></script>
   <script src="script.js"></script>
+
+  <!-- Registro do service worker: sem ele o app não abre offline -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js")
+          .catch(err => console.warn("Service worker não registrado:", err));
+      });
+    }
+  </script>
 </body>
 </html>

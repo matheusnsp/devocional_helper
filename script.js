@@ -131,6 +131,11 @@ document.addEventListener("DOMContentLoaded", () => {
   loadReadingScale();
   applyFilter(true);
 
+  /* Atalhos do app instalado (manifest.json → shortcuts) */
+  const abrir = new URLSearchParams(location.search).get("abrir");
+  if (abrir === "biblia")         openBibleReader();
+  else if (abrir === "favoritos") openFavoritesModal();
+
   document.getElementById("versionSelect").addEventListener("change", (e) => {
     currentVersion = e.target.value;
     document.getElementById("versionSelectMobile").value = e.target.value;
