@@ -1047,8 +1047,17 @@ function renderChapter(chapterData, highlightId, container) {
 
   setTimeout(() => {
     const target = container.querySelector(".reading-verse--source");
-    if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
-    else container.scrollTop = 0;
+    if (!target) { container.scrollTop = 0; return; }
+
+    /* Rola só este contêiner. scrollIntoView rolaria todos os ancestrais
+       roláveis, inclusive o painel — que tem overflow:hidden e, por isso,
+       não rola com o dedo, mas rola por script. Era isso que empurrava a
+       barra do topo do leitor para fora da tela. */
+    const cRect = container.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    const top   = container.scrollTop + (tRect.top - cRect.top) - container.clientHeight / 3;
+
+    container.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }, 100);
 }
 
@@ -1225,11 +1234,15 @@ function renderBookPanel() {
       </div>
 
       <div class="picker-search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" id="bookFilterInput" class="picker-search__input"
-               placeholder="Filtrar livro — ex: salmos, 1 co"
-               autocomplete="off" oninput="filterBooks(this.value)" />
+               placeholder="Ex: salmos 23:1"
+               autocomplete="off" enterkeyhint="go"
+               oninput="filterBooks(this.value)"
+               onkeydown="onBookFilterKey(event)" />
       </div>
+
+      <p class="picker-hint" id="bookFilterHint" style="display:none"></p>
 
       <div id="bookGrids">
         ${bookGrid(OT_BOOKS, "Antigo Testamento")}
@@ -1243,9 +1256,27 @@ function renderBookPanel() {
   body.scrollTop = 0;
 }
 
-/* ── Filtro de livros por nome, sem acento ── */
+/* ── Filtro de livros: entende também capítulo e versículo ──
+   Aceita "salmos", "salmos 23", "salmos 23:1", "sl 23 1", "1 co 13:4".
+   A parte numérica só é lida quando vem no fim, depois de um espaço —
+   assim "1 João" e "2 Samuel" continuam sendo nome de livro. */
+let _pendingRef = { chapter: null, verse: null };
+
+function parseBookQuery(raw) {
+  const q = (raw || "").trim();
+  const m = q.match(/^(.+?)[\s,]+(\d+)(?:\s*[:.\s]\s*(\d+))?\s*$/);
+  if (!m) return { book: normalizeForSearch(q), chapter: null, verse: null };
+  return {
+    book:    normalizeForSearch(m[1]),
+    chapter: parseInt(m[2]),
+    verse:   m[3] ? parseInt(m[3]) : null
+  };
+}
+
 function filterBooks(query) {
-  const q = normalizeForSearch(query).trim();
+  const { book, chapter, verse } = parseBookQuery(query);
+  _pendingRef = { chapter, verse };
+
   const grids = document.getElementById("bookGrids");
   if (!grids) return;
 
@@ -1254,7 +1285,7 @@ function filterBooks(query) {
   grids.querySelectorAll("[data-testament]").forEach(section => {
     let sectionVisible = false;
     section.querySelectorAll(".panel-btn--book").forEach(btn => {
-      const match = !q || btn.dataset.name.includes(q);
+      const match = !book || btn.dataset.name.includes(book);
       btn.style.display = match ? "" : "none";
       if (match) sectionVisible = true;
     });
@@ -1264,6 +1295,41 @@ function filterBooks(query) {
 
   const empty = document.getElementById("bookFilterEmpty");
   if (empty) empty.style.display = anyVisible ? "none" : "block";
+
+  /* Dica do que foi entendido, quando há número na busca */
+  const hint = document.getElementById("bookFilterHint");
+  if (hint) {
+    const alvo = bestBookMatch(book);
+    if (chapter && alvo && anyVisible) {
+      const nome = BOOKS_PT.find(b => b[0] === alvo)?.[1] ?? alvo;
+      hint.textContent = `Enter para abrir ${nome} ${chapter}${verse ? ":" + verse : ""}`;
+      hint.style.display = "block";
+    } else {
+      hint.style.display = "none";
+    }
+  }
+}
+
+/* Melhor livro para a busca: nome exato ganha de "começa com",
+   que ganha de "contém". Sem isso, "jo" abriria Jó em vez de João. */
+function bestBookMatch(book) {
+  if (!book) return null;
+  const candidatos = BOOKS_PT
+    .map(([id, nome]) => ({ id, n: normalizeForSearch(nome) }))
+    .filter(c => c.n.includes(book));
+  if (candidatos.length === 0) return null;
+  return (candidatos.find(c => c.n === book)
+       ?? candidatos.find(c => c.n.startsWith(book))
+       ?? candidatos[0]).id;
+}
+
+/* Enter abre direto o melhor resultado */
+function onBookFilterKey(e) {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  const { book } = parseBookQuery(e.target.value);
+  const alvo = bestBookMatch(book);
+  if (alvo) selectBook(alvo);
 }
 
 /* ── Passo 2: capítulos do livro escolhido ── */
@@ -1271,6 +1337,10 @@ async function selectBook(bookId) {
   readerBook    = bookId;
   readerChapter = null;
   readerVerse   = null;
+
+  /* Se a busca trouxe capítulo (e talvez versículo), pula direto */
+  const salto  = _pendingRef;
+  _pendingRef  = { chapter: null, verse: null };
 
   const body     = document.getElementById("readerBody");
   const bookName = BOOKS_PT.find(b => b[0] === bookId)?.[1] ?? bookId;
@@ -1283,6 +1353,20 @@ async function selectBook(bookId) {
     if (!book) throw new Error("Livro não encontrado");
 
     _readerChapCount = book.chapters.length;
+
+    if (salto.chapter && salto.chapter >= 1 && salto.chapter <= _readerChapCount) {
+      readerChapter = salto.chapter;
+      const versos = book.chapters[readerChapter - 1] || [];
+      if (salto.verse && salto.verse >= 1 && salto.verse <= versos.length) {
+        /* Referência completa: abre a leitura no versículo */
+        readerVerse = `${readerBook}.${readerChapter}.${salto.verse}`;
+        loadReaderChapter();
+      } else {
+        /* Só o capítulo: mostra a lista de versículos dele */
+        selectChapter(readerChapter);
+      }
+      return;
+    }
 
     const nums = book.chapters.map((_, i) => {
       const n = i + 1;
