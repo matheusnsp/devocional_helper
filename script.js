@@ -124,6 +124,11 @@ let _showToken = 0;
    INICIALIZAÇÃO
    ──────────────────────────────────────────────────────────*/
 document.addEventListener("DOMContentLoaded", () => {
+  /* O navegador restaura a rolagem da visita anterior e o app abria
+     no meio da página. Aqui ele sempre começa do topo. */
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+
   populateThemes();
   populateVersions();
   initThemeDropdowns();
@@ -568,7 +573,7 @@ function copyToClipboard() {
     const btn    = document.querySelector(".copy-btn");
     const status = document.getElementById("copyStatus");
     btn.classList.add("success");
-    status.textContent = "Copiado!";
+    status.textContent = "Copiado";
     setTimeout(() => {
       btn.classList.remove("success");
       status.textContent = "Copiar";

@@ -136,11 +136,15 @@ body {
 
   min-height:100vh;
 
-  padding:20px;
+  padding:32px 20px;
 
   display:flex;
   justify-content:center;
-  align-items:center;
+  /* flex-start, nunca center: com o conteúdo mais alto que a tela,
+     um flex centralizado joga o excesso para cima do início da área
+     rolável e esse trecho fica inacessível. No celular isso cortava
+     o cabeçalho inteiro. */
+  align-items:flex-start;
 
   overflow-x:hidden;
 
@@ -833,7 +837,7 @@ body.light {
 @media (max-width:768px){
 
   body {
-    padding:18px;
+    padding:26px 18px 22px;
   }
 
   .workspace-card {
@@ -862,7 +866,7 @@ body.light {
 @media (max-width: 480px) {
 
   body {
-    padding: 10px;
+    padding: 20px 12px 18px;
   }
 
   /* ── Header: só brand + hamburguer ── */
@@ -1054,7 +1058,9 @@ body.light {
 
   .card-actions {
     width: 100%;
-    height: 44px;
+    height: auto;
+    min-height: 44px;
+    gap: 6px;
   }
 
   .context-btn,
@@ -1062,7 +1068,7 @@ body.light {
   .copy-btn {
     font-size: .65rem;
     padding: 0 10px;
-    gap: 6px;
+    gap: 5px;
   }
 
   .verse-main-text {
@@ -1160,6 +1166,7 @@ body.light {
 .card-actions {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   gap: 8px;
   background: transparent;
   border: none;
@@ -1204,6 +1211,20 @@ body.light {
   flex-shrink: 0;
   opacity: .85;
   transition: opacity .2s;
+}
+
+/* Estes rótulos trocam de texto ("Copiar" → "Copiado", "Favoritar"
+   → "Favoritado"). Reservar a largura do texto mais longo evita que
+   o botão cresça e empurre a fileira para fora do card. A unidade ch
+   é exata aqui porque a fonte é monoespaçada. */
+#copyStatus {
+  display: inline-block;
+  min-width: 7ch;
+}
+
+#favStatus {
+  display: inline-block;
+  min-width: 10ch;
 }
 
 .context-btn:hover,
@@ -1350,9 +1371,43 @@ body.light {
 
 .modal-body {
   overflow-y: auto;
-  padding: 22px;
+  /* Sem padding vertical: quem faz esse papel são os pseudo-elementos
+     abaixo, que também servem de esmaecimento. */
+  padding: 0 22px;
   flex: 1;
   scroll-behavior: smooth;
+}
+
+/* Esmaecimento nas bordas da área que rola: o texto se dissolve ao
+   entrar e sair da tela, em vez de ser cortado no meio da linha.
+
+   Os pseudo-elementos são sticky e ocupam espaço real no fluxo — daí
+   fazerem as vezes do padding vertical. Sem margem negativa: com ela,
+   a faixa ficava por cima do começo do conteúdo e lavava os títulos
+   mesmo com a rolagem parada no topo.
+
+   Evita mask-image de propósito: máscara promove o elemento a uma
+   camada composta e faz o texto perder nitidez. */
+.modal-body::before,
+.modal-body::after {
+  content: "";
+  display: block;
+  position: sticky;
+  z-index: 3;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.modal-body::before {
+  top: 0;
+  height: 24px;
+  background: linear-gradient(to bottom, var(--bg-secondary), transparent);
+}
+
+.modal-body::after {
+  bottom: 0;
+  height: 28px;
+  background: linear-gradient(to top, var(--bg-secondary), transparent);
 }
 
 .modal-loading {
@@ -1728,7 +1783,9 @@ body.light {
 
 /* ── Corpo do leitor ── */
 .modal-panel--reader .modal-body {
-  padding: 26px 22px 32px;
+  padding: 0 22px;
+  scroll-padding-top: 32px;
+  scroll-padding-bottom: 40px;
 }
 
 .modal-panel--reader .reader-picker,
@@ -1745,7 +1802,7 @@ body.light {
     gap: 10px;
   }
   .modal-panel--reader .modal-body {
-    padding: 20px 14px 28px;
+    padding: 0 14px;
   }
   .font-scale {
     gap: 12px;
