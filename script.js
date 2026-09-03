@@ -241,8 +241,8 @@ function selectVersion(versionId, fromMobile) {
   if (fromMobile) closeHamburgerMenu();
   show(pool[idx]);
 
-  /* Se o leitor estiver aberto, recarrega o capítulo na nova versão */
-  if (document.getElementById("bibleModal")?.classList.contains("open") && _readerChapCount) {
+  /* Se o leitor estiver aberto e lendo, recarrega o capítulo na nova versão */
+  if (document.getElementById("readerPanel")?.classList.contains("is-reading")) {
     loadReaderChapter();
   }
   if (document.getElementById("contextModal")?.classList.contains("open")) {
@@ -321,29 +321,32 @@ function toggleDropdown(triggerId, panelId) {
     trigger.classList.add("is-open");
     trigger.setAttribute("aria-expanded","true");
 
-    /* Reposiciona para não sair do app-container.
-       Usa offsetWidth em vez de getBoundingClientRect: o painel está no
-       primeiro frame da animação (scale .97 / translateY), então o rect
-       vem distorcido e a conta de overflow sai errada. */
-    panel.style.left  = "";
-    panel.style.right = "";
+    /* Reposiciona para não sair da tela.
+       Calcula a posição desejada em coordenadas absolutas e prende
+       dentro dos limites visíveis. Escrever left inline sobrepõe
+       qualquer alinhamento vindo do CSS (right:0 dos temas, por
+       exemplo), então o resultado não depende da classe do painel.
+       Usa offsetWidth: o painel está no primeiro quadro da animação
+       (scale .97 / translateY) e o getBoundingClientRect dele viria
+       distorcido. */
+    panel.style.left  = "0";
+    panel.style.right = "auto";
 
-    const triggerRect   = trigger.getBoundingClientRect();
-    const panelWidth    = panel.offsetWidth;
-    const container     = document.querySelector(".app-container");
-    const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth };
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelWidth  = panel.offsetWidth;
+    const container   = document.querySelector(".app-container");
+    const cRect       = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth };
 
-    const isRightAligned = trigger.closest(".custom-dropdown")?.classList.contains("custom-dropdown--right");
-    const projectedLeft  = isRightAligned ? triggerRect.right - panelWidth : triggerRect.left;
-    const projectedRight = projectedLeft + panelWidth;
+    const GUTTER   = 8;
+    const minLeft  = Math.max(cRect.left, GUTTER);
+    const maxRight = Math.min(cRect.right, window.innerWidth - GUTTER);
 
-    if (projectedRight > containerRect.right) {
-      panel.style.left = "auto";
-      panel.style.right = "0";
-    } else if (projectedLeft < containerRect.left) {
-      panel.style.left = "0";
-      panel.style.right = "auto";
-    }
+    /* Começa alinhado à esquerda do gatilho e ajusta se estourar */
+    let absLeft = triggerRect.left;
+    if (absLeft + panelWidth > maxRight) absLeft = maxRight - panelWidth;
+    if (absLeft < minLeft)               absLeft = minLeft;
+
+    panel.style.left = `${Math.round(absLeft - triggerRect.left)}px`;
 
     /* Scroll até o item selecionado */
     const sel = panel.querySelector(".is-selected");
@@ -1124,20 +1127,18 @@ const BOOKS_PT = [
 const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL"];
 const NT_BOOKS = ["MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
 
-let readerBook      = "JHN";
-let readerChapter   = 1;
+let readerBook      = null;
+let readerChapter   = null;
 let readerVerse     = null;
 let _readerChapCount = 0;   // total de capítulos do livro aberto
 
+/* Abre sempre na lista de livros, sem herdar a passagem do devocional.
+   Para ler o capítulo do versículo do dia existe o botão "Passagem". */
 function openBibleReader() {
-  const item = pool[idx];
-  if (item) {
-    const base = item.apiId.includes("-") ? item.apiId.split("-")[0] : item.apiId;
-    const p    = base.split(".");
-    readerBook    = p[0];
-    readerChapter = parseInt(p[1]) || 1;
-    readerVerse   = base;
-  }
+  readerBook       = null;
+  readerChapter    = null;
+  readerVerse      = null;
+  _readerChapCount = 0;
 
   document.getElementById("bibleModal").classList.add("open");
   renderBookPanel();
@@ -1150,14 +1151,16 @@ function closeBibleReader() {
 }
 
 /* ──────────────────────────────────────────────────────────
-   SELETOR DE PASSAGEM — tela única
-   Livro e capítulo na mesma tela: escolher o livro abre a régua
-   de capítulos no topo; escolher o capítulo já abre a leitura.
+   SELETOR DE PASSAGEM — três passos
+   Livro → Capítulo → Versículo. Cada passo substitui o anterior
+   na tela, com a volta explícita no topo.
    ──────────────────────────────────────────────────────────*/
+
+/* ── Passo 1: livros ── */
 function renderBookPanel() {
   const body  = document.getElementById("readerBody");
   const panel = document.getElementById("readerPanel");
-  /* Modo seleção: esconde o botão de referência e a régua de fonte */
+  /* Modo seleção: esconde o botão de referência do topo */
   panel?.classList.remove("is-reading");
 
   const bookGrid = (ids, label) => {
@@ -1179,18 +1182,19 @@ function renderBookPanel() {
   body.innerHTML = `
     <div class="reader-picker">
 
+      <div class="picker-head">
+        <div class="picker-head__text">
+          <span class="picker-head__title">Escolha o livro</span>
+          <span class="picker-head__sub">${BOOKS_PT.length} livros</span>
+        </div>
+      </div>
+
       <div class="picker-search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" id="bookFilterInput" class="picker-search__input"
                placeholder="Filtrar livro — ex: salmos, 1 co"
                autocomplete="off" oninput="filterBooks(this.value)" />
       </div>
-
-      <div class="picker-chapters" id="readerChapterStrip">
-        <p class="picker-chapters__hint">Escolha um livro para ver os capítulos.</p>
-      </div>
-
-      <div class="picker-verses" id="readerVerseStrip"></div>
 
       <div id="bookGrids">
         ${bookGrid(OT_BOOKS, "Antigo Testamento")}
@@ -1201,8 +1205,7 @@ function renderBookPanel() {
     </div>
   `;
 
-  /* Se já há um livro corrente, abre a régua dele de cara */
-  if (readerBook) selectBook(readerBook, { silent: true });
+  body.scrollTop = 0;
 }
 
 /* ── Filtro de livros por nome, sem acento ── */
@@ -1228,97 +1231,59 @@ function filterBooks(query) {
   if (empty) empty.style.display = anyVisible ? "none" : "block";
 }
 
-/* ── Seleciona livro → mostra a régua de capítulos na mesma tela ── */
-async function selectBook(bookId, opts = {}) {
-  const changedBook = bookId !== readerBook;
-  readerBook = bookId;
+/* ── Passo 2: capítulos do livro escolhido ── */
+async function selectBook(bookId) {
+  readerBook    = bookId;
+  readerChapter = null;
+  readerVerse   = null;
 
-  /* Trocou de livro: zera capítulo/versículo e esconde a régua de versículos */
-  if (changedBook) {
-    readerChapter = 1;
-    readerVerse   = null;
-    hideVerseStrip();
-  }
-
-  /* Marca o livro ativo sem redesenhar a lista toda */
-  document.querySelectorAll(".panel-btn--book").forEach(btn => {
-    btn.classList.toggle("panel-btn--active", btn.dataset.book === bookId);
-  });
-
-  const strip = document.getElementById("readerChapterStrip");
-  if (!strip) return;
-
+  const body     = document.getElementById("readerBody");
   const bookName = BOOKS_PT.find(b => b[0] === bookId)?.[1] ?? bookId;
-  strip.innerHTML = `<p class="picker-chapters__hint">Carregando capítulos de ${bookName}...</p>`;
+
+  body.innerHTML = `<div class="modal-loading">Carregando capítulos de ${bookName}...</div>`;
 
   try {
-    const data   = await loadBibleVersion(currentVersion);
-    const book   = data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
+    const data = await loadBibleVersion(currentVersion);
+    const book = data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
     if (!book) throw new Error("Livro não encontrado");
 
     _readerChapCount = book.chapters.length;
 
     const nums = book.chapters.map((_, i) => {
       const n = i + 1;
-      const active = (!changedBook && n === readerChapter) ? "panel-btn--active" : "";
-      return `<button class="panel-btn panel-btn--num ${active}" data-chapter="${n}" onclick="selectChapter(${n})">${n}</button>`;
+      return `<button class="panel-btn panel-btn--num" onclick="selectChapter(${n})">${n}</button>`;
     }).join("");
 
-    strip.innerHTML = `
-      <div class="picker-chapters__head">
-        <span class="picker-chapters__book">${bookName}</span>
-        <span class="picker-chapters__count">${_readerChapCount} ${_readerChapCount === 1 ? "capítulo" : "capítulos"}</span>
-      </div>
-      <div class="panel-grid panel-grid--nums">${nums}</div>`;
+    body.innerHTML = `
+      <div class="reader-picker">
+        <div class="picker-head">
+          <button class="picker-back" onclick="renderBookPanel()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <span>Livros</span>
+          </button>
+          <div class="picker-head__text">
+            <span class="picker-head__title">${bookName}</span>
+            <span class="picker-head__sub">${_readerChapCount} ${_readerChapCount === 1 ? "capítulo" : "capítulos"}</span>
+          </div>
+        </div>
+        <div class="panel-grid panel-grid--nums">${nums}</div>
+      </div>`;
 
-    /* Abertura inicial: já mostra os versículos do capítulo corrente */
-    if (!changedBook) renderVerseStrip({ silent: true });
-
-    if (!opts.silent) {
-      strip.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    body.scrollTop = 0;
   } catch(e) {
-    strip.innerHTML = `<p class="picker-chapters__hint">Erro ao carregar os capítulos.</p>`;
+    body.innerHTML = `<p class="modal-error">Erro ao carregar os capítulos.</p>`;
   }
 }
 
-/* ── Seleciona capítulo → abre a régua de versículos logo abaixo.
-      Clicar de novo no capítulo já ativo abre a leitura direto. ── */
-function selectChapter(num) {
-  const n     = parseInt(num);
-  const strip = document.getElementById("readerVerseStrip");
-
-  if (n === readerChapter && strip?.classList.contains("is-visible")) {
-    openWholeChapter();
-    return;
-  }
-
-  readerChapter = n;
+/* ── Passo 3: versículos do capítulo escolhido ── */
+async function selectChapter(num) {
+  readerChapter = parseInt(num);
   readerVerse   = null;
 
-  document.querySelectorAll("#readerChapterStrip .panel-btn--num").forEach(btn => {
-    btn.classList.toggle("panel-btn--active", parseInt(btn.dataset.chapter) === n);
-  });
-
-  renderVerseStrip();
-}
-
-function hideVerseStrip() {
-  const host = document.getElementById("readerVerseStrip");
-  if (!host) return;
-  host.classList.remove("is-visible");
-  host.innerHTML = "";
-}
-
-/* ── Régua de versículos do capítulo selecionado ── */
-async function renderVerseStrip(opts = {}) {
-  const host = document.getElementById("readerVerseStrip");
-  if (!host) return;
-
+  const body     = document.getElementById("readerBody");
   const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
 
-  host.classList.add("is-visible");
-  host.innerHTML = `<p class="picker-chapters__hint">Carregando versículos...</p>`;
+  body.innerHTML = `<div class="modal-loading">Carregando versículos...</div>`;
 
   try {
     const data = await loadBibleVersion(currentVersion);
@@ -1330,26 +1295,32 @@ async function renderVerseStrip(opts = {}) {
 
     const nums = chapArr.map((_, i) => {
       const n = i + 1;
-      const active = readerVerse === `${readerBook}.${readerChapter}.${n}` ? "panel-btn--active" : "";
-      return `<button class="panel-btn panel-btn--num ${active}" onclick="selectVerse(${n})">${n}</button>`;
+      return `<button class="panel-btn panel-btn--num" onclick="selectVerse(${n})">${n}</button>`;
     }).join("");
 
-    host.innerHTML = `
-      <div class="picker-verses__head">
-        <span class="picker-chapters__book">${bookName} ${readerChapter}</span>
-        <button class="picker-open-btn" onclick="openWholeChapter()">
-          Ler o capítulo
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l6 6-6 6"/></svg>
-        </button>
-      </div>
-      <span class="panel-section-label">ou comece em um versículo — ${total} no capítulo</span>
-      <div class="panel-grid panel-grid--nums">${nums}</div>`;
+    body.innerHTML = `
+      <div class="reader-picker">
+        <div class="picker-head">
+          <button class="picker-back" onclick="selectBook('${readerBook}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <span>Capítulos</span>
+          </button>
+          <div class="picker-head__text">
+            <span class="picker-head__title">${bookName} ${readerChapter}</span>
+            <span class="picker-head__sub">${total} ${total === 1 ? "versículo" : "versículos"}</span>
+          </div>
+          <button class="picker-open-btn" onclick="openWholeChapter()">
+            Ler o capítulo
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <span class="panel-section-label">ou comece em um versículo</span>
+        <div class="panel-grid panel-grid--nums">${nums}</div>
+      </div>`;
 
-    if (!opts.silent) {
-      host.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    body.scrollTop = 0;
   } catch(e) {
-    host.innerHTML = `<p class="picker-chapters__hint">Erro ao carregar os versículos.</p>`;
+    body.innerHTML = `<p class="modal-error">Erro ao carregar os versículos.</p>`;
   }
 }
 

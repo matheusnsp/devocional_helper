@@ -1601,6 +1601,19 @@ body.light {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+/* O botão de referência acompanha o próprio texto; o X vai para a
+   direita da coluna, não para o canto da tela. */
+.reader-bar__top .reader-ref-btn {
+  flex: 0 1 auto;
+}
+
+.reader-bar__top .modal-close {
+  margin-left: auto;
 }
 
 .reader-bar__title {
@@ -1621,6 +1634,9 @@ body.light {
 
 .reader-bar__scale {
   display: flex;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
 }
 
 /* ── Régua de tamanho do texto ── */
@@ -1778,87 +1794,70 @@ body.light {
 
 .picker-search__input::placeholder { color: var(--text-muted); }
 
-/* Régua de capítulos do livro selecionado */
-.picker-chapters {
+/* Cabeçalho do passo: volta + título + ação */
+.picker-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.picker-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 16px 0 12px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--glass);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.picker-back:hover {
+  background: var(--glass-hover);
+  border-color: rgba(18,163,148,.35);
+  color: var(--text-primary);
+}
+
+.picker-head__text {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  border-radius: var(--radius-md);
-  background: rgba(18,163,148,.07);
-  border: 1px solid rgba(18,163,148,.22);
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
-.picker-chapters__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.picker-chapters__book {
+.picker-head__title {
   font-family: var(--font-serif);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -.02em;
   color: var(--text-primary);
 }
 
-.picker-chapters__count {
+.picker-head__sub {
   font-family: var(--font-mono);
   font-size: .72rem;
   color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.picker-chapters__hint,
-.picker-empty {
-  font-family: var(--font-serif);
-  font-size: .98rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.picker-empty {
-  text-align: center;
-  padding: 28px 0;
-}
-
-/* Régua de versículos — aparece depois de escolher o capítulo */
-.picker-verses {
-  display: none;
-  flex-direction: column;
-  gap: 12px;
-  padding: 18px;
-  border-radius: var(--radius-md);
-  background: var(--glass);
-  border: 1px solid var(--card-border);
-}
-
-.picker-verses.is-visible {
-  display: flex;
-  animation: pickerVersesIn .2s cubic-bezier(.16,1,.3,1) both;
-}
-
-@keyframes pickerVersesIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.picker-verses__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
 .picker-open-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 42px;
-  padding: 0 18px;
+  min-height: 44px;
+  padding: 0 20px;
+  flex-shrink: 0;
   border-radius: 999px;
   border: 1px solid rgba(18,163,148,.45);
   background: rgba(18,163,148,.18);
@@ -2055,12 +2054,11 @@ body.light {
     font-size: .98rem;
     padding: 9px 13px;
   }
-  .picker-chapters,
-  .picker-verses {
-    padding: 14px;
+  .picker-head {
+    gap: 10px;
   }
-  .picker-chapters__book {
-    font-size: 1.15rem;
+  .picker-head__title {
+    font-size: 1.28rem;
   }
   .picker-open-btn {
     width: 100%;
@@ -2590,8 +2588,6 @@ body.light {
   max-width: calc(100vw - 48px);
   max-height: min(360px, 60vh);
   overflow-y: auto;
-  right: 0;
-  left: auto;
 }
 
 /* "Todos os Temas" em linha completa no topo */
