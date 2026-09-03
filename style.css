@@ -136,7 +136,15 @@ body {
 
   min-height:100vh;
 
-  padding:32px 20px;
+  /* Instalado como web app não há barra do navegador, e o conteúdo
+     passa por baixo da barra de status e do notch. env(safe-area-*)
+     devolve esse espaço. No navegador os valores são 0 e valem os
+     mínimos do max(). */
+  padding:
+    max(32px, calc(env(safe-area-inset-top) + 12px))
+    max(20px, env(safe-area-inset-right))
+    max(32px, calc(env(safe-area-inset-bottom) + 12px))
+    max(20px, env(safe-area-inset-left));
 
   display:flex;
   justify-content:center;
@@ -837,7 +845,11 @@ body.light {
 @media (max-width:768px){
 
   body {
-    padding:26px 18px 22px;
+    padding:
+      max(26px, calc(env(safe-area-inset-top) + 10px))
+      max(18px, env(safe-area-inset-right))
+      max(22px, calc(env(safe-area-inset-bottom) + 10px))
+      max(18px, env(safe-area-inset-left));
   }
 
   .workspace-card {
@@ -866,7 +878,11 @@ body.light {
 @media (max-width: 480px) {
 
   body {
-    padding: 20px 12px 18px;
+    padding:
+      max(20px, calc(env(safe-area-inset-top) + 8px))
+      max(12px, env(safe-area-inset-right))
+      max(18px, calc(env(safe-area-inset-bottom) + 8px))
+      max(12px, env(safe-area-inset-left));
   }
 
   /* ── Header: só brand + hamburguer ── */
@@ -1630,17 +1646,21 @@ body.light {
 
 .modal-overlay--reader {
   align-items: stretch;
+  /* O respiro do topo vem daqui: o painel não encosta na borda da
+     tela e o fundo escuro aparece atrás, como nos outros modais. */
   padding: 0;
+  padding-top: max(30px, env(safe-area-inset-top));
 }
 
 .modal-panel--reader {
   width: 100%;
   max-width: 100%;
-  height: 100dvh;
-  max-height: 100dvh;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
+  height: 100%;
+  max-height: 100%;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border: 1px solid var(--card-border);
+  border-bottom: none;
+  box-shadow: 0 -20px 60px rgba(0,0,0,.45);
   transform: translateY(16px);
 }
 
@@ -1649,8 +1669,7 @@ body.light {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px 20px;
-  padding-top: max(14px, env(safe-area-inset-top));
+  padding: 18px 20px 16px;
   border-bottom: 1px solid var(--card-border);
   background: var(--bg-secondary);
   flex-shrink: 0;
@@ -1796,9 +1815,11 @@ body.light {
 }
 
 @media (max-width: 480px) {
+  .modal-overlay--reader {
+    padding-top: max(24px, env(safe-area-inset-top));
+  }
   .reader-bar {
-    padding: 12px 16px;
-    padding-top: max(12px, env(safe-area-inset-top));
+    padding: 16px 16px 14px;
     gap: 10px;
   }
   .modal-panel--reader .modal-body {
