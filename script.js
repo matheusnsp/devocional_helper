@@ -331,6 +331,15 @@ function toggleDropdown(triggerId, panelId) {
     trigger.classList.add("is-open");
     trigger.setAttribute("aria-expanded","true");
 
+    /* Dentro da gaveta o painel já ocupa a largura do gatilho e abre
+       para cima pelo CSS. Medir pelo container da página aqui daria
+       uma posição errada, então não há o que reposicionar. */
+    if (trigger.closest(".action-toolbar")) {
+      const sel = panel.querySelector(".is-selected");
+      if (sel) setTimeout(() => sel.scrollIntoView({ block: "nearest" }), 20);
+      return;
+    }
+
     /* Reposiciona para não sair da tela.
        Calcula a posição desejada em coordenadas absolutas e prende
        dentro dos limites visíveis. Escrever left inline sobrepõe
@@ -703,18 +712,40 @@ function renderFavoritesList() {
     return;
   }
 
-  body.innerHTML = '<div class="favs-list">' + favs.map((f, i) => `
+  body.innerHTML = '<div class="favs-list">' + favs.map((f, i) => {
+    /* Favorito vindo do leitor da Bíblia: não tem tema nem análise,
+       e ao tocar abre o leitor na passagem, não o card do devocional. */
+    const daBiblia = f.source === "biblia";
+    const badge = daBiblia
+      ? '<span class="theme-badge theme-badge--sm theme-badge--bible">Bíblia</span>'
+      : `<span class="theme-badge theme-badge--sm">${escapeHtml(f.theme)}</span>`;
+    const abrir = daBiblia
+      ? `goToFavoriteBible('${escapeAttr(f.apiId)}')`
+      : `goToFavorite('${escapeAttr(f.apiId)}','${escapeAttr(f.theme)}')`;
+
+    return `
     <div class="fav-item">
       <div class="fav-item__header">
-        <span class="theme-badge theme-badge--sm">${escapeHtml(f.theme)}</span>
-        <button class="fav-item__remove" onclick="removeFavorite(${i})" title="Remover dos favoritos">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        ${badge}
+        <button class="fav-item__remove" onclick="removeFavorite(${i})" title="Remover dos favoritos" aria-label="Remover dos favoritos">
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
-      <button class="fav-item__ref" onclick="goToFavorite('${escapeAttr(f.apiId)}','${escapeAttr(f.theme)}');closeFavoritesModal();">${escapeHtml(f.ref)}</button>
+      <button class="fav-item__ref" onclick="${abrir};closeFavoritesModal();">${escapeHtml(f.ref)}</button>
       <p class="fav-item__ctx">${escapeHtml(f.ctx)}</p>
-    </div>`
-  ).join("") + '</div>';
+    </div>`;
+  }).join("") + '</div>';
+}
+
+/* Abre o leitor direto na passagem favoritada */
+function goToFavoriteBible(apiId) {
+  const base = apiId.includes("-") ? apiId.split("-")[0] : apiId;
+  const [livro, cap] = base.split(".");
+  readerBook    = livro;
+  readerChapter = parseInt(cap);
+  readerVerse   = base;
+  openModal("bibleModal");
+  loadReaderChapter();
 }
 
 function removeFavorite(i) {
@@ -808,7 +839,7 @@ function toggleDark() {
   const isLight = document.body.classList.contains("light");
   document.getElementById("modeIcon").textContent = isLight ? "☀" : "☽";
   const lbl = document.getElementById("themeLabel");
-  if (lbl) lbl.textContent = isLight ? "Claro" : "Escuro";
+  if (lbl) lbl.textContent = isLight ? "Modo claro" : "Modo escuro";
   localStorage.setItem("devocional-mode", isLight ? "light" : "dark");
 }
 
@@ -818,12 +849,12 @@ function loadDark() {
     document.body.classList.add("light");
     document.getElementById("modeIcon").textContent = "☀";
     const lbl = document.getElementById("themeLabel");
-    if (lbl) lbl.textContent = "Claro";
+    if (lbl) lbl.textContent = "Modo claro";
   } else {
     document.body.classList.remove("light");
     document.getElementById("modeIcon").textContent = "☽";
     const lbl = document.getElementById("themeLabel");
-    if (lbl) lbl.textContent = "Escuro";
+    if (lbl) lbl.textContent = "Modo escuro";
   }
 }
 
@@ -1072,8 +1103,12 @@ function _ensureSelectionBar(container) {
     <span class="verse-sel-label">0 versículos</span>
     <div class="verse-sel-actions">
       <button class="verse-sel-btn verse-sel-btn--ghost" onclick="_clearVerseSelection(this)">Limpar</button>
-      <button class="verse-sel-btn verse-sel-btn--copy" onclick="_copyVerseSelection(this)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <button class="verse-sel-btn verse-sel-btn--fav" onclick="_favoriteVerseSelection(this)" aria-label="Favoritar seleção">
+        <svg aria-hidden="true" class="icon-heart" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="verse-sel-fav-label">Favoritar</span>
+      </button>
+      <button class="verse-sel-btn verse-sel-btn--copy" onclick="_copyVerseSelection(this)" aria-label="Copiar seleção">
+        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span class="verse-sel-copy-label">Copiar</span>
       </button>
     </div>`;
@@ -1099,6 +1134,16 @@ function _updateSelectionBar(panel) {
   const count = _selectedVids.size;
   bar.classList.toggle("verse-sel-bar--visible", count > 0);
   label.textContent = count === 1 ? "1 versículo" : `${count} versículos`;
+
+  /* Estado do favoritar para a seleção atual */
+  const favBtn = panel.querySelector(".verse-sel-btn--fav");
+  if (favBtn) {
+    const d = _selectionData();
+    const ativo = !!d && getFavorites().some(f => f.apiId === d.apiId && f.source === "biblia");
+    favBtn.classList.toggle("verse-sel-btn--fav-active", ativo);
+    const lbl = favBtn.querySelector(".verse-sel-fav-label");
+    if (lbl) lbl.textContent = ativo ? "Favoritado" : "Favoritar";
+  }
 }
 
 /* Limpa seleção e esconde a barra — usado ao fechar os modais */
@@ -1113,36 +1158,74 @@ function _clearVerseSelection(btn) {
   _resetVerseSelection(btn.closest(".modal-panel"));
 }
 
-function _copyVerseSelection(btn) {
-  if (_selectedVids.size === 0) return;
-
-  /* Ordena pelos índices originais do capítulo */
+/* Dados da seleção atual, usados tanto para copiar quanto para
+   favoritar. Devolve null se não há nada selecionado. */
+function _selectionData() {
   const ordered = _selVerseOrder.filter(vid => _selectedVids.has(vid));
+  if (ordered.length === 0) return null;
 
-  /* Monta referência */
-  const _bookName = BOOKS_PT.find(b => b[0] === _selBookId)?.[1] ?? _selBookId;
-  const _chapRef  = `${_bookName} ${_selChapNum}`;
+  const bookName = BOOKS_PT.find(b => b[0] === _selBookId)?.[1] ?? _selBookId;
   const nums = ordered.map(vid => parseInt(vid.split(".")[2]));
   const min  = Math.min(...nums);
   const max  = Math.max(...nums);
-  const ref  = min === max ? `${_chapRef}:${min}` : `${_chapRef}:${min}-${max}`;
+
+  const ref = min === max
+    ? `${bookName} ${_selChapNum}:${min}`
+    : `${bookName} ${_selChapNum}:${min}-${max}`;
+
+  /* Mesmo formato dos apiId do devocional, para os favoritos
+     guardarem tudo numa lista só. */
+  const apiId = min === max
+    ? `${_selBookId}.${_selChapNum}.${min}`
+    : `${_selBookId}.${_selChapNum}.${min}-${_selBookId}.${_selChapNum}.${max}`;
+
+  return { ordered, ref, apiId, texto: ordered.map(v => _selVerseMap[v]).join(" ") };
+}
+
+/* Favoritar a seleção — alterna: se já está salva, remove */
+function _favoriteVerseSelection(btn) {
+  const d = _selectionData();
+  if (!d) return;
+
+  let favs = getFavorites();
+  const i = favs.findIndex(f => f.apiId === d.apiId && f.source === "biblia");
+  const salvando = i === -1;
+
+  if (salvando) {
+    favs.push({ apiId: d.apiId, ref: d.ref, theme: null, ctx: d.texto, source: "biblia" });
+  } else {
+    favs.splice(i, 1);
+  }
+  saveFavorites(favs);
+
+  const lbl = btn.querySelector(".verse-sel-fav-label");
+  if (lbl) {
+    lbl.textContent = salvando ? "Salvo" : "Removido";
+    setTimeout(() => _updateSelectionBar(btn.closest(".modal-panel")), 1400);
+  }
+  btn.classList.toggle("verse-sel-btn--fav-active", salvando);
+}
+
+function _copyVerseSelection(btn) {
+  const d = _selectionData();
+  if (!d) return;
 
   /* Monta o texto final */
-  const toSup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
+  const toSup = n => String(n).split("").map(x => "⁰¹²³⁴⁵⁶⁷⁸⁹"[x]).join("");
   let formatted;
-  if (ordered.length === 1) {
-    formatted = `"${_selVerseMap[ordered[0]]}" - ${ref}`;
+  if (d.ordered.length === 1) {
+    formatted = `"${_selVerseMap[d.ordered[0]]}" - ${d.ref}`;
   } else {
-    const lines = ordered.map(vid => {
+    const lines = d.ordered.map(vid => {
       const n = parseInt(vid.split(".")[2]);
       return `${toSup(n)} ${_selVerseMap[vid]}`;
     }).join("\n");
-    formatted = `${lines}\n\n${ref}`;
+    formatted = `${lines}\n\n${d.ref}`;
   }
 
   navigator.clipboard.writeText(formatted).then(() => {
     const lbl = btn.querySelector(".verse-sel-copy-label");
-    if (lbl) { lbl.textContent = "Copiado!"; setTimeout(() => { lbl.textContent = "Copiar"; }, 1800); }
+    if (lbl) { lbl.textContent = "Copiado"; setTimeout(() => { lbl.textContent = "Copiar"; }, 1800); }
     btn.classList.add("verse-sel-btn--success");
     setTimeout(() => btn.classList.remove("verse-sel-btn--success"), 1800);
   }).catch(err => console.error("Erro ao copiar:", err));
@@ -1564,19 +1647,13 @@ function openHamburgerMenu() {
   const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
   if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
 
-  /* Posiciona o dropdown logo abaixo do header, alinhado à direita */
-  const header        = document.querySelector('.app-header');
-  const container     = document.querySelector('.app-container');
-  const headerRect    = header.getBoundingClientRect();
-  const containerRect = container.getBoundingClientRect();
-  hamburgerToolbar.style.top = (headerRect.bottom - containerRect.top + 8) + 'px';
-  hamburgerToolbar.style.right = '0px';
-  hamburgerToolbar.style.position = 'absolute';
-
+  /* A gaveta é position:fixed e ocupa a lateral inteira — não precisa
+     mais ser ancorada no header por estilo inline. */
   hamburgerBtn.classList.add('is-open');
   hamburgerBtn.setAttribute('aria-expanded', 'true');
   hamburgerToolbar.classList.add('is-open');
   hamburgerBackdrop.classList.add('is-active');
+  document.body.classList.add('modal-open');
 }
 
 function closeHamburgerMenu() {
@@ -1589,4 +1666,9 @@ function closeHamburgerMenu() {
   hamburgerBtn.setAttribute('aria-expanded', 'false');
   hamburgerToolbar.classList.remove('is-open');
   hamburgerBackdrop.classList.remove('is-active');
+
+  /* Só libera a rolagem se nenhum modal ficou aberto */
+  if (!document.querySelector('.modal-overlay.open')) {
+    document.body.classList.remove('modal-open');
+  }
 }

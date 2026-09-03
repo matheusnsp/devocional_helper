@@ -305,36 +305,6 @@ body.light {
   min-width: 0;
 }
 
-/* ── Botão da Bíblia ao lado dos seletores de tema e versão ── */
-.header-bible-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  border: 1px solid rgba(18,163,148,.35);
-  background: rgba(18,163,148,.14);
-  color: var(--accent-2);
-  font-family: var(--font-mono);
-  font-size: .72rem;
-  letter-spacing: .04em;
-  cursor: pointer;
-  transition: var(--transition);
-  white-space: nowrap;
-}
-
-.header-bible-btn:hover {
-  background: rgba(18,163,148,.26);
-  border-color: rgba(18,163,148,.6);
-  color: var(--text-primary);
-}
-
-.header-bible-btn svg {
-  flex-shrink: 0;
-}
-
 
 
 
@@ -386,6 +356,12 @@ body.light {
 
 .action-btn:hover svg {
   opacity: 1;
+}
+
+/* Só existem no mobile, quando a barra vira gaveta */
+.drawer-close,
+.drawer-settings {
+  display: none;
 }
 
 .action-toolbar__divider {
@@ -551,6 +527,12 @@ body.light {
   font-size: .64rem;
   letter-spacing: .12em;
   padding: 7px 13px;
+}
+
+/* Favorito vindo do leitor: distingue da badge de tema do devocional */
+.theme-badge--bible {
+  background: rgba(240,129,63,.85);
+  color: #fff6ef;
 }
 
 .copy-btn {
@@ -825,11 +807,6 @@ body.light {
   display: none;
 }
 
-/* Selects duplicados para mobile: ocultos no desktop */
-.mobile-selects-bar {
-  display: none;
-}
-
 /* =========================================================
    TABLET
 ========================================================= */
@@ -897,32 +874,6 @@ body.light {
     display: none;
   }
 
-  /* ── Faixa de selects abaixo do header ── */
-  .mobile-selects-bar {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  /* Botão da Bíblia mantém o rótulo. Quem encolhe, se faltar espaço,
-     é o seletor de tema — o nome do tema trunca com reticências. */
-  .mobile-selects-bar .header-bible-btn--icon {
-    padding: 0 13px;
-    height: 36px;
-    flex-shrink: 0;
-  }
-
-  .mobile-selects-bar .custom-dropdown {
-    min-width: 0;
-    flex: 0 1 auto;
-  }
-
-  /* A Bíblia já está na faixa acima: sai do menu hamburguer */
-  #btnBible,
-  #dividerBible {
-    display: none;
-  }
-
   /* ── Botão hamburguer ── */
   .hamburger-btn {
     display: flex;
@@ -973,62 +924,219 @@ body.light {
     position: fixed;
     inset: 0;
     z-index: 350;
+    background: rgba(0,0,0,.55);
   }
   .hamburger-backdrop.is-active {
     display: block;
+    animation: hamFadeIn .25s ease both;
   }
 
-  /* ── Toolbar vira dropdown ── */
+  @keyframes hamFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Toolbar vira gaveta lateral ──
+     Painel inteiro em vez de menuzinho suspenso: cabe rótulo grande,
+     respiro entre os itens e um lugar próprio para o ajuste de tema. */
   .action-toolbar {
-    /* oculto por padrão */
     display: none;
-    /* quando aberto, posiciona-se sob o header à direita */
-    position: absolute;
-    top: 0;              /* será ajustado pelo JS via top do header */
+    position: fixed;
+    top: 0;
     right: 0;
-    width: 210px;
-    height: auto;
+    bottom: 0;
+    width: min(86vw, 340px);
+    height: 100dvh;
     flex-direction: column;
     align-items: stretch;
-    border-radius: 14px;
-    overflow: hidden;
-    z-index: 500;
+    gap: 0;
+    padding:
+      calc(env(safe-area-inset-top) + 92px)
+      28px
+      calc(env(safe-area-inset-bottom) + 30px);
+    margin: 0;
+    border: none;
+    border-left: 1px solid var(--card-border);
+    border-radius: 0;
     background: var(--bg-secondary);
-    border: 1px solid var(--card-border);
-    box-shadow: 0 12px 40px rgba(0,0,0,.35);
-    /* fundo opaco no mobile: blur aqui só custa nitidez */
+    box-shadow: -24px 0 60px rgba(0,0,0,.55);
     backdrop-filter: none;
-    /* ancora no header via position:absolute do .app-header */
-    margin-top: 8px;
+    z-index: 500;
+    overflow-y: auto;
+    counter-reset: menu;
   }
 
-  /* Classe que abre o dropdown */
   .action-toolbar.is-open {
     display: flex;
-    animation: hamDropIn .22s cubic-bezier(.34,1.56,.64,1) both;
+    animation: hamSlideIn .3s cubic-bezier(.16,1,.3,1) both;
   }
 
-  @keyframes hamDropIn {
-    from { opacity: 0; transform: scale(.94) translateY(-6px); transform-origin: top right; }
-    to   { opacity: 1; transform: scale(1)   translateY(0);    transform-origin: top right; }
+  @keyframes hamSlideIn {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
   }
 
-  /* Cada botão vira linha full-width */
+  /* Fechar, no alto da própria gaveta */
+  .drawer-close {
+    display: flex;
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 22px);
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    border: 1px solid var(--card-border);
+    background: var(--glass);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background .18s, color .18s;
+  }
+
+  .drawer-close:hover {
+    background: var(--glass-hover);
+    color: var(--text-primary);
+  }
+
+  /* ── Itens: número em mono + rótulo em serifada ── */
   .action-toolbar .action-btn {
     flex: none;
     width: 100%;
     justify-content: flex-start;
-    padding: 14px 18px;
+    align-items: baseline;
+    gap: 20px;
+    padding: 15px 0;
+    border: none;
     border-radius: 0;
-    gap: 12px;
-    font-size: .76rem;
-    border-bottom: 1px solid var(--card-border);
-  }
-  .action-toolbar .action-btn:last-child {
-    border-bottom: none;
+    background: transparent;
+    color: var(--text-primary);
+    text-transform: none;
+    transition: opacity .18s, transform .22s cubic-bezier(.16,1,.3,1);
   }
 
-  /* Dividers horizontais desnecessários no dropdown */
+  .action-toolbar .action-btn:hover,
+  .action-toolbar .action-btn:active {
+    background: transparent;
+    opacity: .6;
+    transform: translateX(4px);
+  }
+
+  /* Numeração automática, sem precisar escrever no HTML */
+  .action-toolbar .action-btn:not(#themeToggle)::before {
+    counter-increment: menu;
+    content: counter(menu, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--accent-2);
+    opacity: .75;
+    min-width: 26px;
+    flex-shrink: 0;
+  }
+
+  /* O número já orienta a leitura: o ícone só competiria com ele */
+  .action-toolbar .action-btn svg {
+    display: none;
+  }
+
+  .action-toolbar .action-btn:not(#themeToggle) span {
+    font-family: var(--font-serif);
+    font-size: 1.55rem;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+  }
+
+  /* ── Preferências: filtro de tema e versão, no pé da gaveta ── */
+  .drawer-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--card-border);
+  }
+
+  .drawer-settings__label {
+    font-family: var(--font-mono);
+    font-size: .66rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  .drawer-settings .custom-dropdown {
+    display: block;
+    width: 100%;
+  }
+
+  .drawer-settings .custom-dropdown__trigger {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border-radius: 13px;
+    font-size: .78rem;
+    justify-content: space-between;
+  }
+
+  /* Painel ocupa a largura do gatilho e abre para cima: aberto para
+     baixo ele cairia fora da gaveta, que é o fim da tela. */
+  .drawer-settings .custom-dropdown__panel {
+    top: auto;
+    bottom: calc(100% + 6px);
+    left: 0;
+    right: auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .drawer-settings .custom-dropdown__panel--themes {
+    max-height: min(300px, 46vh);
+  }
+
+  .drawer-settings .custom-dropdown__grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Tema: ajuste, não navegação. Fica no rodapé, sem número ── */
+  .action-toolbar #themeToggle {
+    margin-top: 14px;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1px solid var(--card-border);
+    border-radius: 13px;
+    background: var(--glass);
+    color: var(--text-secondary);
+  }
+
+  .action-toolbar #themeToggle:hover {
+    background: var(--glass-hover);
+    opacity: 1;
+    transform: none;
+    color: var(--text-primary);
+  }
+
+  .action-toolbar #themeToggle span {
+    font-family: var(--font-mono);
+    font-size: .74rem;
+    letter-spacing: .04em;
+  }
+
+  .action-toolbar #modeIcon {
+    color: var(--accent-orange);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  /* Dividers não fazem sentido na gaveta */
   .action-toolbar .action-toolbar__divider {
     display: none;
   }
@@ -2346,6 +2454,28 @@ body.modal-open {
   color: var(--text-primary);
 }
 
+/* Favoritar dentro da barra de seleção */
+.verse-sel-btn--fav {
+  background: var(--glass);
+  color: var(--text-secondary);
+}
+
+.verse-sel-btn--fav:hover {
+  background: rgba(244,63,94,.14);
+  border-color: rgba(244,63,94,.35);
+  color: #ffb2c0;
+}
+
+.verse-sel-btn--fav-active {
+  background: rgba(244,63,94,.18);
+  border-color: rgba(244,63,94,.45);
+  color: #ff7d94;
+}
+
+.verse-sel-btn--fav-active .icon-heart {
+  fill: currentColor;
+}
+
 .verse-sel-btn--copy {
   background: rgba(18,163,148,.18);
   border-color: rgba(18,163,148,.4);
@@ -2367,10 +2497,24 @@ body.modal-open {
 @media (max-width: 480px) {
   .verse-sel-bar {
     padding: 12px 16px;
+    gap: 8px;
   }
   .verse-sel-btn {
     padding: 8px 11px;
     font-size: .66rem;
+  }
+  /* Com três ações, o rótulo de favoritar e copiar não cabe:
+     ficam só os ícones. "Limpar" mantém o texto por não ter ícone. */
+  .verse-sel-fav-label,
+  .verse-sel-copy-label {
+    display: none;
+  }
+  .verse-sel-btn--fav,
+  .verse-sel-btn--copy {
+    padding: 8px 12px;
+  }
+  .verse-sel-label {
+    font-size: .64rem;
   }
 }
 /* ── STREAK BADGE ── */
