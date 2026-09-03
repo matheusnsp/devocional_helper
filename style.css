@@ -62,6 +62,10 @@
   --radius-lg: 22px;
   --radius-md: 16px;
 
+  /* Tamanho do texto bíblico — controlado pela régua de fonte do leitor */
+  --reading-size: 1.26rem;
+  --reading-line: 1.85;
+
   --transition:
     all .35s cubic-bezier(.16,1,.3,1);
 
@@ -280,6 +284,36 @@ body.light {
   gap: 8px;
   flex-shrink: 0;
   min-width: 0;
+}
+
+/* ── Botão da Bíblia ao lado dos seletores de tema e versão ── */
+.header-bible-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(18,163,148,.35);
+  background: rgba(18,163,148,.14);
+  color: var(--accent-2);
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.header-bible-btn:hover {
+  background: rgba(18,163,148,.26);
+  border-color: rgba(18,163,148,.6);
+  color: var(--text-primary);
+}
+
+.header-bible-btn svg {
+  flex-shrink: 0;
 }
 
 .select-custom {
@@ -851,6 +885,26 @@ body.light {
   .mobile-selects-bar {
     display: flex;
     gap: 8px;
+    align-items: center;
+  }
+
+  /* Botão da Bíblia mantém o rótulo. Quem encolhe, se faltar espaço,
+     é o seletor de tema — o nome do tema trunca com reticências. */
+  .mobile-selects-bar .header-bible-btn--icon {
+    padding: 0 13px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .mobile-selects-bar .custom-dropdown {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  /* A Bíblia já está na faixa acima: sai do menu hamburguer */
+  #btnBible,
+  #dividerBible {
+    display: none;
   }
 
   /* .mobile-selects-bar .select-custom {
@@ -1314,59 +1368,109 @@ body.light {
 
 /* ── Chapter verses ── */
 
-/* Coluna de leitura: medida limitada (~64 caracteres) e centralizada.
-   Linha longa demais é o que mais cansa a vista em texto corrido. */
-.chapter-verses {
+/* =========================================================
+   LEITURA DO CAPÍTULO
+   Um versículo por linha, numeração numa calha à esquerda
+   separada por uma régua contínua. Sem caixas, sem divisórias
+   horizontais: o texto é o objeto principal da tela.
+========================================================= */
+
+.reading {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-bottom: 8px;
+}
+
+.reading__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.reading__book {
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 8px;
+}
+
+.reading__chap {
+  font-family: var(--font-serif);
+  font-size: 3.1rem;
+  font-weight: 300;
+  line-height: .85;
+  letter-spacing: -.04em;
+  color: var(--accent-2);
+}
+
+.reading__body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  max-width: 64ch;
-  margin: 0 auto;
-  padding: 2px 0 6px;
 }
 
-.chapter-verse {
-  display: flex;
-  gap: 16px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border-bottom: none;
-  transition: background .18s;
+/* Cada versículo: calha do número + texto. Sem gap entre as linhas,
+   para a régua da calha correr contínua de cima a baixo. */
+.reading-verse {
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 0 10px 10px 0;
+  transition: background .16s;
 }
 
-.chapter-verse:hover {
+.reading-verse:hover {
   background: var(--glass);
 }
 
-/* Número em segundo plano: marca a posição sem competir com o texto */
-.verse-num {
+.reading-verse__num {
   font-family: var(--font-mono);
-  font-size: .68rem;
-  color: var(--accent-2);
-  opacity: .55;
-  min-width: 22px;
-  padding-top: .6em;
-  flex-shrink: 0;
-  text-align: right;
+  font-size: .7rem;
   font-variant-numeric: tabular-nums;
-  transition: opacity .18s;
+  color: var(--accent-2);
+  opacity: .45;
+  text-align: right;
+  padding: calc(.55em + 6px) 14px 0 0;
+  border-right: 1px solid var(--card-border);
+  transition: opacity .16s, color .16s, border-color .16s;
 }
 
-.verse-words {
-  font-size: 1.1rem;
-  line-height: 1.85;
+.reading-verse__text {
+  padding: 6px 4px 16px 20px;
+  font-size: var(--reading-size);
+  line-height: var(--reading-line);
   letter-spacing: -.005em;
   color: var(--text-primary);
 }
 
-/* Versículo de origem do devocional: barra de acento, sem caixa */
-.chapter-verse.verse-highlight {
-  background: rgba(18,163,148,.10);
-  box-shadow: inset 3px 0 0 var(--accent);
+/* Versículo que originou o devocional */
+.reading-verse--source {
+  background: rgba(240,129,63,.09);
 }
 
-.chapter-verse.verse-highlight .verse-num {
+.reading-verse--source .reading-verse__num {
   opacity: 1;
+  font-weight: 700;
+  color: var(--accent-orange);
+  border-right-color: var(--accent-orange);
+}
+
+/* Versículo marcado para copiar */
+.reading-verse--selected {
+  background: rgba(18,163,148,.14);
+}
+
+.reading-verse--selected .reading-verse__num {
+  opacity: 1;
+  font-weight: 700;
+  color: var(--accent-2);
+  border-right-color: var(--accent);
 }
 
 /* ── Bible Reader nav ── */
@@ -1461,21 +1565,176 @@ body.light {
    BIBLE READER PANEL
 ========================================================= */
 
-/* ── Modal header do leitor ── */
-#bibleModal .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 20px;
-  background: var(--bg-secondary);
+/* =========================================================
+   LEITOR EM TELA CHEIA
+========================================================= */
+
+.modal-overlay--reader {
+  align-items: stretch;
+  padding: 0;
 }
 
-#bibleModal .reader-book-select {
+.modal-panel--reader {
+  width: 100%;
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  transform: translateY(16px);
+}
+
+/* ── Barra superior do leitor ── */
+.reader-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 20px;
+  padding-top: max(14px, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--card-border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.reader-bar__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reader-bar__title {
   flex: 1;
-  font-size: .8rem;
-  padding: 10px 16px;
-  border-radius: 12px;
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+/* Em modo leitura, o título dá lugar ao botão de referência.
+   A régua de tamanho fica sempre visível dentro do leitor. */
+.modal-panel--reader.is-reading .reader-bar__title,
+.modal-panel--reader:not(.is-reading) .reader-ref-btn {
+  display: none;
+}
+
+.reader-bar__scale {
+  display: flex;
+}
+
+/* ── Régua de tamanho do texto ── */
+.font-scale {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.font-scale__a {
+  font-family: var(--font-serif);
+  color: var(--text-muted);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.font-scale__a--sm { font-size: .8rem; }
+.font-scale__a--lg { font-size: 1.4rem; }
+
+.font-scale__label {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--text-muted);
+  min-width: 108px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.font-scale__input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  cursor: pointer;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.font-scale__input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+  opacity: .55;
+}
+
+.font-scale__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  border: 3px solid var(--bg-secondary);
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+  cursor: grab;
+}
+
+.font-scale__input:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.08);
+}
+
+.font-scale__input::-moz-range-track {
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+  opacity: .55;
+}
+
+.font-scale__input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  border: 3px solid var(--bg-secondary);
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+  cursor: grab;
+}
+
+.font-scale__input:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 4px;
+  border-radius: 99px;
+}
+
+/* ── Corpo do leitor ── */
+.modal-panel--reader .modal-body {
+  padding: 26px 22px 32px;
+}
+
+.modal-panel--reader .reader-picker,
+.modal-panel--reader .reader-chapter-nav {
+  max-width: 44rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 480px) {
+  .reader-bar {
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    gap: 10px;
+  }
+  .modal-panel--reader .modal-body {
+    padding: 20px 14px 28px;
+  }
+  .font-scale {
+    gap: 12px;
+  }
+  .font-scale__label {
+    min-width: 92px;
+    font-size: .64rem;
+  }
 }
 
 /* ── Seletor de passagem — tela única (livro + capítulo) ── */
@@ -1808,13 +2067,18 @@ body.light {
     justify-content: center;
   }
   /* Leitura no celular */
-  .chapter-verse {
-    gap: 12px;
-    padding: 8px 6px;
+  .reading-verse {
+    grid-template-columns: 34px 1fr;
   }
-  .verse-words {
-    font-size: 1.06rem;
-    line-height: 1.8;
+  .reading-verse__num {
+    padding: calc(.55em + 5px) 10px 0 0;
+    font-size: .66rem;
+  }
+  .reading-verse__text {
+    padding: 5px 2px 15px 14px;
+  }
+  .reading__chap {
+    font-size: 2.4rem;
   }
   .reader-nav-btn {
     font-size: .70rem;
@@ -1824,7 +2088,7 @@ body.light {
 
 /* ── Botão de referência clicável no header do leitor ── */
 .reader-ref-btn {
-  display: none;
+  display: flex;
   align-items: center;
   gap: 8px;
   flex: 1;
@@ -1979,28 +2243,6 @@ body.light {
 /* =========================================================
    SELEÇÃO DE VERSÍCULOS NO LEITOR
 ========================================================= */
-
-/* Cursor de ponteiro nos versículos — dá hint de clicável */
-.chapter-verse {
-  cursor: pointer;
-  user-select: none;
-}
-
-/* Versículo selecionado */
-.chapter-verse.verse-selected {
-  background: rgba(18,163,148,.16);
-  box-shadow: inset 3px 0 0 var(--accent-2);
-}
-
-.chapter-verse.verse-selected .verse-num {
-  opacity: 1;
-  font-weight: 700;
-  color: var(--accent-2);
-}
-
-.chapter-verse {
-  position: relative;
-}
 
 /* ─── Barra flutuante de cópia ─── */
 .verse-sel-bar {

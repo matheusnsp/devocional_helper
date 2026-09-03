@@ -128,6 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
   populateVersions();
   initThemeDropdowns();
   loadDark();
+  loadReadingScale();
   applyFilter(true);
 
   document.getElementById("versionSelect").addEventListener("change", (e) => {
@@ -809,6 +810,44 @@ function loadDark() {
 
 
 /* ──────────────────────────────────────────────────────────
+   TAMANHO DO TEXTO DE LEITURA (5 níveis, arrastando)
+   Grava a preferência e vale para o leitor e para o modal
+   de passagem, já que altera a variável --reading-size.
+   ──────────────────────────────────────────────────────────*/
+const READING_SCALE_KEY = "devocional-readingScale";
+
+const READING_SCALES = [
+  { label: "Pequeno",       size: "1.02rem", line: "1.8"  },
+  { label: "Pequeno-médio", size: "1.13rem", line: "1.82" },
+  { label: "Médio",         size: "1.26rem", line: "1.85" },
+  { label: "Médio-grande",  size: "1.42rem", line: "1.88" },
+  { label: "Grande",        size: "1.62rem", line: "1.9"  },
+];
+
+function setReadingScale(step, persist = true) {
+  const i = Math.min(READING_SCALES.length - 1, Math.max(0, parseInt(step) - 1));
+  const s = READING_SCALES[i];
+
+  document.documentElement.style.setProperty("--reading-size", s.size);
+  document.documentElement.style.setProperty("--reading-line", s.line);
+
+  const input = document.getElementById("fontScaleInput");
+  const label = document.getElementById("fontScaleLabel");
+  if (input) input.value = i + 1;
+  if (label) label.textContent = s.label;
+
+  if (persist) {
+    try { localStorage.setItem(READING_SCALE_KEY, String(i + 1)); } catch {}
+  }
+}
+
+function loadReadingScale() {
+  let saved = 3;
+  try { saved = parseInt(localStorage.getItem(READING_SCALE_KEY)) || 3; } catch {}
+  setReadingScale(saved, false);
+}
+
+/* ──────────────────────────────────────────────────────────
    MODAL — LER CAPÍTULO COMPLETO (contexto do versículo)
    ──────────────────────────────────────────────────────────*/
 let contextBook      = "JHN";
@@ -938,18 +977,28 @@ function renderChapter(chapterData, highlightId, container) {
     _selVerseOrder.push(vid);
   });
 
-  const html = entries.map(([vid, text]) => {
+  const chapNum  = entries[0][0].split(".")[1];
+  const bookId   = entries[0][0].split(".")[0];
+  const bookName = BOOKS_PT.find(b => b[0] === bookId)?.[1] ?? bookId;
+
+  const rows = entries.map(([vid]) => {
     const verseNum    = vid.split(".")[2] || "";
     const isHighlight = highlightId && vid === highlightId;
-    const clean       = _selVerseMap[vid];
     return `
-      <div class="chapter-verse ${isHighlight ? "verse-highlight" : ""}" data-id="${vid}" data-verse="${verseNum}" onclick="toggleVerseSelect('${vid}', this)">
-        <span class="verse-num">${verseNum}</span>
-        <span class="verse-words">${escapeHtml(clean)}</span>
+      <div class="reading-verse ${isHighlight ? "reading-verse--source" : ""}" data-id="${vid}" onclick="toggleVerseSelect('${vid}', this)">
+        <span class="reading-verse__num">${verseNum}</span>
+        <span class="reading-verse__text">${escapeHtml(_selVerseMap[vid])}</span>
       </div>`;
   }).join("");
 
-  container.innerHTML = `<div class="chapter-verses">${html}</div>`;
+  container.innerHTML = `
+    <article class="reading">
+      <header class="reading__head">
+        <span class="reading__book">${bookName}</span>
+        <span class="reading__chap">${chapNum}</span>
+      </header>
+      <div class="reading__body">${rows}</div>
+    </article>`;
 
   /* Garante que a barra de seleção existe no modal correto */
   const panel = container.closest(".modal-panel");
@@ -959,8 +1008,9 @@ function renderChapter(chapterData, highlightId, container) {
   _updateSelectionBar(panel);
 
   setTimeout(() => {
-    const target = container.querySelector(".verse-highlight") ?? container.querySelector(".chapter-verse");
+    const target = container.querySelector(".reading-verse--source");
     if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+    else container.scrollTop = 0;
   }, 100);
 }
 
@@ -986,10 +1036,10 @@ function _ensureSelectionBar(container) {
 function toggleVerseSelect(vid, el) {
   if (_selectedVids.has(vid)) {
     _selectedVids.delete(vid);
-    el.classList.remove("verse-selected");
+    el.classList.remove("reading-verse--selected");
   } else {
     _selectedVids.add(vid);
-    el.classList.add("verse-selected");
+    el.classList.add("reading-verse--selected");
   }
   _updateSelectionBar(el.closest(".modal-panel"));
 }
@@ -1008,7 +1058,7 @@ function _updateSelectionBar(panel) {
 function _resetVerseSelection(panel) {
   _selectedVids.clear();
   if (!panel) return;
-  panel.querySelectorAll(".verse-selected").forEach(el => el.classList.remove("verse-selected"));
+  panel.querySelectorAll(".reading-verse--selected").forEach(el => el.classList.remove("reading-verse--selected"));
   _updateSelectionBar(panel);
 }
 
@@ -1105,9 +1155,10 @@ function closeBibleReader() {
    de capítulos no topo; escolher o capítulo já abre a leitura.
    ──────────────────────────────────────────────────────────*/
 function renderBookPanel() {
-  const body   = document.getElementById("readerBody");
-  const refBtn = document.getElementById("readerRefBtn");
-  if (refBtn) refBtn.style.display = "none";
+  const body  = document.getElementById("readerBody");
+  const panel = document.getElementById("readerPanel");
+  /* Modo seleção: esconde o botão de referência e a régua de fonte */
+  panel?.classList.remove("is-reading");
 
   const bookGrid = (ids, label) => {
     const items = ids.map(id => {
@@ -1330,8 +1381,7 @@ async function loadReaderChapter() {
   const body = document.getElementById("readerBody");
 
   updateReaderRefLabel();
-  const refBtn = document.getElementById("readerRefBtn");
-  if (refBtn) refBtn.style.display = "flex";
+  document.getElementById("readerPanel")?.classList.add("is-reading");
   body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
 
   try {

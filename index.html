@@ -2,7 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />  <title>Devocional Helper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Devocional Helper</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -33,6 +34,9 @@
           </button>
           <div class="custom-dropdown__panel custom-dropdown__panel--versions" id="versionDropdownPanel" role="listbox"></div>
         </div>
+        <!-- O botão da Bíblia não entra aqui: no desktop ele já existe na
+             barra de ações. Ele só aparece na faixa do mobile, onde sai
+             do menu hamburguer para não ficar duplicado. -->
         <!-- selects ocultos para compatibilidade com script existente -->
         <select id="versionSelect" aria-label="Versão da Bíblia" style="display:none"></select>
       </div>
@@ -61,6 +65,10 @@
         </button>
         <div class="custom-dropdown__panel custom-dropdown__panel--versions" id="versionDropdownPanelMobile" role="listbox"></div>
       </div>
+      <button class="header-bible-btn header-bible-btn--icon" onclick="openBibleReader()" title="Abrir a Bíblia" aria-label="Abrir a Bíblia">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span>Bíblia</span>
+      </button>
       <!-- selects ocultos para compatibilidade -->
       <select id="versionSelectMobile" aria-label="Versão da Bíblia" style="display:none"></select>
     </div>
@@ -76,8 +84,10 @@
         <span>Aleatório</span>
       </button>
 
-      <div class="action-toolbar__divider"></div>
+      <div class="action-toolbar__divider" id="dividerBible"></div>
 
+      <!-- No mobile este item some do menu hamburguer: lá a Bíblia já está
+           na faixa de cima, ao lado de Temas e Versão. -->
       <button class="action-btn" id="btnBible" onclick="openBibleReader(); closeHamburgerMenu();">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         <span>Bíblia</span>
@@ -194,17 +204,34 @@
     </div>
   </div>
 
-  <!-- MODAL: LEITOR DE BÍBLIA -->
-  <div class="modal-overlay" id="bibleModal" onclick="handleModalClick(event,'bibleModal')">
-    <div class="modal-panel modal-panel--wide">
-      <div class="modal-header">
-        <button class="reader-ref-btn" id="readerRefBtn" onclick="renderBookPanel()" title="Trocar livro / capítulo / versículo">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-          <span id="readerRefLabel">Selecionar passagem</span>
-          <svg class="reader-ref-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <button class="modal-close" onclick="closeBibleReader()">✕</button>
+  <!-- MODAL: LEITOR DE BÍBLIA (tela cheia) -->
+  <div class="modal-overlay modal-overlay--reader" id="bibleModal" onclick="handleModalClick(event,'bibleModal')">
+    <div class="modal-panel modal-panel--reader" id="readerPanel">
+
+      <div class="reader-bar">
+        <div class="reader-bar__top">
+          <span class="reader-bar__title">Selecionar passagem</span>
+          <button class="reader-ref-btn" id="readerRefBtn" onclick="renderBookPanel()" title="Trocar livro / capítulo / versículo">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <span id="readerRefLabel">Selecionar passagem</span>
+            <svg class="reader-ref-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <button class="modal-close" onclick="closeBibleReader()">✕</button>
+        </div>
+
+        <div class="reader-bar__scale">
+          <div class="font-scale">
+            <span class="font-scale__a font-scale__a--sm">A</span>
+            <input type="range" class="font-scale__input" id="fontScaleInput"
+                   min="1" max="5" step="1" value="3"
+                   aria-label="Tamanho do texto"
+                   oninput="setReadingScale(this.value)" />
+            <span class="font-scale__a font-scale__a--lg">A</span>
+            <span class="font-scale__label" id="fontScaleLabel">Médio</span>
+          </div>
+        </div>
       </div>
+
       <div class="modal-body" id="readerBody">
         <div class="modal-loading">Carregando...</div>
       </div>
