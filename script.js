@@ -9,6 +9,14 @@ function stripQuotes(text) {
   return text.replace(/[“”„‟‘’]/g, "");
 }
 
+/* Normaliza para busca: sem acento, minúsculo */
+function normalizeForSearch(s) {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 /* ──────────────────────────────────────────────────────────
    DADOS LOCAIS DA BÍBLIA
    O JSON de cada versão é carregado de versoes/<id>.json e
@@ -20,7 +28,10 @@ const _bibleCache = {};   // { "ARA": Promise<data[]> }
 function loadBibleVersion(versionId) {
   if (!_bibleCache[versionId]) {
     _bibleCache[versionId] = fetch(`versoes/${versionId}.json`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      /* Se falhar, tira a promise rejeitada do cache — senão a versão
+         fica quebrada até dar F5, mesmo depois da rede voltar. */
+      .catch(err => { delete _bibleCache[versionId]; throw err; });
   }
   return _bibleCache[versionId];
 }
@@ -38,7 +49,7 @@ const USFM_TO_ABBREV = {
   MAT:"Mt", MRK:"Mc", LUK:"Lc", JHN:"Jo", ACT:"At",
   ROM:"Rm", "1CO":"1Co", "2CO":"2Co", GAL:"Gl",
   EPH:"Ef", PHP:"Fp", COL:"Cl", "1TH":"1Ts", "2TH":"2Ts",
-  "1TI":"1Tn", "2TI":"2Tm", TIT:"Tt",
+  "1TI":"1Tm", "2TI":"2Tm", TIT:"Tt",
   PHM:"Fm", HEB:"Hb", JAS:"Tg", "1PE":"1Pe", "2PE":"2Pe",
   "1JN":"1Jo", "2JN":"2Jo", "3JN":"3Jo", JUD:"Jd", REV:"Ap"
 };
@@ -52,52 +63,62 @@ const ABBREV_TO_USFM = Object.fromEntries(
 async function fetchVerse(apiId, versionId) {
   const data = await loadBibleVersion(versionId);
 
+  const readVerse = (bookId, chap, verse) => {
+    const bookData = data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
+    if (!bookData) return "";
+    return bookData.chapters[chap - 1]?.[verse - 1] ?? "";
+  };
+
   /* Passagem (ex: "ROM.8.38-ROM.8.39") */
   if (apiId.includes("-")) {
     const [startId, endId] = apiId.split("-");
-    const [book, chap, vStart] = startId.split(".");
-    const vEnd = endId.split(".")[2];
-    const abbrev = USFM_TO_ABBREV[book];
-    const bookData = data.find(b => b.abbrev === abbrev);
+    const [bookA, chapA, vStart] = startId.split(".");
+    const [bookB, chapB, vEnd]   = endId.split(".");
+
+    const bookData = data.find(b => b.abbrev === USFM_TO_ABBREV[bookA]);
     if (!bookData) return "";
-    const chapArr = bookData.chapters[parseInt(chap) - 1] || [];
+
     const texts = [];
-    for (let v = parseInt(vStart); v <= parseInt(vEnd); v++) {
-      const t = chapArr[v - 1];
-      if (t) texts.push(t);
+    /* Suporta passagem que atravessa capítulos (ex: "ROM.8.38-ROM.9.1") */
+    for (let c = parseInt(chapA); c <= parseInt(chapB); c++) {
+      const chapArr = bookData.chapters[c - 1] || [];
+      const from = c === parseInt(chapA) ? parseInt(vStart) : 1;
+      const to   = c === parseInt(chapB) ? parseInt(vEnd)   : chapArr.length;
+      for (let v = from; v <= to; v++) {
+        const t = chapArr[v - 1];
+        if (t) texts.push(t);
+      }
     }
     return texts.join(" ");
   }
 
   /* Versículo simples (ex: "JHN.3.16") */
   const [book, chap, verse] = apiId.split(".");
-  const abbrev = USFM_TO_ABBREV[book];
-  const bookData = data.find(b => b.abbrev === abbrev);
-  if (!bookData) return "";
-  return bookData.chapters[parseInt(chap) - 1]?.[parseInt(verse) - 1] ?? "";
+  return readVerse(book, parseInt(chap), parseInt(verse));
 }
 
 
-   /* Versões locais disponíveis (arquivo JSON em versoes/<id>.json) */
-   const BIBLE_VERSIONS = [
-    // { id: "ARA", name: "ARA", lang: "pt" },
-    { id: "ARA", name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
-    // { id: "ARC", name: "ARC", lang: "pt" },
-    { id: "ARC", name: "ARC — Almeida Revista e Corrigida", lang: "pt" },
-    // { id: "NAA", name: "NAA", lang: "pt" },
-    { id: "NAA", name: "NAA — Nova Almeida Atualizada", lang: "pt" },
-  ];
-  
-   
-   // verses carregado de versiculos.js
-   /* ──────────────────────────────────────────────────────────
+/* Versões locais disponíveis (arquivo JSON em versoes/<id>.json) */
+const BIBLE_VERSIONS = [
+  { id: "ARA", name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
+  { id: "ARC", name: "ARC — Almeida Revista e Corrigida", lang: "pt" },
+  { id: "NAA", name: "NAA — Nova Almeida Atualizada", lang: "pt" },
+];
+
+
+// verses carregado de versiculos.js
+/* ──────────────────────────────────────────────────────────
    ESTADO DA APLICAÇÃO
    ──────────────────────────────────────────────────────────*/
 let currentTheme   = "Todos";
 let currentVersion = "ARA";
 let pool           = [...verses];
 let idx            = 0;
-let isLoading      = false;
+
+/* Token de exibição: cada chamada de show() ganha um número.
+   Só a mais recente pode escrever na tela — resolve o problema de
+   clicar rápido no próximo/anterior e a tela ficar dessincronizada. */
+let _showToken = 0;
 
 /* ──────────────────────────────────────────────────────────
    INICIALIZAÇÃO
@@ -218,6 +239,14 @@ function selectVersion(versionId, fromMobile) {
   if (s2) s2.value = versionId;
   if (fromMobile) closeHamburgerMenu();
   show(pool[idx]);
+
+  /* Se o leitor estiver aberto, recarrega o capítulo na nova versão */
+  if (document.getElementById("bibleModal")?.classList.contains("open") && _readerChapCount) {
+    loadReaderChapter();
+  }
+  if (document.getElementById("contextModal")?.classList.contains("open")) {
+    loadContextChapter();
+  }
 }
 
 function syncVersionUI() {
@@ -291,23 +320,26 @@ function toggleDropdown(triggerId, panelId) {
     trigger.classList.add("is-open");
     trigger.setAttribute("aria-expanded","true");
 
-    /* Reposiciona para não sair do app-container */
+    /* Reposiciona para não sair do app-container.
+       Usa offsetWidth em vez de getBoundingClientRect: o painel está no
+       primeiro frame da animação (scale .97 / translateY), então o rect
+       vem distorcido e a conta de overflow sai errada. */
     panel.style.left  = "";
     panel.style.right = "";
-    const panelRect     = panel.getBoundingClientRect();
+
     const triggerRect   = trigger.getBoundingClientRect();
+    const panelWidth    = panel.offsetWidth;
     const container     = document.querySelector(".app-container");
     const containerRect = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth };
 
-    /* Tenta alinhar à esquerda do trigger */
-    const overflowRight = panelRect.right - containerRect.right;
-    const overflowLeft  = containerRect.left - panelRect.left;
+    const isRightAligned = trigger.closest(".custom-dropdown")?.classList.contains("custom-dropdown--right");
+    const projectedLeft  = isRightAligned ? triggerRect.right - panelWidth : triggerRect.left;
+    const projectedRight = projectedLeft + panelWidth;
 
-    if (overflowRight > 0) {
-      /* Empurra para a esquerda o suficiente para caber */
+    if (projectedRight > containerRect.right) {
       panel.style.left = "auto";
       panel.style.right = "0";
-    } else if (overflowLeft > 0) {
+    } else if (projectedLeft < containerRect.left) {
       panel.style.left = "0";
       panel.style.right = "auto";
     }
@@ -368,9 +400,12 @@ const LAST_VERSE_KEY = "devocional-lastVerse";
 /* Retorna o índice do versículo do dia (0-based, baseado no dia do ano) */
 function getDayIndex(poolArr) {
   const now   = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff  = now - start;
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)); // 1..365
+  /* Diferença em dias no fuso local, sem depender de milissegundos
+     (evita erro de 1 dia em fusos com horário de verão). */
+  const start = new Date(now.getFullYear(), 0, 1);
+  const dayOfYear = Math.round(
+    (new Date(now.getFullYear(), now.getMonth(), now.getDate()) - start) / 86400000
+  ) + 1;
   return (dayOfYear - 1) % poolArr.length;
 }
 
@@ -414,21 +449,19 @@ function goRandom() {
 }
 
 
-
 /* ──────────────────────────────────────────────────────────
    EXIBIR VERSÍCULO
    ──────────────────────────────────────────────────────────*/
-
-
 async function show(item) {
-  if (!item || isLoading) return;
-  isLoading = true;
+  if (!item) return;
 
+  const token  = ++_showToken;
   const textEl = document.getElementById("verseText");
+
   textEl.classList.add("loading");
   textEl.textContent = "Carregando...";
 
-  document.getElementById("verseRef").textContent   = item.ref;
+  document.getElementById("verseRef").textContent = item.ref;
   saveLastVerse(item);
 
   /* Coleta todos os temas associados a esse apiId */
@@ -446,21 +479,23 @@ async function show(item) {
     themeEl.textContent = item.theme;
   }
 
-  document.getElementById("verseCtx").textContent   = item.ctx;
-
-  document.getElementById("dayNum").textContent = pool.indexOf(item) + 1;
+  document.getElementById("verseCtx").textContent = item.ctx;
+  document.getElementById("dayNum").textContent   = idx + 1;
 
   try {
     const text = await fetchVerse(item.apiId, currentVersion);
+    if (token !== _showToken) return;          // chegou atrasado: descarta
     textEl.textContent = capitalizeFirst(stripQuotes(text));
   } catch (err) {
     console.error("Erro ao buscar versículo:", err);
+    if (token !== _showToken) return;
     textEl.textContent = "Não foi possível carregar o versículo.";
   } finally {
-    textEl.classList.remove("loading");
-    isLoading = false;
-    updateFavBtn();
-    loadRelated(item);
+    if (token === _showToken) {
+      textEl.classList.remove("loading");
+      updateFavBtn();
+      loadRelated(item);
+    }
   }
 }
 
@@ -472,6 +507,7 @@ function updateNav() {
   const pct = ((idx + 1) / pool.length) * 100;
   document.getElementById("progressFill").style.width = `${pct}%`;
   document.getElementById("dayTotal").textContent = pool.length;
+  document.getElementById("dayNum").textContent   = idx + 1;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -492,20 +528,11 @@ function copyToClipboard() {
     const vStart = parseInt(startId.split(".")[2]);
     const vEnd   = parseInt(endId.split(".")[2]);
 
-    // Tenta separar pelo ponto final entre os versículos
-    // Estratégia: divide o texto em frases e distribui pelos números
     const numVerses = vEnd - vStart + 1;
-    // Separa por ". " mas preservando abreviações comuns — usa split simples em ". "
-    // Para passagens de 2 versículos, tenta achar o ponto que divide
     let lines;
     if (numVerses === 2) {
-      // Acha o primeiro ponto final seguido de espaço maiúsculo (provável divisão de versículo)
       const splitMatch = txt.match(/^(.+?[.!?])\s+([A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇ].*)$/s);
-      if (splitMatch) {
-        lines = [splitMatch[1].trim(), splitMatch[2].trim()];
-      } else {
-        lines = [txt];
-      }
+      lines = splitMatch ? [splitMatch[1].trim(), splitMatch[2].trim()] : [txt];
     } else {
       lines = [txt];
     }
@@ -514,7 +541,6 @@ function copyToClipboard() {
       const body = lines.map((l, i) => `${toSup(vStart + i)} ${l}`).join("\n");
       formatted = `${body}\n\n${ref}`;
     } else {
-      // Fallback: texto inteiro sem aspas
       formatted = `${txt}\n\n${ref}`;
     }
 
@@ -542,10 +568,20 @@ function copyToClipboard() {
 }
 
 
-
 /* ──────────────────────────────────────────────────────────
    VERSÍCULOS RELACIONADOS (mesmo tema)
    ──────────────────────────────────────────────────────────*/
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+/* Escapa para uso dentro de atributo onclick="...('aqui')" */
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/\\/g, "\\\\");
+}
+
 function loadRelated(item) {
   const block = document.getElementById("relatedBlock");
   const list  = document.getElementById("relatedList");
@@ -560,9 +596,9 @@ function loadRelated(item) {
 
   block.style.display = "block";
   list.innerHTML = related.map(v => `
-    <button class="related-item" onclick="goToRelated('${v.apiId}','${v.theme.replace(/'/g,"\\'")}')">
-      <span class="related-ref">${v.ref}</span>
-      <span class="related-ctx">${v.ctx.substring(0, 80)}...</span>
+    <button class="related-item" onclick="goToRelated('${escapeAttr(v.apiId)}','${escapeAttr(v.theme)}')">
+      <span class="related-ref">${escapeHtml(v.ref)}</span>
+      <span class="related-ctx">${escapeHtml(v.ctx.substring(0, 80))}...</span>
     </button>`
   ).join("");
 }
@@ -642,7 +678,7 @@ function renderFavoritesList() {
       <div class="favs-empty">
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);margin-bottom:12px"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <p>Nenhum versículo favoritado ainda.</p>
-        <p style="font-size:.8rem;margin-top:4px;color:var(--text-muted)">Toque no coração para guardar os que tocarem seu coração.</p>
+        <p style="font-size:.88rem;margin-top:6px;color:var(--text-muted)">Toque no coração para guardar os que tocarem seu coração.</p>
       </div>`;
     return;
   }
@@ -650,13 +686,13 @@ function renderFavoritesList() {
   body.innerHTML = '<div class="favs-list">' + favs.map((f, i) => `
     <div class="fav-item">
       <div class="fav-item__header">
-        <span class="theme-badge" style="font-size:.58rem;padding:6px 12px">${f.theme}</span>
+        <span class="theme-badge theme-badge--sm">${escapeHtml(f.theme)}</span>
         <button class="fav-item__remove" onclick="removeFavorite(${i})" title="Remover dos favoritos">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
       </div>
-      <button class="fav-item__ref" onclick="goToFavorite('${f.apiId}','${f.theme.replace(/'/g,"\\'")}');closeFavoritesModal();">${f.ref}</button>
-      <p class="fav-item__ctx">${f.ctx}</p>
+      <button class="fav-item__ref" onclick="goToFavorite('${escapeAttr(f.apiId)}','${escapeAttr(f.theme)}');closeFavoritesModal();">${escapeHtml(f.ref)}</button>
+      <p class="fav-item__ctx">${escapeHtml(f.ctx)}</p>
     </div>`
   ).join("") + '</div>';
 }
@@ -670,8 +706,7 @@ function removeFavorite(i) {
 }
 
 /* Vai até um favorito. Se o tema atual não incluir esse versículo,
-   volta o filtro para "Todos" e sincroniza os dropdowns customizados
-   (em vez dos antigos <select id="themeFilter">, que não existem mais). */
+   volta o filtro para "Todos" e sincroniza os dropdowns customizados. */
 function goToFavorite(apiId, theme) {
   const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
   if (found === -1) return;
@@ -694,7 +729,8 @@ function openSearchModal() {
   document.getElementById("searchModal").classList.add("open");
   const input = document.getElementById("searchInput");
   if (input) { input.value = ""; setTimeout(() => input.focus(), 100); }
-  document.getElementById("searchBody").innerHTML = '<p class="search-hint">Digite para buscar entre os ' + verses.length + ' versículos.</p>';
+  document.getElementById("searchBody").innerHTML =
+    '<p class="search-hint">Digite para buscar entre os ' + verses.length + ' versículos.</p>';
 }
 
 function closeSearchModal() {
@@ -702,16 +738,17 @@ function closeSearchModal() {
 }
 
 function onSearchInput() {
-  const q    = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+  const q    = normalizeForSearch(document.getElementById("searchInput").value || "").trim();
   const body = document.getElementById("searchBody");
   if (q.length < 2) {
     body.innerHTML = '<p class="search-hint">Continue digitando...</p>';
     return;
   }
+  /* Busca sem acento: "salmo" acha "Salmos", "coracao" acha "coração" */
   const results = verses.filter(v =>
-    v.ref.toLowerCase().includes(q) ||
-    v.theme.toLowerCase().includes(q) ||
-    v.ctx.toLowerCase().includes(q)
+    normalizeForSearch(v.ref).includes(q) ||
+    normalizeForSearch(v.theme).includes(q) ||
+    normalizeForSearch(v.ctx).includes(q)
   );
   if (results.length === 0) {
     body.innerHTML = '<p class="search-hint">Nenhum resultado encontrado.</p>';
@@ -720,16 +757,14 @@ function onSearchInput() {
   body.innerHTML = '<div class="favs-list">' + results.map(v => `
     <div class="fav-item">
       <div class="fav-item__header">
-        <span class="theme-badge" style="font-size:.58rem;padding:6px 12px">${v.theme}</span>
+        <span class="theme-badge theme-badge--sm">${escapeHtml(v.theme)}</span>
       </div>
-      <button class="fav-item__ref" onclick="goToVerseFromSearch('${v.apiId}','${v.theme.replace(/'/g,"\\'")}');closeSearchModal();">${v.ref}</button>
-      <p class="fav-item__ctx">${v.ctx.substring(0, 120)}...</p>
+      <button class="fav-item__ref" onclick="goToVerseFromSearch('${escapeAttr(v.apiId)}','${escapeAttr(v.theme)}');closeSearchModal();">${escapeHtml(v.ref)}</button>
+      <p class="fav-item__ctx">${escapeHtml(v.ctx.substring(0, 120))}...</p>
     </div>`
   ).join("") + '</div>';
 }
 
-/* Mesmo ajuste de goToFavorite: sem <select id="themeFilter"> — usa
-   syncDropdownUI() para refletir a troca de tema nos dropdowns novos. */
 function goToVerseFromSearch(apiId, theme) {
   const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
   if (found === -1) return;
@@ -744,6 +779,7 @@ function goToVerseFromSearch(apiId, theme) {
   show(pool[idx]);
   updateNav();
 }
+
 /* ──────────────────────────────────────────────────────────
    MODO ESCURO / CLARO
    ──────────────────────────────────────────────────────────*/
@@ -795,11 +831,11 @@ async function openContextModal() {
 }
 
 async function loadContextChapter() {
-  const chapterId = `${contextBook}.${contextChapter}`;
-  const body      = document.getElementById("contextBody");
-  const title     = document.getElementById("contextTitle");
+  const body  = document.getElementById("contextBody");
+  const title = document.getElementById("contextTitle");
 
-  title.textContent = `Capítulo ${contextChapter}`;
+  const bookName = BOOKS_PT.find(b => b[0] === contextBook)?.[1] ?? contextBook;
+  title.textContent = bookName;
   document.getElementById("contextChapterLabel").textContent = `Cap. ${contextChapter}`;
   document.getElementById("contextPrev").disabled = contextChapter <= 1;
   document.getElementById("contextNext").disabled = true;
@@ -836,8 +872,9 @@ function contextGo(dir) {
 }
 
 function closeContextModal() {
-  document.getElementById("contextModal").classList.remove("open");
-  _selectedVids.clear();
+  const modal = document.getElementById("contextModal");
+  modal.classList.remove("open");
+  _resetVerseSelection(modal.querySelector(".modal-panel"));
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -883,7 +920,7 @@ function renderChapter(chapterData, highlightId, container) {
   const entries = Object.entries(verseMap);
 
   if (entries.length === 0) {
-    container.innerHTML = `<p style="color:var(--text-secondary);line-height:1.9">${chapterData.content ?? ""}</p>`;
+    container.innerHTML = `<p class="modal-error">Capítulo vazio nesta versão.</p>`;
     return;
   }
 
@@ -892,7 +929,6 @@ function renderChapter(chapterData, highlightId, container) {
   _selVerseOrder = [];
   _selectedVids  = new Set();
 
-  /* Salva book/chap — nome resolvido na hora da cópia (BOOKS_PT existe lá) */
   _selBookId  = entries[0][0].split(".")[0];
   _selChapNum = entries[0][0].split(".")[1];
 
@@ -909,14 +945,18 @@ function renderChapter(chapterData, highlightId, container) {
     return `
       <div class="chapter-verse ${isHighlight ? "verse-highlight" : ""}" data-id="${vid}" data-verse="${verseNum}" onclick="toggleVerseSelect('${vid}', this)">
         <span class="verse-num">${verseNum}</span>
-        <span class="verse-words">${clean}</span>
+        <span class="verse-words">${escapeHtml(clean)}</span>
       </div>`;
   }).join("");
 
   container.innerHTML = `<div class="chapter-verses">${html}</div>`;
 
   /* Garante que a barra de seleção existe no modal correto */
+  const panel = container.closest(".modal-panel");
   _ensureSelectionBar(container);
+  /* Zera o rótulo/visibilidade — senão a barra fica pendurada com a
+     contagem do capítulo anterior depois de trocar de capítulo. */
+  _updateSelectionBar(panel);
 
   setTimeout(() => {
     const target = container.querySelector(".verse-highlight") ?? container.querySelector(".chapter-verse");
@@ -931,9 +971,8 @@ function _ensureSelectionBar(container) {
   if (panel.querySelector(".verse-sel-bar")) return;
   const bar = document.createElement("div");
   bar.className = "verse-sel-bar";
-  bar.id = "verseSelBar_" + Date.now();
   bar.innerHTML = `
-    <span class="verse-sel-label" id="verseSelLabel_${bar.id}">0 versículos</span>
+    <span class="verse-sel-label">0 versículos</span>
     <div class="verse-sel-actions">
       <button class="verse-sel-btn verse-sel-btn--ghost" onclick="_clearVerseSelection(this)">Limpar</button>
       <button class="verse-sel-btn verse-sel-btn--copy" onclick="_copyVerseSelection(this)">
@@ -965,11 +1004,16 @@ function _updateSelectionBar(panel) {
   label.textContent = count === 1 ? "1 versículo" : `${count} versículos`;
 }
 
-function _clearVerseSelection(btn) {
+/* Limpa seleção e esconde a barra — usado ao fechar os modais */
+function _resetVerseSelection(panel) {
   _selectedVids.clear();
-  const panel = btn.closest(".modal-panel");
+  if (!panel) return;
   panel.querySelectorAll(".verse-selected").forEach(el => el.classList.remove("verse-selected"));
   _updateSelectionBar(panel);
+}
+
+function _clearVerseSelection(btn) {
+  _resetVerseSelection(btn.closest(".modal-panel"));
 }
 
 function _copyVerseSelection(btn) {
@@ -1030,11 +1074,10 @@ const BOOKS_PT = [
 const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL"];
 const NT_BOOKS = ["MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
 
-let readerBook       = "JHN";
-let readerChapter    = 1;
-let readerVerse      = null;
-let selectorChapters = [];
-let selectorVerses   = [];
+let readerBook      = "JHN";
+let readerChapter   = 1;
+let readerVerse     = null;
+let _readerChapCount = 0;   // total de capítulos do livro aberto
 
 function openBibleReader() {
   const item = pool[idx];
@@ -1051,14 +1094,18 @@ function openBibleReader() {
 }
 
 function closeBibleReader() {
-  document.getElementById("bibleModal").classList.remove("open");
-  _selectedVids.clear();
+  const modal = document.getElementById("bibleModal");
+  modal.classList.remove("open");
+  _resetVerseSelection(modal.querySelector(".modal-panel"));
 }
 
-
-/* ── Painel: Livros ── */
+/* ──────────────────────────────────────────────────────────
+   SELETOR DE PASSAGEM — tela única
+   Livro e capítulo na mesma tela: escolher o livro abre a régua
+   de capítulos no topo; escolher o capítulo já abre a leitura.
+   ──────────────────────────────────────────────────────────*/
 function renderBookPanel() {
-  const body = document.getElementById("readerBody");
+  const body   = document.getElementById("readerBody");
   const refBtn = document.getElementById("readerRefBtn");
   if (refBtn) refBtn.style.display = "none";
 
@@ -1066,127 +1113,116 @@ function renderBookPanel() {
     const items = ids.map(id => {
       const name   = BOOKS_PT.find(b => b[0] === id)?.[1] ?? id;
       const active = id === readerBook ? "panel-btn--active" : "";
-      return `<button class="panel-btn ${active}" onclick="selectBook('${id}')">${name}</button>`;
+      return `<button class="panel-btn panel-btn--book ${active}"
+                      data-book="${id}"
+                      data-name="${normalizeForSearch(name)}"
+                      onclick="selectBook('${id}')">${name}</button>`;
     }).join("");
     return `
-      <div class="panel-section">
+      <div class="panel-section" data-testament>
         <span class="panel-testament-label">${label}</span>
         <div class="panel-grid panel-grid--books">${items}</div>
       </div>`;
   };
 
   body.innerHTML = `
-    <div class="reader-panel">
-      <div class="panel-breadcrumb">
-        <span class="panel-crumb panel-crumb--active">Livro</span>
-        <span class="panel-crumb-sep">›</span>
-        <span class="panel-crumb">Capítulo</span>
-        <span class="panel-crumb-sep">›</span>
-        <span class="panel-crumb">Versículo</span>
+    <div class="reader-picker">
+
+      <div class="picker-search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="bookFilterInput" class="picker-search__input"
+               placeholder="Filtrar livro — ex: salmos, 1 co"
+               autocomplete="off" oninput="filterBooks(this.value)" />
       </div>
-      ${bookGrid(OT_BOOKS, "Antigo Testamento")}
-      ${bookGrid(NT_BOOKS, "Novo Testamento")}
+
+      <div class="picker-chapters" id="readerChapterStrip">
+        <p class="picker-chapters__hint">Escolha um livro para ver os capítulos.</p>
+      </div>
+
+      <div id="bookGrids">
+        ${bookGrid(OT_BOOKS, "Antigo Testamento")}
+        ${bookGrid(NT_BOOKS, "Novo Testamento")}
+        <p class="picker-empty" id="bookFilterEmpty" style="display:none">Nenhum livro com esse nome.</p>
+      </div>
+
     </div>
   `;
+
+  /* Se já há um livro corrente, abre a régua dele de cara */
+  if (readerBook) selectBook(readerBook, { silent: true });
 }
 
-/* ── Seleciona livro → monta lista de capítulos a partir do JSON local ── */
-async function selectBook(bookId) {
-  readerBook    = bookId;
-  readerChapter = 1;
-  readerVerse   = null;
+/* ── Filtro de livros por nome, sem acento ── */
+function filterBooks(query) {
+  const q = normalizeForSearch(query).trim();
+  const grids = document.getElementById("bookGrids");
+  if (!grids) return;
 
-  const body = document.getElementById("readerBody");
-  body.innerHTML = `<div class="modal-loading">Carregando capítulos...</div>`;
+  let anyVisible = false;
+
+  grids.querySelectorAll("[data-testament]").forEach(section => {
+    let sectionVisible = false;
+    section.querySelectorAll(".panel-btn--book").forEach(btn => {
+      const match = !q || btn.dataset.name.includes(q);
+      btn.style.display = match ? "" : "none";
+      if (match) sectionVisible = true;
+    });
+    section.style.display = sectionVisible ? "" : "none";
+    if (sectionVisible) anyVisible = true;
+  });
+
+  const empty = document.getElementById("bookFilterEmpty");
+  if (empty) empty.style.display = anyVisible ? "none" : "block";
+}
+
+/* ── Seleciona livro → mostra a régua de capítulos na mesma tela ── */
+async function selectBook(bookId, opts = {}) {
+  readerBook = bookId;
+
+  /* Marca o livro ativo sem redesenhar a lista toda */
+  document.querySelectorAll(".panel-btn--book").forEach(btn => {
+    btn.classList.toggle("panel-btn--active", btn.dataset.book === bookId);
+  });
+
+  const strip = document.getElementById("readerChapterStrip");
+  if (!strip) return;
+
+  const bookName = BOOKS_PT.find(b => b[0] === bookId)?.[1] ?? bookId;
+  strip.innerHTML = `<p class="picker-chapters__hint">Carregando capítulos de ${bookName}...</p>`;
 
   try {
     const data   = await loadBibleVersion(currentVersion);
-    const abbrev = USFM_TO_ABBREV[bookId];
-    const book   = data.find(b => b.abbrev === abbrev);
+    const book   = data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
     if (!book) throw new Error("Livro não encontrado");
-    selectorChapters = book.chapters.map((_, i) => ({ number: String(i + 1) }));
-    renderChapterPanel();
+
+    _readerChapCount = book.chapters.length;
+
+    const nums = book.chapters.map((_, i) => {
+      const n = i + 1;
+      const active = n === readerChapter ? "panel-btn--active" : "";
+      return `<button class="panel-btn panel-btn--num ${active}" onclick="selectChapter(${n})">${n}</button>`;
+    }).join("");
+
+    strip.innerHTML = `
+      <div class="picker-chapters__head">
+        <span class="picker-chapters__book">${bookName}</span>
+        <span class="picker-chapters__count">${_readerChapCount} ${_readerChapCount === 1 ? "capítulo" : "capítulos"}</span>
+      </div>
+      <div class="panel-grid panel-grid--nums">${nums}</div>`;
+
+    if (!opts.silent) {
+      strip.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
   } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar capítulos.</p>`;
+    strip.innerHTML = `<p class="picker-chapters__hint">Erro ao carregar os capítulos.</p>`;
   }
 }
 
-/* ── Painel: Capítulos ── */
-function renderChapterPanel() {
-  const body     = document.getElementById("readerBody");
-  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
-
-  const items = selectorChapters.map(c => {
-    const active = parseInt(c.number) === readerChapter ? "panel-btn--active" : "";
-    return `<button class="panel-btn panel-btn--num ${active}" onclick="selectChapter(${c.number})">${c.number}</button>`;
-  }).join("");
-
-  body.innerHTML = `
-    <div class="reader-panel">
-      <div class="panel-breadcrumb">
-        <button class="panel-crumb panel-crumb--link" onclick="renderBookPanel()">Livro</button>
-        <span class="panel-crumb-sep">›</span>
-        <span class="panel-crumb panel-crumb--active">${bookName}</span>
-        <span class="panel-crumb-sep">›</span>
-        <span class="panel-crumb">Capítulo</span>
-      </div>
-      <div class="panel-section">
-        <span class="panel-section-label">Capítulo</span>
-        <div class="panel-grid panel-grid--nums">${items}</div>
-      </div>
-    </div>
-  `;
-}
-
-/* ── Seleciona capítulo → monta lista de versículos a partir do JSON local ── */
-async function selectChapter(num) {
+/* ── Seleciona capítulo → abre a leitura direto ── */
+function selectChapter(num) {
   readerChapter = parseInt(num);
-
-  const body = document.getElementById("readerBody");
-  body.innerHTML = `<div class="modal-loading">Carregando versículos...</div>`;
-
-  try {
-    const data   = await loadBibleVersion(currentVersion);
-    const abbrev = USFM_TO_ABBREV[readerBook];
-    const book   = data.find(b => b.abbrev === abbrev);
-    if (!book) throw new Error("Livro não encontrado");
-    const chapArr = book.chapters[readerChapter - 1] || [];
-    selectorVerses = chapArr.map((_, i) => ({
-      id:     `${readerBook}.${readerChapter}.${i + 1}`,
-      number: String(i + 1)
-    }));
-    renderVersePanel();
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar versículos.</p>`;
-  }
-}
-
-/* ── Painel: Versículos ── */
-function renderVersePanel() {
-  const body     = document.getElementById("readerBody");
-  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
-
-  const items = selectorVerses.map(v =>
-    `<button class="panel-btn panel-btn--num" onclick="selectVerse('${v.number}')">${v.number}</button>`
-  ).join("");
-
-  body.innerHTML = `
-    <div class="reader-panel">
-      <div class="panel-breadcrumb">
-        <button class="panel-crumb panel-crumb--link" onclick="renderBookPanel()">Livro</button>
-        <span class="panel-crumb-sep">›</span>
-        <button class="panel-crumb panel-crumb--link" onclick="renderChapterPanel()">${bookName}</button>
-        <span class="panel-crumb-sep">›</span>
-        <span class="panel-crumb panel-crumb--active">Cap. ${readerChapter}</span>
-      </div>
-      <div class="panel-section">
-        <span class="panel-section-label">
-          Versículo — ou <button class="panel-link" onclick="selectVerse(null)">abrir do início</button>
-        </span>
-        <div class="panel-grid panel-grid--nums">${items}</div>
-      </div>
-    </div>
-  `;
+  readerVerse   = null;
+  loadReaderChapter();
 }
 
 /* ── Atualiza o label de referência no header do modal ── */
@@ -1200,12 +1236,6 @@ function updateReaderRefLabel() {
     : `${bookName} ${readerChapter}`;
 }
 
-/* ── Seleciona versículo → abre leitura ── */
-function selectVerse(num) {
-  readerVerse = num ? `${readerBook}.${readerChapter}.${num}` : null;
-  loadReaderChapter();
-}
-
 /* ── Carrega e renderiza capítulo ── */
 async function loadReaderChapter() {
   const body = document.getElementById("readerBody");
@@ -1217,11 +1247,15 @@ async function loadReaderChapter() {
 
   try {
     const data   = await loadBibleVersion(currentVersion);
-    const abbrev = USFM_TO_ABBREV[readerBook];
-    const book   = data.find(b => b.abbrev === abbrev);
+    const book   = data.find(b => b.abbrev === USFM_TO_ABBREV[readerBook]);
     if (!book) throw new Error("Livro não encontrado");
+
+    _readerChapCount = book.chapters.length;
+    if (readerChapter > _readerChapCount) readerChapter = _readerChapCount;
+
     const chapArr = book.chapters[readerChapter - 1] || [];
-    const hasNext = readerChapter < book.chapters.length;
+    const hasNext = readerChapter < _readerChapCount;
+    const hasPrev = readerChapter > 1;
 
     /* Monta objeto compatível com renderChapter */
     const content = chapArr.map((text, i) => ({
@@ -1231,45 +1265,30 @@ async function loadReaderChapter() {
     }));
 
     renderChapter({ content, next: hasNext }, readerVerse ?? "", body);
+
+    /* Navegação de capítulo no rodapé da leitura */
+    body.insertAdjacentHTML("beforeend", `
+      <div class="reader-chapter-nav">
+        <button class="reader-nav-btn" ${hasPrev ? "" : "disabled"} onclick="readerGo(-1)">‹ Anterior</button>
+        <button class="reader-nav-btn reader-nav-btn--ghost" onclick="renderBookPanel()">Trocar passagem</button>
+        <button class="reader-nav-btn" ${hasNext ? "" : "disabled"} onclick="readerGo(1)">Próximo ›</button>
+      </div>`);
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique o arquivo da versão.</p>`;
   }
 }
 
-/* ── Navegar capítulos após leitura aberta ── */
+/* ── Navegar capítulos com a leitura aberta ── */
 function readerGo(dir) {
-  readerChapter += dir;
-  if (readerChapter < 1) readerChapter = 1;
-  readerVerse = null;
-  loadReaderChapter();
-}
-
-/* ── Troca livro pelo select do header ── */
-function readerBookChanged() {
-  readerBook    = document.getElementById("readerBookSelect").value;
-  readerChapter = 1;
+  const next = readerChapter + dir;
+  if (next < 1 || (_readerChapCount && next > _readerChapCount)) return;
+  readerChapter = next;
   readerVerse   = null;
-  selectBook(readerBook);
-}
-
-/* ── Popula select do header (mantido para compatibilidade) ── */
-function populateBookSelect() {
-  const sel = document.getElementById("readerBookSelect");
-  if (!sel) return;
-  sel.innerHTML = "";
-  BOOKS_PT.forEach(([id, name]) => {
-    const opt = document.createElement("option");
-    opt.value = id;
-    opt.textContent = name;
-    if (id === readerBook) opt.selected = true;
-    sel.appendChild(opt);
-  });
+  loadReaderChapter();
 }
 
 /* ──────────────────────────────────────────────────────────
    MENU HAMBURGUER (mobile)
-   — movido de um <script> inline no index.html para cá, para
-   manter o HTML livre de JavaScript embutido.
    ──────────────────────────────────────────────────────────*/
 function handleModalClick(e, modalId) {
   if (e.target.id === modalId) {
@@ -1279,6 +1298,17 @@ function handleModalClick(e, modalId) {
     else closeBibleReader();
   }
 }
+
+/* Escape fecha o modal aberto (antes só fechava os dropdowns) */
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  const open = document.querySelector(".modal-overlay.open");
+  if (!open) return;
+  if (open.id === "contextModal")        closeContextModal();
+  else if (open.id === "bibleModal")     closeBibleReader();
+  else if (open.id === "favoritesModal") closeFavoritesModal();
+  else if (open.id === "searchModal")    closeSearchModal();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   const hamburgerBtn      = document.getElementById('hamburgerBtn');
@@ -1306,9 +1336,9 @@ function openHamburgerMenu() {
   if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
 
   /* Posiciona o dropdown logo abaixo do header, alinhado à direita */
-  const header = document.querySelector('.app-header');
-  const headerRect = header.getBoundingClientRect();
-  const container = document.querySelector('.app-container');
+  const header        = document.querySelector('.app-header');
+  const container     = document.querySelector('.app-container');
+  const headerRect    = header.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
   hamburgerToolbar.style.top = (headerRect.bottom - containerRect.top + 8) + 'px';
   hamburgerToolbar.style.right = '0px';
