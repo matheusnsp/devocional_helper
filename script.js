@@ -1139,6 +1139,8 @@ function renderBookPanel() {
         <p class="picker-chapters__hint">Escolha um livro para ver os capítulos.</p>
       </div>
 
+      <div class="picker-verses" id="readerVerseStrip"></div>
+
       <div id="bookGrids">
         ${bookGrid(OT_BOOKS, "Antigo Testamento")}
         ${bookGrid(NT_BOOKS, "Novo Testamento")}
@@ -1177,7 +1179,15 @@ function filterBooks(query) {
 
 /* ── Seleciona livro → mostra a régua de capítulos na mesma tela ── */
 async function selectBook(bookId, opts = {}) {
+  const changedBook = bookId !== readerBook;
   readerBook = bookId;
+
+  /* Trocou de livro: zera capítulo/versículo e esconde a régua de versículos */
+  if (changedBook) {
+    readerChapter = 1;
+    readerVerse   = null;
+    hideVerseStrip();
+  }
 
   /* Marca o livro ativo sem redesenhar a lista toda */
   document.querySelectorAll(".panel-btn--book").forEach(btn => {
@@ -1199,8 +1209,8 @@ async function selectBook(bookId, opts = {}) {
 
     const nums = book.chapters.map((_, i) => {
       const n = i + 1;
-      const active = n === readerChapter ? "panel-btn--active" : "";
-      return `<button class="panel-btn panel-btn--num ${active}" onclick="selectChapter(${n})">${n}</button>`;
+      const active = (!changedBook && n === readerChapter) ? "panel-btn--active" : "";
+      return `<button class="panel-btn panel-btn--num ${active}" data-chapter="${n}" onclick="selectChapter(${n})">${n}</button>`;
     }).join("");
 
     strip.innerHTML = `
@@ -1210,6 +1220,9 @@ async function selectBook(bookId, opts = {}) {
       </div>
       <div class="panel-grid panel-grid--nums">${nums}</div>`;
 
+    /* Abertura inicial: já mostra os versículos do capítulo corrente */
+    if (!changedBook) renderVerseStrip({ silent: true });
+
     if (!opts.silent) {
       strip.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
@@ -1218,10 +1231,86 @@ async function selectBook(bookId, opts = {}) {
   }
 }
 
-/* ── Seleciona capítulo → abre a leitura direto ── */
+/* ── Seleciona capítulo → abre a régua de versículos logo abaixo.
+      Clicar de novo no capítulo já ativo abre a leitura direto. ── */
 function selectChapter(num) {
-  readerChapter = parseInt(num);
+  const n     = parseInt(num);
+  const strip = document.getElementById("readerVerseStrip");
+
+  if (n === readerChapter && strip?.classList.contains("is-visible")) {
+    openWholeChapter();
+    return;
+  }
+
+  readerChapter = n;
   readerVerse   = null;
+
+  document.querySelectorAll("#readerChapterStrip .panel-btn--num").forEach(btn => {
+    btn.classList.toggle("panel-btn--active", parseInt(btn.dataset.chapter) === n);
+  });
+
+  renderVerseStrip();
+}
+
+function hideVerseStrip() {
+  const host = document.getElementById("readerVerseStrip");
+  if (!host) return;
+  host.classList.remove("is-visible");
+  host.innerHTML = "";
+}
+
+/* ── Régua de versículos do capítulo selecionado ── */
+async function renderVerseStrip(opts = {}) {
+  const host = document.getElementById("readerVerseStrip");
+  if (!host) return;
+
+  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
+
+  host.classList.add("is-visible");
+  host.innerHTML = `<p class="picker-chapters__hint">Carregando versículos...</p>`;
+
+  try {
+    const data = await loadBibleVersion(currentVersion);
+    const book = data.find(b => b.abbrev === USFM_TO_ABBREV[readerBook]);
+    if (!book) throw new Error("Livro não encontrado");
+
+    const chapArr = book.chapters[readerChapter - 1] || [];
+    const total   = chapArr.length;
+
+    const nums = chapArr.map((_, i) => {
+      const n = i + 1;
+      const active = readerVerse === `${readerBook}.${readerChapter}.${n}` ? "panel-btn--active" : "";
+      return `<button class="panel-btn panel-btn--num ${active}" onclick="selectVerse(${n})">${n}</button>`;
+    }).join("");
+
+    host.innerHTML = `
+      <div class="picker-verses__head">
+        <span class="picker-chapters__book">${bookName} ${readerChapter}</span>
+        <button class="picker-open-btn" onclick="openWholeChapter()">
+          Ler o capítulo
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <span class="panel-section-label">ou comece em um versículo — ${total} no capítulo</span>
+      <div class="panel-grid panel-grid--nums">${nums}</div>`;
+
+    if (!opts.silent) {
+      host.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  } catch(e) {
+    host.innerHTML = `<p class="picker-chapters__hint">Erro ao carregar os versículos.</p>`;
+  }
+}
+
+/* ── Abre a leitura destacando um versículo ── */
+function selectVerse(num) {
+  readerVerse = `${readerBook}.${readerChapter}.${num}`;
+  loadReaderChapter();
+}
+
+/* ── Abre a leitura do capítulo inteiro, do começo ── */
+function openWholeChapter() {
+  readerVerse = null;
   loadReaderChapter();
 }
 
