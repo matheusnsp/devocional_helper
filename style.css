@@ -130,6 +130,9 @@ html{
   font-size:16px;
   -webkit-text-size-adjust:100%;
   text-size-adjust:100%;
+  /* Mata o zoom por duplo toque. Junto com a meta tag e o bloqueio de
+     gestos no index.html, fecha os três caminhos de zoom no celular. */
+  touch-action:manipulation;
 }
 
 body {
@@ -332,44 +335,9 @@ body.light {
   flex-shrink: 0;
 }
 
-.select-custom {
-  position: relative;
-}
 
-.select-custom select {
-  appearance: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  border-radius: 10px;
-  height: 36px;
-  padding: 0 32px 0 12px;
-  font-family: var(--font-mono);
-  font-size: .72rem;
-  background: var(--glass);
-  border: 1px solid var(--card-border);
-  color: var(--text-secondary);
-  backdrop-filter: blur(20px);
-  transition: var(--transition);
-  white-space: nowrap;
-  width: auto;
-  text-align: center;
-}
 
-.select-custom select:hover {
-  background:var(--glass-hover);
-}
 
-.select-custom::after {
-  content:"↓";
-  position:absolute;
-  right:16px;
-  top:50%;
-  transform:translateY(-50%);
-  color:var(--text-muted);
-  font-size:.7rem;
-  pointer-events:none;
-}
 
 /* =========================================================
    ACTION TOOLBAR
@@ -502,6 +470,37 @@ body.light {
 /* =========================================================
    META ROW
 ========================================================= */
+
+/* Texto invisível na tela, mas lido por leitor de tela.
+   Usado no botão de favoritar, que ficou só com o ícone. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Linha do tema: badge à esquerda, favoritar à direita */
+.meta-row__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.meta-row__head .theme-badge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
 
 .meta-row {
   display: flex;
@@ -770,8 +769,7 @@ body.light {
   gap:14px;
 }
 
-.timeline-meta,
-.timeline-date {
+.timeline-meta {
 
   font-family:var(--font-mono);
 
@@ -780,12 +778,6 @@ body.light {
   color:var(--text-muted);
 
   white-space:nowrap;
-}
-
-.timeline-date {
-  color: var(--accent-2);
-  opacity: .9;
-  letter-spacing: .04em;
 }
 
 .timeline-meta strong {
@@ -931,15 +923,6 @@ body.light {
     display: none;
   }
 
-  /* .mobile-selects-bar .select-custom {
-    flex: 1;
-  } */
-
-  .mobile-selects-bar .select-custom select {
-    width: 100%;
-    font-size: .72rem;
-  }
-
   /* ── Botão hamburguer ── */
   .hamburger-btn {
     display: flex;
@@ -1067,25 +1050,17 @@ body.light {
 
   .meta-row {
     flex-wrap: nowrap;
-    gap: 10px;
-    align-items: flex-start;
+    gap: 12px;
+    align-items: stretch;
     flex-direction: column;
   }
 
-  .card-actions {
+  /* Badge à esquerda, coração encostado na borda direita do card */
+  .meta-row__head {
     width: 100%;
-    height: auto;
-    min-height: 44px;
-    gap: 6px;
+    justify-content: space-between;
   }
 
-  .context-btn,
-  .fav-btn,
-  .copy-btn {
-    font-size: .65rem;
-    padding: 0 10px;
-    gap: 5px;
-  }
 
   .verse-main-text {
     font-size: 1.4rem;
@@ -1115,8 +1090,7 @@ body.light {
     display: none;
   }
 
-  .timeline-meta,
-  .timeline-date {
+  .timeline-meta {
     text-align: center;
     font-size: 0.72rem;
   }
@@ -1148,31 +1122,6 @@ body.light {
     font-size:1.2rem;
   }
 
-  /* Esconde o texto dos botões do card, fica só ícone */
-  .context-btn span,
-  .fav-btn span,
-  .copy-btn span {
-    display: none;
-  }
-
-  .context-btn,
-  .fav-btn,
-  .copy-btn {
-    padding: 0 10px;
-    gap: 0;
-  }
-
-  .context-btn svg,
-  .fav-btn svg,
-  .copy-btn svg {
-    width: 16px;
-    height: 16px;
-    opacity: .9;
-  }
-
-  .card-actions {
-    height: 40px;
-  }
 }
 
 /* =========================================================
@@ -1238,11 +1187,6 @@ body.light {
   min-width: 7ch;
 }
 
-#favStatus {
-  display: inline-block;
-  min-width: 10ch;
-}
-
 .context-btn:hover,
 .copy-btn:hover {
   background: rgba(255,255,255,.14);
@@ -1261,7 +1205,14 @@ body.light {
   opacity: 1;
 }
 
-/* Favoritar: cor especial no hover e ativo */
+/* Favoritar: só ícone, no canto da linha do tema */
+.fav-btn {
+  flex-shrink: 0;
+  width: 40px;
+  padding: 0;
+  gap: 0;
+}
+
 .fav-btn:hover {
   background: rgba(244,63,94,.16);
   border-color: rgba(244,63,94,.4);
@@ -1301,6 +1252,38 @@ body.light {
 }
 
 /* =========================================================
+   CARD ACTIONS — responsivo
+
+   Este bloco precisa vir DEPOIS das regras base acima. Media
+   query não aumenta especificidade: com os ajustes lá em cima,
+   junto dos outros @media, o bloco base vencia por estar mais
+   abaixo no arquivo e o mobile não aplicava nada.
+========================================================= */
+
+/* Passagem, Favoritar e Copiar sempre na mesma linha, do mesmo jeito
+   que já ficam em 425px: cada botão com a largura do próprio conteúdo,
+   sem esticar. O que muda nas telas menores é só a tipografia. */
+@media (max-width: 480px) {
+  .card-actions {
+    width: 100%;
+    height: auto;
+    min-height: 44px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  /* Com o favoritar fora daqui sobram dois botões, então dá para
+     manter o corpo confortável até em 320px. */
+  .context-btn,
+  .copy-btn {
+    flex: 0 0 auto;
+    font-size: .66rem;
+    padding: 0 14px;
+    gap: 6px;
+  }
+}
+
+/* =========================================================
    MODALS
 ========================================================= */
 
@@ -1324,6 +1307,12 @@ body.light {
   pointer-events: all;
 }
 
+/* Fundo travado enquanto há modal aberto. position:fixed em vez de
+   overflow:hidden porque o Safari do iOS ignora o segundo. */
+body.modal-open {
+  overflow: hidden;
+}
+
 .modal-panel {
   width: min(100%, 680px);
   max-height: 82vh;
@@ -1342,9 +1331,6 @@ body.light {
   transform: translateY(0);
 }
 
-.modal-panel--wide {
-  width: min(100%, 720px);
-}
 
 .modal-header {
   display: flex;
@@ -1550,35 +1536,8 @@ body.light {
 
 /* ── Bible Reader nav ── */
 
-.reader-nav-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
 
-}
 
-.reader-book-select {
-  appearance: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-family: var(--font-mono);
-  font-size: .74rem;
-  background: var(--glass);
-  border: 1px solid var(--card-border);
-  color: var(--text-secondary);
-  flex: 1;
-  min-width: 0;
-  transition: var(--transition);
-}
-
-.reader-book-select:hover {
-  background: var(--glass-hover);
-}
 
 .reader-chapter-ctrl {
   display: flex;
@@ -1646,21 +1605,17 @@ body.light {
 
 .modal-overlay--reader {
   align-items: stretch;
-  /* O respiro do topo vem daqui: o painel não encosta na borda da
-     tela e o fundo escuro aparece atrás, como nos outros modais. */
   padding: 0;
-  padding-top: max(30px, env(safe-area-inset-top));
 }
 
 .modal-panel--reader {
   width: 100%;
   max-width: 100%;
-  height: 100%;
-  max-height: 100%;
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  border: 1px solid var(--card-border);
-  border-bottom: none;
-  box-shadow: 0 -20px 60px rgba(0,0,0,.45);
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
   transform: translateY(16px);
 }
 
@@ -1670,6 +1625,10 @@ body.light {
   flex-direction: column;
   gap: 12px;
   padding: 18px 20px 16px;
+  /* Tela cheia: o respiro do topo sai daqui. Somado à área segura,
+     porque instalado como web app o conteúdo passa por baixo da
+     barra de status. */
+  padding-top: max(28px, calc(env(safe-area-inset-top) + 14px));
   border-bottom: 1px solid var(--card-border);
   background: var(--bg-secondary);
   flex-shrink: 0;
@@ -1682,6 +1641,7 @@ body.light {
   width: 100%;
   max-width: var(--reader-col);
   margin: 0 auto;
+  padding-top: 15px;
 }
 
 /* O botão de referência acompanha o próprio texto; o X vai para a
@@ -1802,7 +1762,7 @@ body.light {
 
 /* ── Corpo do leitor ── */
 .modal-panel--reader .modal-body {
-  padding: 0 22px;
+  padding: 0 22px env(safe-area-inset-bottom);
   scroll-padding-top: 32px;
   scroll-padding-bottom: 40px;
 }
@@ -1815,11 +1775,9 @@ body.light {
 }
 
 @media (max-width: 480px) {
-  .modal-overlay--reader {
-    padding-top: max(24px, env(safe-area-inset-top));
-  }
   .reader-bar {
     padding: 16px 16px 14px;
+    padding-top: max(22px, calc(env(safe-area-inset-top) + 10px));
     gap: 10px;
   }
   .modal-panel--reader .modal-body {
@@ -1976,24 +1934,7 @@ body.light {
   gap: 8px;
 }
 
-.panel-link {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: .70rem;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--accent-2);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: opacity .2s;
-  padding: 0;
-}
 
-.panel-link:hover {
-  opacity: .7;
-}
 
 /* ── Grids: colunas iguais, linhas alinhadas ── */
 .panel-grid {

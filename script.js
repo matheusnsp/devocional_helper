@@ -562,7 +562,13 @@ function copyToClipboard() {
   } else {
     const matches = txt.match(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g) || [];
     if (matches.length > 1) {
-      const body = txt.replace(/(?<!^)\s*(?=[⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n");
+      /* Quebra linha antes de cada número sobrescrito, menos no começo.
+         Sem lookbehind de propósito: (?<!^) só existe no Safari 16.4+,
+         e como regex é validada na hora de carregar o arquivo, um iPhone
+         mais antigo derrubaria o script inteiro, não só esta função. */
+      const body = txt
+        .replace(/\s*([⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n$1")
+        .replace(/^\n+/, "");
       formatted = `${body}\n\n${ref}`;
     } else {
       formatted = `"${txt}" - ${ref}`;
@@ -675,12 +681,12 @@ function toggleFavorite() {
 }
 
 function openFavoritesModal() {
-  document.getElementById("favoritesModal").classList.add("open");
+  openModal("favoritesModal");
   renderFavoritesList();
 }
 
 function closeFavoritesModal() {
-  document.getElementById("favoritesModal").classList.remove("open");
+  closeModal("favoritesModal");
 }
 
 function renderFavoritesList() {
@@ -740,7 +746,7 @@ function goToFavorite(apiId, theme) {
    BUSCA POR PALAVRA-CHAVE
    ──────────────────────────────────────────────────────────*/
 function openSearchModal() {
-  document.getElementById("searchModal").classList.add("open");
+  openModal("searchModal");
   const input = document.getElementById("searchInput");
   if (input) { input.value = ""; setTimeout(() => input.focus(), 100); }
   document.getElementById("searchBody").innerHTML =
@@ -748,7 +754,7 @@ function openSearchModal() {
 }
 
 function closeSearchModal() {
-  document.getElementById("searchModal").classList.remove("open");
+  closeModal("searchModal");
 }
 
 function onSearchInput() {
@@ -861,6 +867,25 @@ function loadReadingScale() {
 }
 
 /* ──────────────────────────────────────────────────────────
+   ABRIR / FECHAR MODAIS
+   Trava a rolagem do fundo: sem isso, rolar dentro do modal
+   no celular arrasta a página atrás quando o conteúdo chega
+   ao fim, e ao fechar você aparece em outro ponto da página.
+   ──────────────────────────────────────────────────────────*/
+function openModal(id) {
+  document.getElementById(id)?.classList.add("open");
+  document.body.classList.add("modal-open");
+}
+
+function closeModal(id) {
+  document.getElementById(id)?.classList.remove("open");
+  /* Só libera a rolagem se não sobrou nenhum outro modal aberto */
+  if (!document.querySelector(".modal-overlay.open")) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
    MODAL — LER CAPÍTULO COMPLETO (contexto do versículo)
    ──────────────────────────────────────────────────────────*/
 let contextBook      = "JHN";
@@ -878,7 +903,7 @@ async function openContextModal() {
   contextChapter   = parseInt(parts[1]) || 1;
   contextHighVerse = baseId;
 
-  document.getElementById("contextModal").classList.add("open");
+  openModal("contextModal");
   await loadContextChapter();
 }
 
@@ -925,7 +950,7 @@ function contextGo(dir) {
 
 function closeContextModal() {
   const modal = document.getElementById("contextModal");
-  modal.classList.remove("open");
+  closeModal("contextModal");
   _resetVerseSelection(modal.querySelector(".modal-panel"));
 }
 
@@ -1150,13 +1175,13 @@ function openBibleReader() {
   readerVerse      = null;
   _readerChapCount = 0;
 
-  document.getElementById("bibleModal").classList.add("open");
+  openModal("bibleModal");
   renderBookPanel();
 }
 
 function closeBibleReader() {
   const modal = document.getElementById("bibleModal");
-  modal.classList.remove("open");
+  closeModal("bibleModal");
   _resetVerseSelection(modal.querySelector(".modal-panel"));
 }
 

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Devocional Helper</title>
 
   <!-- PWA: instalável e com leitura offline -->
@@ -76,7 +76,7 @@
         <div class="custom-dropdown__panel custom-dropdown__panel--versions" id="versionDropdownPanelMobile" role="listbox"></div>
       </div>
       <button class="header-bible-btn header-bible-btn--icon" onclick="openBibleReader()" title="Abrir a Bíblia" aria-label="Abrir a Bíblia">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         <span>Bíblia</span>
       </button>
       <!-- selects ocultos para compatibilidade -->
@@ -90,7 +90,7 @@
     <div class="action-toolbar" id="actionToolbar">
 
       <button class="action-btn" id="btnRandom" onclick="goRandom(); closeHamburgerMenu();">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="7" cy="7" r="1"/><circle cx="17" cy="17" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="12" cy="12" r="1"/></svg>
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="7" cy="7" r="1"/><circle cx="17" cy="17" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="12" cy="12" r="1"/></svg>
         <span>Aleatório</span>
       </button>
 
@@ -99,21 +99,21 @@
       <!-- No mobile este item some do menu hamburguer: lá a Bíblia já está
            na faixa de cima, ao lado de Temas e Versão. -->
       <button class="action-btn" id="btnBible" onclick="openBibleReader(); closeHamburgerMenu();">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         <span>Bíblia</span>
       </button>
 
       <div class="action-toolbar__divider"></div>
 
       <button class="action-btn" id="btnFavList" onclick="openFavoritesModal(); closeHamburgerMenu();">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <span>Favoritos</span>
       </button>
 
       <div class="action-toolbar__divider"></div>
 
       <button class="action-btn" id="btnSearch" onclick="openSearchModal(); closeHamburgerMenu();">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <span>Buscar</span>
       </button>
 
@@ -130,21 +130,24 @@
 
         <div class="card-top">
           <div class="meta-row">
-            <span class="theme-badge" id="verseTheme">---</span>
+            <div class="meta-row__head">
+              <span class="theme-badge" id="verseTheme">---</span>
+              <button class="fav-btn" id="favBtn" onclick="toggleFavorite()" title="Favoritar versículo" aria-label="Favoritar versículo">
+                <svg aria-hidden="true" class="icon-heart" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <!-- Texto mantido para leitor de tela: e ele que anuncia
+                     se o versiculo ja esta favoritado ou nao. -->
+                <span id="favStatus" class="sr-only">Favoritar</span>
+              </button>
+            </div>
 
             <div class="card-actions">
               <button class="context-btn" onclick="openContextModal()" title="Ler capítulo completo">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                 <span>Passagem</span>
               </button>
               <div class="card-actions__divider"></div>
-              <button class="fav-btn" id="favBtn" onclick="toggleFavorite()" title="Favoritar versículo">
-                <svg class="icon-heart" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                <span id="favStatus">Favoritar</span>
-              </button>
-              <div class="card-actions__divider"></div>
               <button class="copy-btn" onclick="copyToClipboard()" title="Copiar Versículo">
-                <svg class="icon-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg aria-hidden="true" class="icon-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span id="copyStatus">Copiar</span>
               </button>
             </div>
@@ -177,7 +180,7 @@
 
     <footer class="navigation-hub">
       <button class="nav-arrow-btn" id="btnPrev" onclick="go(-1)" aria-label="Anterior">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
 
       <div class="timeline-tracker">
@@ -190,14 +193,14 @@
       </div>
 
       <button class="nav-arrow-btn" id="btnNext" onclick="go(1)" aria-label="Próximo">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l6 6-6 6"/></svg>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l6 6-6 6"/></svg>
       </button>
     </footer>
 
   </div>
 
   <!-- MODAL: CAPÍTULO DO VERSÍCULO -->
-  <div class="modal-overlay" id="contextModal" onclick="handleModalClick(event,'contextModal')">
+  <div class="modal-overlay" id="contextModal" role="dialog" aria-modal="true" aria-label="Capítulo completo" onclick="handleModalClick(event,'contextModal')">
     <div class="modal-panel">
       <div class="modal-header">
         <span class="modal-title" id="contextTitle">Capítulo</span>
@@ -215,14 +218,14 @@
   </div>
 
   <!-- MODAL: LEITOR DE BÍBLIA (tela cheia) -->
-  <div class="modal-overlay modal-overlay--reader" id="bibleModal" onclick="handleModalClick(event,'bibleModal')">
+  <div class="modal-overlay modal-overlay--reader" id="bibleModal" role="dialog" aria-modal="true" aria-label="Leitor da Bíblia" onclick="handleModalClick(event,'bibleModal')">
     <div class="modal-panel modal-panel--reader" id="readerPanel">
 
       <div class="reader-bar">
         <div class="reader-bar__top">
           <span class="reader-bar__title">Selecionar passagem</span>
           <button class="reader-ref-btn" id="readerRefBtn" onclick="renderBookPanel()" title="Trocar livro / capítulo / versículo">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             <span id="readerRefLabel">Selecionar passagem</span>
             <svg class="reader-ref-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
           </button>
@@ -249,11 +252,11 @@
   </div>
 
   <!-- MODAL: FAVORITOS -->
-  <div class="modal-overlay" id="favoritesModal" onclick="handleModalClick(event,'favoritesModal')">
+  <div class="modal-overlay" id="favoritesModal" role="dialog" aria-modal="true" aria-label="Favoritos" onclick="handleModalClick(event,'favoritesModal')">
     <div class="modal-panel">
       <div class="modal-header">
         <span class="modal-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-2);margin-right:6px;vertical-align:middle"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-2);margin-right:6px;vertical-align:middle"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           Favoritos
         </span>
         <button class="modal-close" onclick="closeFavoritesModal()">✕</button>
@@ -265,11 +268,11 @@
   </div>
 
   <!-- MODAL: BUSCA -->
-  <div class="modal-overlay" id="searchModal" onclick="handleModalClick(event,'searchModal')">
+  <div class="modal-overlay" id="searchModal" role="dialog" aria-modal="true" aria-label="Buscar versículos" onclick="handleModalClick(event,'searchModal')">
     <div class="modal-panel">
       <div class="modal-header">
         <span class="modal-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           Buscar Versículos
         </span>
         <button class="modal-close" onclick="closeSearchModal()">✕</button>
@@ -294,6 +297,14 @@
           .catch(err => console.warn("Service worker não registrado:", err));
       });
     }
+
+    /* Bloqueio do zoom por pinça no iOS.
+       O Safari ignora user-scalable=no na meta tag desde o iOS 10, então
+       o único caminho é cancelar os eventos de gesto. O duplo toque é
+       tratado pelo touch-action: manipulation no CSS. */
+    ["gesturestart", "gesturechange", "gestureend"].forEach(evt => {
+      document.addEventListener(evt, e => e.preventDefault(), { passive: false });
+    });
   </script>
 </body>
 </html>
