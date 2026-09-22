@@ -938,15 +938,22 @@ async function openContextModal() {
   await loadContextChapter();
 }
 
+let _contextPrevCh = null;
+let _contextNextCh = null;
+
 async function loadContextChapter() {
-  const body  = document.getElementById("contextBody");
-  const title = document.getElementById("contextTitle");
+  const body    = document.getElementById("contextBody");
+  const title   = document.getElementById("contextTitle");
+  const prevBtn = document.getElementById("contextPrev");
+  const nextBtn = document.getElementById("contextNext");
 
   const bookName = BOOKS_PT.find(b => b[0] === contextBook)?.[1] ?? contextBook;
   title.textContent = bookName;
   document.getElementById("contextChapterLabel").textContent = `Cap. ${contextChapter}`;
-  document.getElementById("contextPrev").disabled = contextChapter <= 1;
-  document.getElementById("contextNext").disabled = true;
+
+  _contextPrevCh = _contextNextCh = null;
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
 
   body.innerHTML = `<div class="modal-loading">Carregando capítulo...</div>`;
 
@@ -956,9 +963,14 @@ async function loadContextChapter() {
     const book   = data.find(b => b.abbrev === abbrev);
     if (!book) throw new Error("Livro não encontrado");
     const chapArr = book.chapters[contextChapter - 1] || [];
-    const hasNext = contextChapter < book.chapters.length;
 
-    document.getElementById("contextNext").disabled = !hasNext;
+    _contextPrevCh = neighborChapter(data, contextBook, contextChapter, -1);
+    _contextNextCh = neighborChapter(data, contextBook, contextChapter, 1);
+
+    prevBtn.disabled = !_contextPrevCh;
+    nextBtn.disabled = !_contextNextCh;
+    prevBtn.title = _contextPrevCh ? chapRef(_contextPrevCh) : "";
+    nextBtn.title = _contextNextCh ? chapRef(_contextNextCh) : "";
 
     const content = chapArr.map((text, i) => ({
       name: "verse-span",
@@ -966,15 +978,17 @@ async function loadContextChapter() {
       items: [{ type: "text", text }]
     }));
 
-    renderChapter({ content, next: hasNext }, contextHighVerse, body);
+    renderChapter({ content, next: !!_contextNextCh }, contextHighVerse, body);
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Não foi possível carregar o capítulo.</p>`;
   }
 }
 
 function contextGo(dir) {
-  contextChapter += dir;
-  if (contextChapter < 1) contextChapter = 1;
+  const alvo = dir > 0 ? _contextNextCh : _contextPrevCh;
+  if (!alvo) return;
+  contextBook      = alvo.book;
+  contextChapter   = alvo.chapter;
   contextHighVerse = null;
   loadContextChapter();
 }
@@ -1254,13 +1268,58 @@ const BOOKS_PT = [
 const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL"];
 const NT_BOOKS = ["MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
 
+/* ── Capítulo vizinho, atravessando livros ──
+  dir = 1 (próximo) ou -1 (anterior). Devolve { book, chapter },
+  ou null antes de Gênesis 1 e depois de Apocalipse 22. */
+  function neighborChapter(data, bookId, chapter, dir) {
+  const count = id => data.find(b => b.abbrev === USFM_TO_ABBREV[id])?.chapters.length ?? 0;
+
+  const c = chapter + dir;
+  if (c >= 1 && c <= count(bookId)) return { book: bookId, chapter: c };
+
+  const order = BOOKS_PT.map(b => b[0]);
+  const i = order.indexOf(bookId) + dir;
+  if (i < 0 || i >= order.length) return null;
+
+  const outro = order[i];
+  const total = count(outro);
+  if (!total) return null;
+  return { book: outro, chapter: dir > 0 ? 1 : total };
+}
+
+/* "Êxodo 1" */
+function chapRef(n) {
+  const nome = BOOKS_PT.find(b => b[0] === n.book)?.[1] ?? n.book;
+  return `${nome} ${n.chapter}`;
+}
+
+/* No mesmo livro o botão fica genérico; ao virar de livro, mostra o destino */
+function neighborLabel(n, currentBook, generic) {
+  if (!n || n.book === currentBook) return generic;
+  return chapRef(n);
+}
+
+/* Setas do topo do leitor: só aparecem com a leitura aberta */
+function syncReaderTopNav(visible) {
+  [["readerTopPrev", _readerPrev], ["readerTopNext", _readerNext]].forEach(([id, alvo]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.style.display = visible ? "" : "none";
+    b.disabled = !alvo;
+    b.title = alvo ? chapRef(alvo) : "";
+  });
+}
+  
+let _readerPrev = null;
+let _readerNext = null;
+
 let readerBook      = null;
 let readerChapter   = null;
 let readerVerse     = null;
 let _readerChapCount = 0;   // total de capítulos do livro aberto
 
 /* Abre sempre na lista de livros, sem herdar a passagem do devocional.
-   Para ler o capítulo do versículo do dia existe o botão "Passagem". */
+Para ler o capítulo do versículo do dia existe o botão "Passagem". */
 function openBibleReader() {
   readerBook       = null;
   readerChapter    = null;
@@ -1274,6 +1333,7 @@ function openBibleReader() {
 function closeBibleReader() {
   const modal = document.getElementById("bibleModal");
   closeModal("bibleModal");
+  document.getElementById("readerPanel")?.classList.remove("is-reading");
   _resetVerseSelection(modal.querySelector(".modal-panel"));
 }
 
@@ -1289,6 +1349,7 @@ function renderBookPanel() {
   const panel = document.getElementById("readerPanel");
   /* Modo seleção: esconde o botão de referência do topo */
   panel?.classList.remove("is-reading");
+  syncReaderTopNav(false);
 
   const bookGrid = (ids, label) => {
     const items = ids.map(id => {
@@ -1549,52 +1610,57 @@ function updateReaderRefLabel() {
     : `${bookName} ${readerChapter}`;
 }
 
-/* ── Carrega e renderiza capítulo ── */
 async function loadReaderChapter() {
   const body = document.getElementById("readerBody");
 
+  _readerPrev = _readerNext = null;
   updateReaderRefLabel();
   document.getElementById("readerPanel")?.classList.add("is-reading");
+  syncReaderTopNav(true);
   body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
 
   try {
-    const data   = await loadBibleVersion(currentVersion);
-    const book   = data.find(b => b.abbrev === USFM_TO_ABBREV[readerBook]);
+    const data = await loadBibleVersion(currentVersion);
+    const book = data.find(b => b.abbrev === USFM_TO_ABBREV[readerBook]);
     if (!book) throw new Error("Livro não encontrado");
 
     _readerChapCount = book.chapters.length;
     if (readerChapter > _readerChapCount) readerChapter = _readerChapCount;
 
     const chapArr = book.chapters[readerChapter - 1] || [];
-    const hasNext = readerChapter < _readerChapCount;
-    const hasPrev = readerChapter > 1;
+    _readerPrev = neighborChapter(data, readerBook, readerChapter, -1);
+    _readerNext = neighborChapter(data, readerBook, readerChapter, 1);
 
-    /* Monta objeto compatível com renderChapter */
     const content = chapArr.map((text, i) => ({
       name: "verse-span",
       attrs: { verseId: `${readerBook}.${readerChapter}.${i + 1}` },
       items: [{ type: "text", text }]
     }));
 
-    renderChapter({ content, next: hasNext }, readerVerse ?? "", body);
+    renderChapter({ content, next: !!_readerNext }, readerVerse ?? "", body);
 
-    /* Navegação de capítulo no rodapé da leitura */
+    const prevTxt = neighborLabel(_readerPrev, readerBook, "Anterior");
+    const nextTxt = neighborLabel(_readerNext, readerBook, "Próximo");
+
     body.insertAdjacentHTML("beforeend", `
       <div class="reader-chapter-nav">
-        <button class="reader-nav-btn" ${hasPrev ? "" : "disabled"} onclick="readerGo(-1)">‹ Anterior</button>
+        <button class="reader-nav-btn" ${_readerPrev ? "" : "disabled"} onclick="readerGo(-1)">‹ ${prevTxt}</button>
         <button class="reader-nav-btn reader-nav-btn--ghost" onclick="renderBookPanel()">Trocar passagem</button>
-        <button class="reader-nav-btn" ${hasNext ? "" : "disabled"} onclick="readerGo(1)">Próximo ›</button>
+        <button class="reader-nav-btn" ${_readerNext ? "" : "disabled"} onclick="readerGo(1)">${nextTxt} ›</button>
       </div>`);
+
+    syncReaderTopNav(true);
   } catch(e) {
     body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique o arquivo da versão.</p>`;
   }
 }
 
-/* ── Navegar capítulos com a leitura aberta ── */
+/* ── Navegar capítulos com a leitura aberta (vira de livro no fim) ── */
 function readerGo(dir) {
-  const next = readerChapter + dir;
-  if (next < 1 || (_readerChapCount && next > _readerChapCount)) return;
-  readerChapter = next;
+  const alvo = dir > 0 ? _readerNext : _readerPrev;
+  if (!alvo) return;
+  readerBook    = alvo.book;
+  readerChapter = alvo.chapter;
   readerVerse   = null;
   loadReaderChapter();
 }

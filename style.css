@@ -2898,3 +2898,51 @@ body.modal-open {
     padding: 8px 9px;
   }
 }
+
+
+
+/* =========================================================
+   SETAS DE CAPÍTULO NO TOPO DO LEITOR
+========================================================= */
+
+/* Setas coladas na referência, com a mesma altura do botão dela */
+.reader-bar__top {
+  gap: 8px;
+}
+
+.reader-bar__top .reader-ch-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 1.25rem;
+}
+
+/* Rodapé: rótulos como "‹ 2 Tessalonicenses 3" cortam com reticências
+   em vez de alargar o botão para fora da tela */
+.reader-nav-btn {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 480px) {
+  .reader-bar__top .reader-ch-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* Sem o ícone do livro, sobra espaço para o nome da referência */
+  .reader-ref-btn svg:first-child {
+    display: none;
+  }
+
+  .reader-ref-btn {
+    padding: 10px 12px;
+  }
+
+  /* Os três botões dividem a largura por igual */
+  .reader-nav-btn--ghost {
+    flex: 1;
+  }
+}
