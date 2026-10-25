@@ -13,7 +13,7 @@
    invalida o cache antigo e força o download dos arquivos novos.
    ──────────────────────────────────────────────────────────*/
 
-   const CACHE_VERSION = "v3";
+   const CACHE_VERSION = "v4";
    const SHELL_CACHE   = `devocional-shell-${CACHE_VERSION}`;
    const BIBLE_CACHE   = `devocional-biblias-${CACHE_VERSION}`;
    const FONT_CACHE    = "devocional-fontes";
@@ -28,9 +28,12 @@
      "./versiculos.js",
      "./manifest.json",
      "./favicon.ico",
-     "./icons/icon-192.png",
-     "./icons/icon-512.png",
-     "./icons/icon-maskable-512.png",
+     "./favicon.svg",
+     "./icons/icon-64-v2.png",
+     "./icons/apple-touch-icon-v2.png",
+     "./icons/icon-192-v2.png",
+     "./icons/icon-512-v2.png",
+     "./icons/icon-maskable-512-v2.png",
      "./versoes/ARA.json"
    ];
    

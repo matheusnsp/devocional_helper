@@ -1,48 +1,68 @@
 {
-    "name": "Devocional Helper",
-    "short_name": "Devocional",
-    "description": "Um versículo por dia, com reflexão, favoritos e a Bíblia completa para leitura offline.",
-    "lang": "pt-BR",
-    "dir": "ltr",
-    "start_url": "./",
-    "scope": "./",
-    "display": "standalone",
-    "orientation": "portrait",
-    "background_color": "#F5F0E6",
-    "theme_color": "#F5F0E6",
-    "categories": ["books", "lifestyle", "education"],
-    "icons": [
-      {
-        "src": "icons/icon-192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "icons/icon-512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "icons/icon-maskable-512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "maskable"
-      }
-    ],
-    "shortcuts": [
-      {
-        "name": "Abrir a Bíblia",
-        "short_name": "Bíblia",
-        "url": "./?abrir=biblia",
-        "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
-      },
-      {
-        "name": "Meus favoritos",
-        "short_name": "Favoritos",
-        "url": "./?abrir=favoritos",
-        "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
-      }
-    ]
-  }
+  "name": "Devocional Helper",
+  "short_name": "Devocional",
+  "description": "Um versículo por dia, com reflexão, favoritos e a Bíblia completa para leitura offline.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F0E6",
+  "theme_color": "#F5F0E6",
+  "categories": [
+    "books",
+    "lifestyle",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "icons/apple-touch-icon-v2.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Abrir a Bíblia",
+      "short_name": "Bíblia",
+      "url": "./?abrir=biblia",
+      "icons": [
+        {
+          "src": "icons/icon-192-v2.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Meus favoritos",
+      "short_name": "Favoritos",
+      "url": "./?abrir=favoritos",
+      "icons": [
+        {
+          "src": "icons/icon-192-v2.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

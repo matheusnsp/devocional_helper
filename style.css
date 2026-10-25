@@ -127,13 +127,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand__mark {
-  width: 22px; height: 22px; border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 120%, var(--accent) 0 46%, transparent 47%),
-    var(--gold-soft);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-}
+.brand__mark { width: 24px; height: 24px; flex-shrink: 0; display: block; }
 .brand__name {
   font-family: var(--font-read);
   font-size: 1.32rem;
