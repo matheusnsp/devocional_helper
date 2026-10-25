@@ -13,7 +13,7 @@
    invalida o cache antigo e força o download dos arquivos novos.
    ──────────────────────────────────────────────────────────*/
 
-   const CACHE_VERSION = "v1";
+   const CACHE_VERSION = "v2";
    const SHELL_CACHE   = `devocional-shell-${CACHE_VERSION}`;
    const BIBLE_CACHE   = `devocional-biblias-${CACHE_VERSION}`;
    const FONT_CACHE    = "devocional-fontes";

@@ -1,28 +1,121 @@
-/* ── Remove aspas tipográficas da API ── */
+/* ──────────────────────────────────────────────────────────
+   DEVOCIONAL — script principal
+   Quatro telas (Hoje, Bíblia, Buscar, Salvos) trocadas pela
+   hash da URL, para o botão "voltar" do celular funcionar.
+   `verses` vem de versiculos.js.
+   ──────────────────────────────────────────────────────────*/
+
+/* ── Utilidades ── */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+const store = {
+  get(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  },
+  /* Algumas chaves antigas guardavam texto puro, sem JSON */
+  getRaw(key, fallback) {
+    try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+  },
+  setRaw(key, value) {
+    try { localStorage.setItem(key, value); } catch {}
+  }
+};
+
 function capitalizeFirst(text) {
   if (!text) return text;
   const t = text.trimStart();
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+/* Remove aspas tipográficas que vêm nos arquivos das versões */
 function stripQuotes(text) {
-  return text.replace(/[“”„‟‘’]/g, "");
+  return (text || "").replace(/[“”„‟‘’]/g, "");
 }
 
 /* Normaliza para busca: sem acento, minúsculo */
 function normalizeForSearch(s) {
-  return (s || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+const icon = (name, size = 16) =>
+  `<svg class="i" width="${size}" height="${size}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+
+const toSup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
+
+function plural(n, um, varios) { return `${n} ${n === 1 ? um : varios}`; }
+
+/* ── Toast ── */
+let _toastTimer;
+function toast(msg) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("is-on");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove("is-on"), 1900);
+}
+
+async function copyText(text, msg = "Copiado") {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(msg);
+  } catch {
+    /* Fallback para navegadores sem permissão de clipboard */
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast(msg); }
+    catch { toast("Não foi possível copiar"); }
+    ta.remove();
+  }
 }
 
 /* ──────────────────────────────────────────────────────────
-   DADOS LOCAIS DA BÍBLIA
-   O JSON de cada versão é carregado de versoes/<id>.json e
-   mantido em memória. Estrutura esperada:
-   [{ "abbrev": "Gn", "chapters": [["v1","v2",...], ...] }, ...]
+   DADOS DA BÍBLIA
+   versoes/<id>.json → [{ abbrev: "Gn", chapters: [["v1", ...], ...] }]
    ──────────────────────────────────────────────────────────*/
+const BIBLE_VERSIONS = [
+  { id: "ARA", name: "Almeida Revista e Atualizada" },
+  { id: "ARC", name: "Almeida Revista e Corrigida" },
+  { id: "NAA", name: "Nova Almeida Atualizada" },
+];
+
+const BOOKS_PT = [
+  ["GEN","Gênesis","Gn"],["EXO","Êxodo","Êx"],["LEV","Levítico","Lv"],["NUM","Números","Nm"],["DEU","Deuteronômio","Dt"],
+  ["JOS","Josué","Js"],["JDG","Juízes","Jz"],["RUT","Rute","Rt"],["1SA","1 Samuel","1Sm"],["2SA","2 Samuel","2Sm"],
+  ["1KI","1 Reis","1Rs"],["2KI","2 Reis","2Rs"],["1CH","1 Crônicas","1Cr"],["2CH","2 Crônicas","2Cr"],["EZR","Esdras","Ed"],
+  ["NEH","Neemias","Ne"],["EST","Ester","Et"],["JOB","Jó","Jó"],["PSA","Salmos","Sl"],["PRO","Provérbios","Pv"],
+  ["ECC","Eclesiastes","Ec"],["SNG","Cantares","Ct"],["ISA","Isaías","Is"],["JER","Jeremias","Jr"],["LAM","Lamentações","Lm"],
+  ["EZK","Ezequiel","Ez"],["DAN","Daniel","Dn"],["HOS","Oséias","Os"],["JOL","Joel","Jl"],["AMO","Amós","Am"],
+  ["OBA","Obadias","Ob"],["JON","Jonas","Jn"],["MIC","Miquéias","Mq"],["NAM","Naum","Na"],["HAB","Habacuque","Hc"],
+  ["ZEP","Sofonias","Sf"],["HAG","Ageu","Ag"],["ZEC","Zacarias","Zc"],["MAL","Malaquias","Ml"],
+  ["MAT","Mateus","Mt"],["MRK","Marcos","Mc"],["LUK","Lucas","Lc"],["JHN","João","Jo"],["ACT","Atos","At"],
+  ["ROM","Romanos","Rm"],["1CO","1 Coríntios","1Co"],["2CO","2 Coríntios","2Co"],["GAL","Gálatas","Gl"],
+  ["EPH","Efésios","Ef"],["PHP","Filipenses","Fp"],["COL","Colossenses","Cl"],["1TH","1 Tessalonicenses","1Ts"],
+  ["2TH","2 Tessalonicenses","2Ts"],["1TI","1 Timóteo","1Tm"],["2TI","2 Timóteo","2Tm"],["TIT","Tito","Tt"],
+  ["PHM","Filemom","Fm"],["HEB","Hebreus","Hb"],["JAS","Tiago","Tg"],["1PE","1 Pedro","1Pe"],["2PE","2 Pedro","2Pe"],
+  ["1JN","1 João","1Jo"],["2JN","2 João","2Jo"],["3JN","3 João","3Jo"],["JUD","Judas","Jd"],["REV","Apocalipse","Ap"]
+];
+const BOOK_ORDER     = BOOKS_PT.map(b => b[0]);
+const USFM_TO_ABBREV = Object.fromEntries(BOOKS_PT.map(b => [b[0], b[2]]));
+const OT_COUNT       = 39;
+
+const bookName = id => BOOKS_PT.find(b => b[0] === id)?.[1] ?? id;
+
 const _bibleCache = {};   // { "ARA": Promise<data[]> }
 
 function loadBibleVersion(versionId) {
@@ -30,1711 +123,1446 @@ function loadBibleVersion(versionId) {
     _bibleCache[versionId] = fetch(`versoes/${versionId}.json`)
       .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
       /* Se falhar, tira a promise rejeitada do cache — senão a versão
-         fica quebrada até dar F5, mesmo depois da rede voltar. */
+         fica quebrada até recarregar, mesmo depois da rede voltar. */
       .catch(err => { delete _bibleCache[versionId]; throw err; });
   }
   return _bibleCache[versionId];
 }
 
-/* Mapeamento USFM (usado nos apiId) → abreviação do JSON */
-const USFM_TO_ABBREV = {
-  GEN:"Gn", EXO:"Êx", LEV:"Lv", NUM:"Nm", DEU:"Dt",
-  JOS:"Js", JDG:"Jz", RUT:"Rt", "1SA":"1Sm", "2SA":"2Sm",
-  "1KI":"1Rs", "2KI":"2Rs", "1CH":"1Cr", "2CH":"2Cr", EZR:"Ed",
-  NEH:"Ne", EST:"Et", JOB:"Jó", PSA:"Sl", PRO:"Pv",
-  ECC:"Ec", SNG:"Ct", ISA:"Is", JER:"Jr", LAM:"Lm",
-  EZK:"Ez", DAN:"Dn", HOS:"Os", JOL:"Jl", AMO:"Am",
-  OBA:"Ob", JON:"Jn", MIC:"Mq", NAM:"Na", HAB:"Hc",
-  ZEP:"Sf", HAG:"Ag", ZEC:"Zc", MAL:"Ml",
-  MAT:"Mt", MRK:"Mc", LUK:"Lc", JHN:"Jo", ACT:"At",
-  ROM:"Rm", "1CO":"1Co", "2CO":"2Co", GAL:"Gl",
-  EPH:"Ef", PHP:"Fp", COL:"Cl", "1TH":"1Ts", "2TH":"2Ts",
-  "1TI":"1Tm", "2TI":"2Tm", TIT:"Tt",
-  PHM:"Fm", HEB:"Hb", JAS:"Tg", "1PE":"1Pe", "2PE":"2Pe",
-  "1JN":"1Jo", "2JN":"2Jo", "3JN":"3Jo", JUD:"Jd", REV:"Ap"
-};
-
-/* Reverso: abreviação do JSON → USFM */
-const ABBREV_TO_USFM = Object.fromEntries(
-  Object.entries(USFM_TO_ABBREV).map(([u, a]) => [a, u])
-);
-
-/* Retorna texto de um versículo ou passagem a partir do JSON local */
-async function fetchVerse(apiId, versionId) {
-  const data = await loadBibleVersion(versionId);
-
-  const readVerse = (bookId, chap, verse) => {
-    const bookData = data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
-    if (!bookData) return "";
-    return bookData.chapters[chap - 1]?.[verse - 1] ?? "";
-  };
-
-  /* Passagem (ex: "ROM.8.38-ROM.8.39") */
-  if (apiId.includes("-")) {
-    const [startId, endId] = apiId.split("-");
-    const [bookA, chapA, vStart] = startId.split(".");
-    const [bookB, chapB, vEnd]   = endId.split(".");
-
-    const bookData = data.find(b => b.abbrev === USFM_TO_ABBREV[bookA]);
-    if (!bookData) return "";
-
-    const texts = [];
-    /* Suporta passagem que atravessa capítulos (ex: "ROM.8.38-ROM.9.1") */
-    for (let c = parseInt(chapA); c <= parseInt(chapB); c++) {
-      const chapArr = bookData.chapters[c - 1] || [];
-      const from = c === parseInt(chapA) ? parseInt(vStart) : 1;
-      const to   = c === parseInt(chapB) ? parseInt(vEnd)   : chapArr.length;
-      for (let v = from; v <= to; v++) {
-        const t = chapArr[v - 1];
-        if (t) texts.push(t);
-      }
-    }
-    return texts.join(" ");
-  }
-
-  /* Versículo simples (ex: "JHN.3.16") */
-  const [book, chap, verse] = apiId.split(".");
-  return readVerse(book, parseInt(chap), parseInt(verse));
+function getBook(data, bookId) {
+  return data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
 }
 
+/* "ROM.8.38-ROM.8.39" → { book, chapter, verse, endChapter, endVerse } */
+function parseApiId(apiId) {
+  const [start, end] = apiId.split("-");
+  const [book, c, v] = start.split(".");
+  const [, ec, ev]   = (end || start).split(".");
+  return { book, chapter: +c, verse: +v, endChapter: +ec, endVerse: +ev };
+}
 
-/* Versões locais disponíveis (arquivo JSON em versoes/<id>.json) */
-const BIBLE_VERSIONS = [
-  { id: "ARA", name: "ARA — Almeida Revista e Atualizada", lang: "pt" },
-  { id: "ARC", name: "ARC — Almeida Revista e Corrigida", lang: "pt" },
-  { id: "NAA", name: "NAA — Nova Almeida Atualizada", lang: "pt" },
+/* Versículos de uma passagem: [{ n, chapter, text }] */
+async function getPassage(apiId, versionId) {
+  const data = await loadBibleVersion(versionId);
+  const p    = parseApiId(apiId);
+  const book = getBook(data, p.book);
+  if (!book) return [];
+  const out = [];
+  for (let c = p.chapter; c <= p.endChapter; c++) {
+    const arr  = book.chapters[c - 1] || [];
+    const from = c === p.chapter    ? p.verse    : 1;
+    const to   = c === p.endChapter ? p.endVerse : arr.length;
+    for (let v = from; v <= to; v++) {
+      if (arr[v - 1]) out.push({ n: v, chapter: c, text: stripQuotes(arr[v - 1]).trim() });
+    }
+  }
+  return out;
+}
+
+/* Texto para copiar/compartilhar: um versículo vai entre aspas,
+   vários vão numerados com sobrescrito, um por linha. */
+function formatPassage(items, ref) {
+  if (items.length === 1) return `"${capitalizeFirst(items[0].text)}" — ${ref}`;
+  return items.map(i => `${toSup(i.n)} ${i.text}`).join("\n") + `\n\n${ref}`;
+}
+
+/* Capítulo vizinho, atravessando livros. dir = 1 ou -1.
+   Devolve { book, chapter } ou null nos extremos da Bíblia. */
+function neighborChapter(data, bookId, chapter, dir) {
+  const count = id => getBook(data, id)?.chapters.length ?? 0;
+  const c = chapter + dir;
+  if (c >= 1 && c <= count(bookId)) return { book: bookId, chapter: c };
+  const i = BOOK_ORDER.indexOf(bookId) + dir;
+  if (i < 0 || i >= BOOK_ORDER.length) return null;
+  const other = BOOK_ORDER[i];
+  const total = count(other);
+  return total ? { book: other, chapter: dir > 0 ? 1 : total } : null;
+}
+
+/* Entende "salmos", "salmos 23", "sl 23:1", "1 co 13 4".
+   A parte numérica só é lida no fim, depois de um espaço — assim
+   "1 João" e "2 Samuel" continuam sendo nome de livro. */
+function parseRefQuery(raw) {
+  const q = (raw || "").trim();
+  const m = q.match(/^(.+?)[\s,]+(\d+)(?:\s*[:.\s]\s*(\d+))?\s*$/);
+  if (!m) return { book: normalizeForSearch(q), raw: q.toLowerCase(), chapter: null, verse: null };
+  return { book: normalizeForSearch(m[1]), raw: m[1].toLowerCase(), chapter: +m[2], verse: m[3] ? +m[3] : null };
+}
+
+/* Melhor livro para a busca. A sigla exata, com acento, vem antes
+   de tudo: "jo" é João e "jó" é Jó, como nas Bíblias impressas.
+   Depois, nome exato ganha de "começa com", que ganha de "contém". */
+function bestBookMatch(q, raw = "") {
+  if (!q) return null;
+  const qs = q.replace(/\s+/g, "");
+  const rs = raw.replace(/\s+/g, "");
+  const cands = BOOKS_PT.map(([id, nome, ab]) => ({
+    id, n: normalizeForSearch(nome), ns: normalizeForSearch(nome).replace(/\s+/g, ""),
+    ab: normalizeForSearch(ab), abRaw: ab.toLowerCase()
+  }));
+  return (cands.find(c => rs && c.abRaw === rs)
+       ?? cands.find(c => c.n === q || c.ns === qs)
+       ?? cands.find(c => c.ab === qs)
+       ?? cands.find(c => c.n.startsWith(q) || c.ns.startsWith(qs))
+       ?? cands.find(c => c.n.includes(q)))?.id ?? null;
+}
+
+/* ──────────────────────────────────────────────────────────
+   ESTADO
+   ──────────────────────────────────────────────────────────*/
+const KEYS = {
+  favs:     "devocional-favorites",
+  mode:     "devocional-mode",
+  scale:    "devocional-readingScale",
+  version:  "devocional-version",
+  readDays: "devocional-readDays",
+  lastRead: "devocional-lastRead",
+};
+
+const S = {
+  view:    "hoje",
+  theme:   "Todos",
+  version: store.getRaw(KEYS.version, "ARA"),
+  pool:    [...verses],
+  idx:     0,
+  reader:  { book: null, chapter: null, source: null, fromToday: false, screen: "books" },
+  sel:     new Set(),
+  searchScope: "dev",
+  savedFilter: "all",
+};
+if (!BIBLE_VERSIONS.some(v => v.id === S.version)) S.version = "ARA";
+
+/* ──────────────────────────────────────────────────────────
+   APARÊNCIA (sistema / claro / escuro)
+   ──────────────────────────────────────────────────────────*/
+const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+
+function getMode() { return store.getRaw(KEYS.mode, "system"); }
+
+function applyMode(mode = getMode()) {
+  const resolved = mode === "system" ? (darkQuery.matches ? "dark" : "light") : mode;
+  document.documentElement.setAttribute("data-theme", resolved);
+  $("#metaTheme")?.setAttribute("content", resolved === "dark" ? "#15120F" : "#F5F0E6");
+}
+
+function setMode(mode) {
+  store.setRaw(KEYS.mode, mode);
+  applyMode(mode);
+}
+
+darkQuery.addEventListener?.("change", () => { if (getMode() === "system") applyMode(); });
+
+/* ── Tamanho do texto de leitura (5 níveis) ── */
+const READING_SCALES = [
+  { label: "Pequeno",      size: "1.04rem", line: "1.7"  },
+  { label: "Médio-pequeno",size: "1.13rem", line: "1.72" },
+  { label: "Médio",        size: "1.22rem", line: "1.75" },
+  { label: "Médio-grande", size: "1.38rem", line: "1.78" },
+  { label: "Grande",       size: "1.58rem", line: "1.8"  },
 ];
 
+function setReadingScale(step, persist = true) {
+  const i = Math.min(READING_SCALES.length - 1, Math.max(0, parseInt(step) - 1 || 0));
+  const s = READING_SCALES[i];
+  document.documentElement.style.setProperty("--reading-size", s.size);
+  document.documentElement.style.setProperty("--reading-line", s.line);
+  if (persist) store.setRaw(KEYS.scale, String(i + 1));
+  const lbl = $("#scaleLabel");
+  if (lbl) lbl.textContent = s.label;
+}
 
-// verses carregado de versiculos.js
 /* ──────────────────────────────────────────────────────────
-   ESTADO DA APLICAÇÃO
+   NAVEGAÇÃO ENTRE TELAS
    ──────────────────────────────────────────────────────────*/
-let currentTheme   = "Todos";
-let currentVersion = "ARA";
-let pool           = [...verses];
-let idx            = 0;
+const VIEWS = ["hoje", "biblia", "busca", "salvos"];
 
-/* Token de exibição: cada chamada de show() ganha um número.
-   Só a mais recente pode escrever na tela — resolve o problema de
-   clicar rápido no próximo/anterior e a tela ficar dessincronizada. */
+function viewFromHash() {
+  const h = location.hash.replace("#", "");
+  return VIEWS.includes(h) ? h : "hoje";
+}
+
+function showView(view) {
+  const changed = S.view !== view;
+  S.view = view;
+  VIEWS.forEach(v => { $(`#view-${v}`).hidden = v !== view; });
+  $$("[data-nav]").forEach(a => {
+    const on = a.dataset.nav === view;
+    a.classList.toggle("is-on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  if (view !== "biblia") clearSelection();
+
+  if (view === "biblia" && !$("#bibleBody").innerHTML) renderBible();
+  if (view === "salvos") renderSaved();
+  if (view === "busca") {
+    renderSearch();
+    if (changed && matchMedia("(hover: hover)").matches) setTimeout(() => $("#searchInput").focus(), 50);
+  }
+  /* No leitor quem decide a rolagem é o renderReader (pode ir até um versículo) */
+  if (changed && !(view === "biblia" && S.reader.screen === "read")) window.scrollTo(0, 0);
+}
+
+/* Troca de tela na hora (pushState não dispara hashchange). O
+   hashchange continua cuidando do "voltar" e dos links das abas. */
+function goView(view) {
+  if (location.hash !== `#${view}`) history.pushState(null, "", `#${view}`);
+  showView(view);
+}
+
+window.addEventListener("hashchange", () => showView(viewFromHash()));
+
+/* ──────────────────────────────────────────────────────────
+   HOJE
+   ──────────────────────────────────────────────────────────*/
 let _showToken = 0;
+
+function dayOfYear(d = new Date()) {
+  const start = new Date(d.getFullYear(), 0, 1);
+  /* Conta em dias no fuso local, sem depender de milissegundos
+     (evita erro de 1 dia em fusos com horário de verão). */
+  return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000) + 1;
+}
+
+const dayIndex = () => (dayOfYear() - 1) % S.pool.length;
+
+function renderDate() {
+  const d = new Date();
+  const txt = d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  $("#todayDate").textContent = txt;
+}
+
+function renderThemeChips() {
+  const counts = {};
+  verses.forEach(v => { counts[v.theme] = (counts[v.theme] || 0) + 1; });
+  const themes = ["Todos", ...Object.keys(counts)];
+  $("#themeChips").innerHTML = themes.map(t => `
+    <button class="chip ${t === S.theme ? "is-on" : ""}" role="option" aria-selected="${t === S.theme}" data-theme-chip="${escapeHtml(t)}">
+      ${escapeHtml(t)}${t !== "Todos" ? `<span class="chip__n">${counts[t]}</span>` : ""}
+    </button>`).join("");
+}
+
+function selectTheme(theme) {
+  S.theme = theme;
+  S.pool  = theme === "Todos" ? [...verses] : verses.filter(v => v.theme === theme);
+  S.idx   = dayIndex();
+  $$("#themeChips .chip").forEach(c => {
+    const on = c.dataset.themeChip === theme;
+    c.classList.toggle("is-on", on);
+    c.setAttribute("aria-selected", on);
+    if (on) c.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+  });
+  showVerse();
+}
+
+async function showVerse() {
+  const item = S.pool[S.idx];
+  if (!item) return;
+  const token  = ++_showToken;
+  const textEl = $("#verseText");
+  const isToday = S.idx === dayIndex();
+
+  textEl.classList.add("is-loading");
+  $("#verseRef").textContent = item.ref;
+  $("#verseVer").textContent = S.version;
+  $("#verseCtx").textContent = item.ctx;
+  $("#todayTitle").textContent = isToday ? "Palavra de hoje" : (S.theme === "Todos" ? "Devocional" : S.theme);
+  $("#verseCount").textContent = `${S.idx + 1} de ${S.pool.length}`;
+  $("#todayBtn").hidden = isToday;
+  $("#progressFill").style.width = `${((S.idx + 1) / S.pool.length) * 100}%`;
+
+  /* Um mesmo versículo pode aparecer em mais de um tema */
+  const themes = [...new Set(verses.filter(v => v.apiId === item.apiId).map(v => v.theme))];
+  $("#verseTheme").innerHTML = themes.map(escapeHtml).join('<span class="tag__sep">·</span>');
+
+  updateFavBtn();
+  renderRelated(item);
+
+  try {
+    const items = await getPassage(item.apiId, S.version);
+    if (token !== _showToken) return;
+    textEl.innerHTML = items.length > 1
+      ? items.map(i => `<sup>${i.n}</sup>${escapeHtml(i.text)}`).join(" ")
+      : escapeHtml(capitalizeFirst(items[0]?.text || ""));
+  } catch (err) {
+    console.error("Erro ao buscar versículo:", err);
+    if (token !== _showToken) return;
+    textEl.textContent = "Não foi possível carregar o versículo. Verifique sua conexão.";
+  } finally {
+    if (token === _showToken) textEl.classList.remove("is-loading");
+  }
+}
+
+function go(dir) {
+  if (!S.pool.length) return;
+  S.idx = (S.idx + dir + S.pool.length) % S.pool.length;
+  showVerse();
+}
+
+function goRandom() {
+  if (S.pool.length <= 1) return;
+  let n;
+  do { n = Math.floor(Math.random() * S.pool.length); } while (n === S.idx);
+  S.idx = n;
+  showVerse();
+}
+
+function goToday() {
+  S.idx = dayIndex();
+  showVerse();
+}
+
+/* Vai para um item do devocional (busca, favoritos, relacionados) */
+function openDevotional(apiId, theme) {
+  let i = S.pool.findIndex(v => v.apiId === apiId && v.theme === theme);
+  if (i === -1) {
+    S.theme = "Todos";
+    S.pool  = [...verses];
+    renderThemeChips();
+    i = S.pool.findIndex(v => v.apiId === apiId && v.theme === theme);
+  }
+  if (i === -1) return;
+  S.idx = i;
+  showVerse();
+  goView("hoje");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderRelated(item) {
+  const related = verses
+    .filter(v => v.theme === item.theme && v.apiId !== item.apiId)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+  $("#relatedBlock").hidden = related.length === 0;
+  $("#relatedList").innerHTML = related.map(v => `
+    <button class="mini-card" data-dev="${escapeHtml(v.apiId)}" data-dev-theme="${escapeHtml(v.theme)}">
+      <span class="mini-card__ref">${escapeHtml(v.ref)}</span>
+      <span class="mini-card__text">${escapeHtml(v.ctx)}</span>
+    </button>`).join("");
+}
+
+async function currentPassageText() {
+  const item  = S.pool[S.idx];
+  const items = await getPassage(item.apiId, S.version);
+  return { item, items, text: formatPassage(items, `${item.ref} (${S.version})`) };
+}
+
+async function copyVerse() {
+  const { text } = await currentPassageText();
+  copyText(text, "Versículo copiado");
+}
+
+function openChapterFromToday() {
+  const item = S.pool[S.idx];
+  const p    = parseApiId(item.apiId);
+  const ids  = [];
+  for (let v = p.verse; v <= (p.chapter === p.endChapter ? p.endVerse : p.verse); v++) ids.push(v);
+  openReader(p.book, p.chapter, { source: ids, fromToday: true });
+}
+
+/* ──────────────────────────────────────────────────────────
+   SEQUÊNCIA DE LEITURA
+   Guarda os dias (AAAA-MM-DD) em que a leitura foi marcada.
+   ──────────────────────────────────────────────────────────*/
+const dateKey = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+function getReadDays() { return new Set(store.get(KEYS.readDays, [])); }
+
+function computeStreak(days) {
+  const d = new Date();
+  /* Se hoje ainda não foi marcado, a sequência de ontem continua valendo */
+  if (!days.has(dateKey(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (days.has(dateKey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+function renderStreak() {
+  const days   = getReadDays();
+  const streak = computeStreak(days);
+  const today  = new Date();
+  const doneToday = days.has(dateKey(today));
+
+  $("#streakNum").textContent = streak;
+  $("#streakBtn").classList.toggle("is-hot", streak > 0);
+  $("#streakBtn").setAttribute("aria-label", `Sequência: ${plural(streak, "dia", "dias")}`);
+
+  $("#doneBtn").classList.toggle("is-done", doneToday);
+  $("#doneLabel").textContent = doneToday
+    ? "Leitura de hoje feita"
+    : "Marcar a leitura de hoje como feita";
+
+  /* Semana corrente, de domingo a sábado */
+  const start = new Date(today);
+  start.setDate(today.getDate() - today.getDay());
+  const letters = ["D", "S", "T", "Q", "Q", "S", "S"];
+  $("#weekStrip").innerHTML = letters.map((l, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const k = dateKey(d);
+    const cls = [
+      "week__day",
+      k === dateKey(today) ? "is-today" : "",
+      days.has(k) ? "is-done" : "",
+      d > today ? "is-future" : ""
+    ].join(" ");
+    return `<div class="${cls}" title="${d.toLocaleDateString("pt-BR")}">
+      <span>${l}</span>
+      <span class="week__dot">${days.has(k) ? icon("check", 12) : ""}</span>
+    </div>`;
+  }).join("");
+}
+
+function toggleDone() {
+  const days = getReadDays();
+  const k = dateKey();
+  if (days.has(k)) days.delete(k);
+  else {
+    days.add(k);
+    const s = computeStreak(days);
+    toast(s > 1 ? `${s} dias seguidos. Continue assim!` : "Leitura de hoje registrada");
+  }
+  store.set(KEYS.readDays, [...days].sort().slice(-400));
+  renderStreak();
+}
+
+function showStreakInfo() {
+  const days = getReadDays();
+  const streak = computeStreak(days);
+  openSheet("Sua sequência", `
+    <div class="empty" style="padding:16px 0 8px">
+      <p class="empty__title" style="font-size:3rem;color:var(--gold);margin:0">${streak}</p>
+      <p>${streak === 1 ? "dia seguido" : "dias seguidos"} de leitura</p>
+    </div>
+    <div class="field"><span class="field__label">Total</span>${plural(days.size, "dia lido", "dias lidos")}</div>
+    <p class="foot-note">Marque a leitura no fim da reflexão de cada dia. Se um dia passar sem marcar, a sequência recomeça.</p>
+  `);
+}
+
+/* ──────────────────────────────────────────────────────────
+   FAVORITOS
+   { apiId, ref, theme, ctx, source? } — source "biblia" vem do leitor
+   ──────────────────────────────────────────────────────────*/
+const getFavorites  = () => store.get(KEYS.favs, []);
+const saveFavorites = favs => store.set(KEYS.favs, favs);
+
+function isDevFavorite(item) {
+  return getFavorites().some(f => f.source !== "biblia" && f.apiId === item.apiId && f.theme === item.theme);
+}
+
+function updateFavBtn() {
+  const item = S.pool[S.idx];
+  const on = !!item && isDevFavorite(item);
+  const btn = $("#favBtn");
+  btn.classList.toggle("is-on", on);
+  btn.setAttribute("aria-pressed", on);
+  $("#favLabel").textContent = on ? "Salvo" : "Salvar";
+}
+
+function toggleFavorite() {
+  const item = S.pool[S.idx];
+  if (!item) return;
+  let favs = getFavorites();
+  const match = f => f.source !== "biblia" && f.apiId === item.apiId && f.theme === item.theme;
+  if (favs.some(match)) {
+    favs = favs.filter(f => !match(f));
+    toast("Removido dos salvos");
+  } else {
+    favs.unshift({ apiId: item.apiId, ref: item.ref, theme: item.theme, ctx: item.ctx, savedAt: Date.now() });
+    toast("Salvo");
+  }
+  saveFavorites(favs);
+  updateFavBtn();
+  const btn = $("#favBtn");
+  btn.classList.add("is-pulse");
+  setTimeout(() => btn.classList.remove("is-pulse"), 450);
+}
+
+async function renderSaved() {
+  const all  = getFavorites();
+  const list = $("#savedList");
+  const favs = all
+    .map((f, i) => ({ ...f, _i: i }))
+    .filter(f => S.savedFilter === "all"
+      || (S.savedFilter === "bible" ? f.source === "biblia" : f.source !== "biblia"));
+
+  $("#savedCount").textContent = all.length ? plural(all.length, "item", "itens") : "";
+  $$("#savedFilter button").forEach(b => {
+    const on = b.dataset.filter === S.savedFilter;
+    b.classList.toggle("is-on", on);
+    b.setAttribute("aria-selected", on);
+  });
+
+  if (!favs.length) {
+    list.innerHTML = `
+      <div class="empty">
+        ${icon("heart", 44)}
+        <p class="empty__title">${all.length ? "Nada neste filtro" : "Nenhum versículo salvo"}</p>
+        <p>${all.length ? "Tente outro filtro acima." : "Toque em Salvar no devocional, ou selecione versículos na Bíblia."}</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = favs.map(f => {
+    const fromBible = f.source === "biblia";
+    return `
+      <article class="saved-item">
+        <div class="saved-item__top">
+          <span class="saved-item__ref">${escapeHtml(f.ref)}</span>
+          <span class="tag ${fromBible ? "tag--muted" : ""}">${fromBible ? "Bíblia" : escapeHtml(f.theme)}</span>
+        </div>
+        <p class="saved-item__text" data-fav-text="${f._i}">${fromBible ? escapeHtml(f.ctx) : "…"}</p>
+        <div class="saved-item__acts">
+          <button class="text-btn" data-fav-open="${f._i}">${icon(fromBible ? "book" : "sunrise", 14)} Abrir</button>
+          <button class="text-btn" data-fav-copy="${f._i}">${icon("copy", 14)} Copiar</button>
+          <button class="text-btn" data-fav-remove="${f._i}" aria-label="Remover dos salvos">${icon("trash", 14)}</button>
+        </div>
+      </article>`;
+  }).join("");
+
+  /* Devocionais guardam a reflexão, não o texto: busca na versão atual */
+  for (const f of favs) {
+    if (f.source === "biblia") continue;
+    try {
+      const items = await getPassage(f.apiId, S.version);
+      const el = list.querySelector(`[data-fav-text="${f._i}"]`);
+      if (el) el.textContent = capitalizeFirst(items.map(i => i.text).join(" "));
+    } catch {}
+  }
+}
+
+function removeFavorite(i) {
+  const favs = getFavorites();
+  const [gone] = favs.splice(i, 1);
+  saveFavorites(favs);
+  renderSaved();
+  updateFavBtn();
+  if (gone) toast("Removido dos salvos");
+}
+
+function openFavorite(i) {
+  const f = getFavorites()[i];
+  if (!f) return;
+  if (f.source === "biblia") {
+    const p = parseApiId(f.apiId);
+    const ids = [];
+    for (let v = p.verse; v <= p.endVerse; v++) ids.push(v);
+    openReader(p.book, p.chapter, { source: ids });
+  } else {
+    openDevotional(f.apiId, f.theme);
+  }
+}
+
+async function copyFavorite(i) {
+  const f = getFavorites()[i];
+  if (!f) return;
+  const items = await getPassage(f.apiId, S.version);
+  copyText(formatPassage(items, `${f.ref} (${S.version})`));
+}
+
+/* ── Backup ── */
+function exportBackup() {
+  const payload = {
+    app: "devocional-helper",
+    exportedAt: new Date().toISOString(),
+    favorites: getFavorites(),
+    readDays: [...getReadDays()],
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `devocional-backup-${dateKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast("Backup baixado");
+}
+
+function importBackup(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const incoming = Array.isArray(data) ? data : data.favorites;
+      if (!Array.isArray(incoming)) throw new Error("formato");
+      const favs = getFavorites();
+      const key  = f => `${f.source || "dev"}|${f.apiId}|${f.theme}`;
+      const have = new Set(favs.map(key));
+      let added = 0;
+      incoming.forEach(f => {
+        if (f && typeof f.apiId === "string" && typeof f.ref === "string" && !have.has(key(f))) {
+          favs.push(f); have.add(key(f)); added++;
+        }
+      });
+      saveFavorites(favs);
+      if (Array.isArray(data.readDays)) {
+        const days = getReadDays();
+        data.readDays.forEach(d => { if (/^\d{4}-\d{2}-\d{2}$/.test(d)) days.add(d); });
+        store.set(KEYS.readDays, [...days].sort().slice(-400));
+        renderStreak();
+      }
+      updateFavBtn();
+      if (S.view === "salvos") renderSaved();
+      closeSheet();
+      toast(added ? `${plural(added, "item importado", "itens importados")}` : "Nada novo para importar");
+    } catch {
+      toast("Arquivo de backup inválido");
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ──────────────────────────────────────────────────────────
+   BÍBLIA — escolher livro, capítulo e ler
+   ──────────────────────────────────────────────────────────*/
+function saveLastRead() {
+  const r = S.reader;
+  if (r.book) store.set(KEYS.lastRead, { book: r.book, chapter: r.chapter });
+}
+
+function renderBible() {
+  if (S.reader.screen === "read" && S.reader.book) return renderReader();
+  if (S.reader.screen === "chapters" && S.reader.book) return renderChapters(S.reader.book);
+  renderBooks();
+}
+
+function renderBooks() {
+  S.reader.screen = "books";
+  clearSelection();
+  const last = store.get(KEYS.lastRead, null);
+
+  const list = (ids) => ids.map(id => `
+    <button class="book-btn ${id === last?.book ? "is-current" : ""}" data-book="${id}" data-name="${normalizeForSearch(bookName(id))}">
+      ${escapeHtml(bookName(id))}
+    </button>`).join("");
+
+  $("#bibleBody").innerHTML = `
+    <div class="bible-head">
+      <h1 class="display" style="margin-bottom:16px">Bíblia</h1>
+      ${last ? `
+        <button class="continue-card" data-continue>
+          <span class="continue-card__icon">${icon("book", 20)}</span>
+          <span class="continue-card__txt">
+            <span class="continue-card__k">Continuar lendo</span>
+            <span class="continue-card__v">${escapeHtml(bookName(last.book))} ${last.chapter}</span>
+          </span>
+          ${icon("chev-r", 18)}
+        </button>` : ""}
+      <label class="search-field">
+        ${icon("search", 18)}
+        <input type="search" id="bookFilter" placeholder="Livro ou referência (ex: sl 23)" autocomplete="off" enterkeyhint="go" />
+      </label>
+      <p class="hint" id="bookHint" hidden></p>
+    </div>
+    <div id="bookLists">
+      <section class="testament" data-testament>
+        <div class="testament__head"><h2 class="section-label">Antigo Testamento</h2><span class="muted">39 livros</span></div>
+        <div class="book-list">${list(BOOK_ORDER.slice(0, OT_COUNT))}</div>
+      </section>
+      <section class="testament" data-testament>
+        <div class="testament__head"><h2 class="section-label">Novo Testamento</h2><span class="muted">27 livros</span></div>
+        <div class="book-list">${list(BOOK_ORDER.slice(OT_COUNT))}</div>
+      </section>
+      <div class="empty" id="bookEmpty" hidden><p class="empty__title">Nenhum livro com esse nome</p></div>
+    </div>`;
+
+  const input = $("#bookFilter");
+  input.addEventListener("input", () => filterBooks(input.value));
+  input.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    jumpToRef(input.value);
+  });
+}
+
+function filterBooks(value) {
+  const { book, raw, chapter, verse } = parseRefQuery(value);
+  let any = false;
+  $$("#bookLists [data-testament]").forEach(sec => {
+    let secAny = false;
+    $$(".book-btn", sec).forEach(btn => {
+      const ok = !book || btn.dataset.name.includes(book) || normalizeForSearch(USFM_TO_ABBREV[btn.dataset.book]) === book.replace(/\s+/g, "");
+      btn.hidden = !ok;
+      if (ok) secAny = true;
+    });
+    sec.hidden = !secAny;
+    if (secAny) any = true;
+  });
+  $("#bookEmpty").hidden = any;
+
+  const hint = $("#bookHint");
+  const target = bestBookMatch(book, raw);
+  if (book && target) {
+    hint.innerHTML = `${icon("chev-r", 14)} Enter abre ${escapeHtml(bookName(target))}${chapter ? ` ${chapter}${verse ? ":" + verse : ""}` : ""}`;
+    hint.hidden = false;
+  } else {
+    hint.hidden = true;
+  }
+}
+
+/* Abre uma referência digitada. Sem capítulo, mostra a lista. */
+function jumpToRef(value) {
+  const { book, raw, chapter, verse } = parseRefQuery(value);
+  const target = bestBookMatch(book, raw);
+  if (!target) return false;
+  if (chapter) return openReader(target, chapter, { source: verse ? [verse] : null }), true;
+  if (S.view !== "biblia") goView("biblia");
+  renderChapters(target);
+  return true;
+}
+
+async function renderChapters(bookId) {
+  S.reader.screen = "chapters";
+  S.reader.book   = bookId;
+  clearSelection();
+  const body = $("#bibleBody");
+  body.innerHTML = `<div class="loading">Carregando…</div>`;
+  try {
+    const data  = await loadBibleVersion(S.version);
+    const total = getBook(data, bookId)?.chapters.length ?? 0;
+    const last  = store.get(KEYS.lastRead, null);
+    body.innerHTML = `
+      <div class="back-row">
+        <button class="text-btn" data-books>${icon("chev-l", 14)} Livros</button>
+      </div>
+      <h1 class="display">${escapeHtml(bookName(bookId))}</h1>
+      <p class="muted">${plural(total, "capítulo", "capítulos")}</p>
+      <div class="num-grid">
+        ${Array.from({ length: total }, (_, i) => `
+          <button class="num-btn ${last?.book === bookId && last.chapter === i + 1 ? "is-current" : ""}" data-chapter="${i + 1}">${i + 1}</button>`).join("")}
+      </div>`;
+    window.scrollTo(0, 0);
+  } catch {
+    body.innerHTML = errorBlock("Não foi possível carregar os capítulos.");
+  }
+}
+
+function errorBlock(msg) {
+  return `<div class="empty"><p class="empty__title">Algo deu errado</p><p>${escapeHtml(msg)}</p></div>`;
+}
+
+/* Abre o leitor. opts.source = números de versículo para destacar */
+function openReader(book, chapter, opts = {}) {
+  Object.assign(S.reader, {
+    book, chapter,
+    screen: "read",
+    source: opts.source || null,
+    fromToday: !!opts.fromToday,
+  });
+  if (S.view !== "biblia") goView("biblia");
+  renderReader();
+}
+
+let _readerToken = 0;
+let _chapterVerses = [];   // textos do capítulo aberto, para copiar
+
+async function renderReader() {
+  const r     = S.reader;
+  const body  = $("#bibleBody");
+  const token = ++_readerToken;
+  clearSelection();
+
+  body.innerHTML = `
+    <div class="reader-bar">
+      <button class="icon-btn" data-books aria-label="Todos os livros">${icon("grid", 18)}</button>
+      <button class="icon-btn" data-reader-go="-1" aria-label="Capítulo anterior">${icon("chev-l", 20)}</button>
+      <button class="reader-bar__ref" data-chapters>
+        <span>${escapeHtml(bookName(r.book))} ${r.chapter}</span>${icon("chev-d", 14)}
+      </button>
+      <button class="icon-btn" data-reader-go="1" aria-label="Próximo capítulo">${icon("chev-r", 20)}</button>
+      <button class="icon-btn" data-text-size aria-label="Tamanho do texto">${icon("text", 18)}</button>
+    </div>
+    ${r.fromToday ? `<button class="back-banner" data-back-today>${icon("arrow-l", 15)} Voltar ao devocional</button>` : ""}
+    <div class="loading">Carregando…</div>`;
+
+  try {
+    const data = await loadBibleVersion(S.version);
+    if (token !== _readerToken) return;
+    const book = getBook(data, r.book);
+    if (!book) throw new Error("Livro não encontrado");
+    r.chapter = Math.min(Math.max(1, r.chapter), book.chapters.length);
+    const arr  = book.chapters[r.chapter - 1] || [];
+    const prev = neighborChapter(data, r.book, r.chapter, -1);
+    const next = neighborChapter(data, r.book, r.chapter, 1);
+    r.prev = prev; r.next = next;
+    _chapterVerses = arr.map(t => stripQuotes(t).trim());
+
+    const saved  = savedVersesIn(r.book, r.chapter);
+    const source = new Set(r.source || []);
+
+    const verseHtml = _chapterVerses.map((t, i) => {
+      const n = i + 1;
+      const cls = ["rv", saved.has(n) ? "is-saved" : "", source.has(n) ? "is-source" : ""].join(" ");
+      return `<span class="${cls}" data-v="${n}" id="v${n}"><span class="rv__n">${n}</span>${escapeHtml(t)}</span>`;
+    }).join(" ");
+
+    body.querySelector(".loading").outerHTML = `
+      <article class="reading" id="reading">
+        <header class="reading__head">
+          <span class="reading__book">${escapeHtml(bookName(r.book))} · ${S.version}</span>
+          <span class="reading__chap">${r.chapter}</span>
+        </header>
+        <div class="reading__body">${verseHtml}</div>
+        <nav class="chapter-nav">
+          <button class="chapter-nav__btn" data-reader-go="-1" ${prev ? "" : "disabled"}>
+            <small>Anterior</small><span>${prev ? escapeHtml(`${bookName(prev.book)} ${prev.chapter}`) : "—"}</span>
+          </button>
+          <button class="chapter-nav__btn chapter-nav__btn--next" data-reader-go="1" ${next ? "" : "disabled"}>
+            <small>Próximo</small><span>${next ? escapeHtml(`${bookName(next.book)} ${next.chapter}`) : "—"}</span>
+          </button>
+        </nav>
+      </article>`;
+
+    $$("[data-reader-go='-1']", body).forEach(b => b.disabled = !prev);
+    $$("[data-reader-go='1']", body).forEach(b => b.disabled = !next);
+    saveLastRead();
+
+    const first = r.source?.[0];
+    if (first && $(`#v${first}`)) {
+      requestAnimationFrame(() => {
+        const el  = $(`#v${first}`);
+        const top = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 3;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  } catch (e) {
+    if (token !== _readerToken) return;
+    const l = body.querySelector(".loading");
+    if (l) l.outerHTML = errorBlock("Não foi possível carregar o capítulo. Verifique sua conexão.");
+  }
+}
+
+function readerGo(dir) {
+  const target = dir > 0 ? S.reader.next : S.reader.prev;
+  if (!target) return;
+  S.reader.book    = target.book;
+  S.reader.chapter = target.chapter;
+  S.reader.source  = null;
+  renderReader();
+}
+
+/* Versículos deste capítulo que já estão nos salvos */
+function savedVersesIn(book, chapter) {
+  const set = new Set();
+  getFavorites().forEach(f => {
+    const p = parseApiId(f.apiId);
+    if (p.book !== book) return;
+    for (let c = p.chapter; c <= p.endChapter; c++) {
+      if (c !== chapter) continue;
+      const from = c === p.chapter ? p.verse : 1;
+      const to   = c === p.endChapter ? p.endVerse : 200;
+      for (let v = from; v <= to; v++) set.add(v);
+    }
+  });
+  return set;
+}
+
+/* ── Seleção de versículos no leitor ── */
+function toggleVerse(n, el) {
+  if (S.sel.has(n)) { S.sel.delete(n); el.classList.remove("is-sel"); }
+  else              { S.sel.add(n);    el.classList.add("is-sel"); }
+  updateSelBar();
+}
+
+function clearSelection() {
+  S.sel.clear();
+  $$(".rv.is-sel").forEach(el => el.classList.remove("is-sel"));
+  updateSelBar();
+}
+
+/* Referência compacta: "João 3:16-18, 20" */
+function selectionData() {
+  const nums = [...S.sel].sort((a, b) => a - b);
+  if (!nums.length) return null;
+  const parts = [];
+  let a = nums[0], b = nums[0];
+  for (let i = 1; i <= nums.length; i++) {
+    if (nums[i] === b + 1) { b = nums[i]; continue; }
+    parts.push(a === b ? `${a}` : `${a}-${b}`);
+    a = b = nums[i];
+  }
+  const r = S.reader;
+  const min = nums[0], max = nums[nums.length - 1];
+  return {
+    nums,
+    ref: `${bookName(r.book)} ${r.chapter}:${parts.join(", ")}`,
+    /* Mesmo formato dos apiId do devocional, para os salvos ficarem numa lista só */
+    apiId: min === max ? `${r.book}.${r.chapter}.${min}` : `${r.book}.${r.chapter}.${min}-${r.book}.${r.chapter}.${max}`,
+    items: nums.map(n => ({ n, text: _chapterVerses[n - 1] })),
+  };
+}
+
+function isSelectionSaved(d) {
+  return !!d && getFavorites().some(f => f.source === "biblia" && f.apiId === d.apiId);
+}
+
+function updateSelBar() {
+  const bar = $("#selBar");
+  const d = selectionData();
+  bar.classList.toggle("is-open", !!d);
+  if (!d) return;
+  $("#selRef").textContent = d.ref;
+  const saved = isSelectionSaved(d);
+  $("#selFav").classList.toggle("is-on", saved);
+  $("#selFav").setAttribute("aria-label", saved ? "Remover dos salvos" : "Salvar seleção");
+}
+
+function saveSelection() {
+  const d = selectionData();
+  if (!d) return;
+  let favs = getFavorites();
+  const i = favs.findIndex(f => f.source === "biblia" && f.apiId === d.apiId);
+  if (i === -1) {
+    favs.unshift({
+      apiId: d.apiId, ref: d.ref, theme: null, source: "biblia", savedAt: Date.now(),
+      ctx: d.items.map(x => x.text).join(" ")
+    });
+    toast("Salvo");
+  } else {
+    favs.splice(i, 1);
+    toast("Removido dos salvos");
+  }
+  saveFavorites(favs);
+  const saved = savedVersesIn(S.reader.book, S.reader.chapter);
+  $$(".rv").forEach(el => el.classList.toggle("is-saved", saved.has(+el.dataset.v)));
+  updateSelBar();
+}
+
+function copySelection() {
+  const d = selectionData();
+  if (d) copyText(formatPassage(d.items, `${d.ref} (${S.version})`));
+}
+
+function shareSelection() {
+  const d = selectionData();
+  if (d) openShareSheet(d.items, d.ref);
+}
+
+/* ──────────────────────────────────────────────────────────
+   BUSCA
+   ──────────────────────────────────────────────────────────*/
+const _searchIndex = {};   // { "ARA": Promise<[{b, c, v, t, n}]> }
+
+function getSearchIndex(versionId) {
+  if (!_searchIndex[versionId]) {
+    _searchIndex[versionId] = loadBibleVersion(versionId).then(data => {
+      const out = [];
+      data.forEach(book => {
+        const id = BOOKS_PT.find(b => b[2] === book.abbrev)?.[0];
+        if (!id) return;
+        book.chapters.forEach((ch, ci) => ch.forEach((t, vi) => {
+          const text = stripQuotes(t).trim();
+          out.push({ b: id, c: ci + 1, v: vi + 1, t: text, n: normalizeForSearch(text) });
+        }));
+      });
+      return out;
+    }).catch(err => { delete _searchIndex[versionId]; throw err; });
+  }
+  return _searchIndex[versionId];
+}
+
+/* Destaca as palavras buscadas. Funciona porque, em texto com letras
+   já compostas, tirar o acento não muda o tamanho da string. */
+function highlight(text, norm, words) {
+  if (norm.length !== text.length) return escapeHtml(text);
+  const ranges = [];
+  words.forEach(w => {
+    let i = norm.indexOf(w);
+    while (i !== -1) { ranges.push([i, i + w.length]); i = norm.indexOf(w, i + w.length); }
+  });
+  if (!ranges.length) return escapeHtml(text);
+  ranges.sort((a, b) => a[0] - b[0]);
+  let html = "", pos = 0;
+  ranges.forEach(([s, e]) => {
+    if (s < pos) return;
+    html += escapeHtml(text.slice(pos, s)) + `<mark>${escapeHtml(text.slice(s, e))}</mark>`;
+    pos = e;
+  });
+  return html + escapeHtml(text.slice(pos));
+}
+
+let _searchTimer, _searchToken = 0;
+
+function onSearchInput() {
+  $("#searchClear").hidden = !$("#searchInput").value;
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(renderSearch, S.searchScope === "bible" ? 250 : 80);
+}
+
+function setSearchScope(scope) {
+  S.searchScope = scope;
+  $$(".search-head .segmented button").forEach(b => {
+    const on = b.dataset.scope === scope;
+    b.classList.toggle("is-on", on);
+    b.setAttribute("aria-selected", on);
+  });
+  renderSearch();
+}
+
+async function renderSearch() {
+  const raw   = $("#searchInput").value.trim();
+  const q     = normalizeForSearch(raw);
+  const out   = $("#searchResults");
+  const token = ++_searchToken;
+
+  /* Atalho: se parece uma referência, oferece abrir direto */
+  const ref    = parseRefQuery(raw);
+  const target = ref.chapter ? bestBookMatch(ref.book, ref.raw) : null;
+  const jump = target ? `
+    <button class="jump-card" data-jump="${escapeHtml(raw)}">
+      ${icon("book", 18)}<span>Abrir ${escapeHtml(bookName(target))} ${ref.chapter}${ref.verse ? ":" + ref.verse : ""}</span>${icon("chev-r", 18)}
+    </button>` : "";
+
+  if (q.length < 2) {
+    const themes = [...new Set(verses.map(v => v.theme))].slice(0, 10);
+    out.innerHTML = `
+      <div class="empty" style="padding:28px 8px 8px;text-align:left">
+        <p class="empty__title">${S.searchScope === "dev"
+          ? `Procure entre os ${verses.length} devocionais`
+          : "Procure em toda a Bíblia"}</p>
+        <p>${S.searchScope === "dev"
+          ? "Por palavra, referência ou tema. Sem precisar de acento."
+          : `Todas as palavras precisam aparecer no versículo. Versão ${S.version}.`}</p>
+        ${S.searchScope === "dev" ? `<div class="suggest">${themes.map(t =>
+          `<button class="chip" data-suggest="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join("")}</div>` : ""}
+      </div>`;
+    return;
+  }
+
+  if (S.searchScope === "dev") {
+    const results = verses.filter(v =>
+      normalizeForSearch(v.ref).includes(q) ||
+      normalizeForSearch(v.theme).includes(q) ||
+      normalizeForSearch(v.ctx).includes(q));
+    const words = [q];
+    out.innerHTML = jump + (results.length
+      ? `<p class="result-meta">${plural(results.length, "devocional", "devocionais")}</p>` +
+        results.slice(0, 120).map(v => {
+          const n = normalizeForSearch(v.ctx);
+          return `
+          <button class="result" data-dev="${escapeHtml(v.apiId)}" data-dev-theme="${escapeHtml(v.theme)}">
+            <span class="result__top">
+              <span class="result__ref">${highlight(v.ref, normalizeForSearch(v.ref), words)}</span>
+              <span class="tag">${escapeHtml(v.theme)}</span>
+            </span>
+            <p class="result__text result__text--clamp">${highlight(v.ctx, n, words)}</p>
+          </button>`;
+        }).join("")
+      : `<div class="empty"><p class="empty__title">Nada encontrado</p><p>Tente buscar na Bíblia inteira.</p>
+           <div class="suggest" style="justify-content:center"><button class="chip" data-scope-switch="bible">Buscar na Bíblia inteira</button></div></div>`);
+    return;
+  }
+
+  out.innerHTML = jump + `<div class="loading">Procurando…</div>`;
+  try {
+    const index = await getSearchIndex(S.version);
+    if (token !== _searchToken) return;
+    const words = q.split(/\s+/).filter(w => w.length > 1);
+    if (!words.length) { out.innerHTML = jump; return; }
+    const LIMIT = 150;
+    const hits = [];
+    let total = 0;
+    for (const e of index) {
+      if (words.every(w => e.n.includes(w))) {
+        total++;
+        if (hits.length < LIMIT) hits.push(e);
+      }
+    }
+    out.innerHTML = jump + (total
+      ? `<p class="result-meta">${plural(total, "versículo", "versículos")}${total > LIMIT ? ` · mostrando os ${LIMIT} primeiros` : ""}</p>` +
+        hits.map(e => `
+          <button class="result" data-open-ref="${e.b}.${e.c}.${e.v}">
+            <span class="result__top"><span class="result__ref">${escapeHtml(bookName(e.b))} ${e.c}:${e.v}</span></span>
+            <p class="result__text">${highlight(e.t, e.n, words)}</p>
+          </button>`).join("")
+      : `<div class="empty"><p class="empty__title">Nada encontrado</p><p>Confira a grafia ou use menos palavras.</p></div>`);
+  } catch {
+    if (token === _searchToken) out.innerHTML = jump + errorBlock("Não foi possível carregar a Bíblia para buscar.");
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   FOLHA INFERIOR (preferências, compartilhar, capítulos)
+   ──────────────────────────────────────────────────────────*/
+let _sheetReturnFocus = null;
+
+function openSheet(title, html) {
+  _sheetReturnFocus = document.activeElement;
+  $("#sheetTitle").textContent = title;
+  $("#sheetBody").innerHTML = html;
+  const sheet = $("#sheet");
+  sheet.classList.add("is-open");
+  sheet.setAttribute("aria-hidden", "false");
+  document.body.classList.add("is-locked");
+  setTimeout(() => $(".sheet__head [data-close]").focus({ preventScroll: true }), 60);
+}
+
+function closeSheet() {
+  const sheet = $("#sheet");
+  if (!sheet.classList.contains("is-open")) return;
+  sheet.classList.remove("is-open");
+  sheet.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("is-locked");
+  _sheetReturnFocus?.focus?.({ preventScroll: true });
+}
+
+function versionOptions() {
+  return `<div class="option-list">${BIBLE_VERSIONS.map(v => `
+    <button class="option ${v.id === S.version ? "is-on" : ""}" data-version="${v.id}">
+      <span class="option__txt"><strong>${v.id}</strong><small>${v.name}</small></span>
+      <span class="option__radio"></span>
+    </button>`).join("")}</div>`;
+}
+
+function openVersionSheet() {
+  openSheet("Versão da Bíblia", versionOptions());
+}
+
+function openSettings() {
+  const mode  = getMode();
+  const scale = parseInt(store.getRaw(KEYS.scale, "3")) || 3;
+  openSheet("Preferências", `
+    <div class="field">
+      <span class="field__label">Aparência</span>
+      <div class="segmented" role="tablist">
+        ${[["system", "Automático"], ["light", "Claro"], ["dark", "Escuro"]].map(([k, l]) =>
+          `<button class="${mode === k ? "is-on" : ""}" data-mode="${k}">${l}</button>`).join("")}
+      </div>
+    </div>
+    <div class="field">
+      <span class="field__label">Tamanho do texto · <span id="scaleLabel">${READING_SCALES[scale - 1].label}</span></span>
+      <div class="range-row">
+        <span class="a-sm">A</span>
+        <input type="range" min="1" max="5" step="1" value="${scale}" id="scaleInput" aria-label="Tamanho do texto" />
+        <span class="a-lg">A</span>
+      </div>
+      <p class="preview">O Senhor é o meu pastor; nada me faltará.</p>
+    </div>
+    <div class="field">
+      <span class="field__label">Versão da Bíblia</span>
+      ${versionOptions()}
+    </div>
+    <div class="field">
+      <span class="field__label">Backup</span>
+      <div class="btn-row">
+        <button class="btn" data-export>${icon("download", 16)} Exportar</button>
+        <button class="btn" data-import>${icon("upload", 16)} Importar</button>
+      </div>
+      <p class="foot-note">Guarda seus salvos e sua sequência num arquivo, para levar a outro aparelho.</p>
+    </div>
+  `);
+  $("#scaleInput").addEventListener("input", e => setReadingScale(e.target.value));
+}
+
+function openTextSizeSheet() {
+  const scale = parseInt(store.getRaw(KEYS.scale, "3")) || 3;
+  openSheet("Tamanho do texto", `
+    <div class="field">
+      <span class="field__label"><span id="scaleLabel">${READING_SCALES[scale - 1].label}</span></span>
+      <div class="range-row">
+        <span class="a-sm">A</span>
+        <input type="range" min="1" max="5" step="1" value="${scale}" id="scaleInput" aria-label="Tamanho do texto" />
+        <span class="a-lg">A</span>
+      </div>
+    </div>`);
+  $("#scaleInput").addEventListener("input", e => setReadingScale(e.target.value));
+}
+
+function setVersion(id) {
+  if (id === S.version) { closeSheet(); return; }
+  S.version = id;
+  store.setRaw(KEYS.version, id);
+  $("#versionLabel").textContent = id;
+  $$("[data-version]").forEach(b => b.classList.toggle("is-on", b.dataset.version === id));
+  showVerse();
+  if (S.view === "biblia" && S.reader.screen === "read") renderReader();
+  if (S.view === "salvos") renderSaved();
+  if (S.view === "busca") renderSearch();
+  toast(`Versão ${id}`);
+  if ($("#sheetTitle").textContent === "Versão da Bíblia") closeSheet();
+}
+
+/* ── Compartilhar ── */
+async function shareToday() {
+  const { item, items } = await currentPassageText();
+  openShareSheet(items, item.ref);
+}
+
+let _shareData = null;
+
+function openShareSheet(items, ref) {
+  const text = formatPassage(items, `${ref} (${S.version})`);
+  _shareData = { items, ref, text };
+  openSheet("Compartilhar", `
+    <canvas id="shareCanvas" class="share-preview" width="1080" height="1350" aria-label="Prévia da imagem"></canvas>
+    <div class="btn-row">
+      <button class="btn" data-share-text>${icon("text", 16)} Texto</button>
+      <button class="btn btn--primary" data-share-image>${icon("image", 16)} Imagem</button>
+    </div>`);
+  drawShareImage($("#shareCanvas"), items, ref);
+}
+
+async function shareTextNow() {
+  const { text } = _shareData;
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; } catch (e) { if (e.name === "AbortError") return; }
+  }
+  copyText(text, "Texto copiado para compartilhar");
+}
+
+async function shareImageNow() {
+  const canvas = $("#shareCanvas");
+  const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+  const name = `${_shareData.ref.replace(/[^\p{L}\d]+/gu, "-")}.png`;
+  const file = new File([blob], name, { type: "image/png" });
+  if (navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file], text: _shareData.ref }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast("Imagem baixada");
+}
+
+/* Imagem 4:5, boa para stories e WhatsApp */
+async function drawShareImage(canvas, items, ref) {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const dark = document.documentElement.dataset.theme === "dark";
+  const css  = getComputedStyle(document.documentElement);
+  const c = n => css.getPropertyValue(n).trim();
+
+  try {
+    await Promise.all([
+      document.fonts.load('400 64px "Newsreader"'),
+      document.fonts.load('600 32px "Instrument Sans"'),
+    ]);
+  } catch {}
+
+  ctx.fillStyle = c("--bg");
+  ctx.fillRect(0, 0, W, H);
+
+  /* Sol nascendo no rodapé, a mesma marca do app */
+  const g = ctx.createRadialGradient(W / 2, H + 160, 40, W / 2, H + 160, 760);
+  g.addColorStop(0, dark ? "rgba(227,156,116,.35)" : "rgba(155,74,44,.22)");
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = c("--accent-soft");
+  ctx.font = '400 420px "Newsreader", Georgia, serif';
+  ctx.textBaseline = "top";
+  ctx.fillText("“", 70, 10);
+
+  const body = capitalizeFirst(items.map(i => i.text).join(" "));
+  const PAD = 110, maxW = W - PAD * 2;
+  let size = 64, lines;
+  const wrap = (s) => {
+    ctx.font = `400 ${s}px "Newsreader", Georgia, serif`;
+    const words = body.split(/\s+/), out = [];
+    let line = "";
+    words.forEach(w => {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width > maxW && line) { out.push(line); line = w; }
+      else line = test;
+    });
+    if (line) out.push(line);
+    return out;
+  };
+  /* Diminui a fonte até caber */
+  do { lines = wrap(size); size -= 4; } while (lines.length * size * 1.42 > H - 520 && size > 30);
+  size += 4;
+  const lh = size * 1.42;
+  const blockH = lines.length * lh;
+  let y = Math.max(300, (H - blockH) / 2 - 40);
+
+  ctx.fillStyle = c("--ink");
+  ctx.textBaseline = "alphabetic";
+  lines.forEach(l => { ctx.fillText(l, PAD, y + size); y += lh; });
+
+  ctx.fillStyle = c("--accent");
+  ctx.fillRect(PAD, y + 50, 64, 4);
+  ctx.font = '600 46px "Instrument Sans", system-ui, sans-serif';
+  ctx.fillText(ref, PAD, y + 124);
+  ctx.fillStyle = c("--ink-3");
+  ctx.font = '500 32px "Instrument Sans", system-ui, sans-serif';
+  ctx.fillText(S.version, PAD, y + 176);
+
+  ctx.fillStyle = c("--ink-3");
+  ctx.font = '400 italic 34px "Newsreader", Georgia, serif';
+  ctx.textAlign = "center";
+  ctx.fillText("Devocional", W / 2, H - 80);
+  ctx.textAlign = "left";
+}
+
+/* ──────────────────────────────────────────────────────────
+   GESTO DE ARRASTAR (troca versículo / capítulo)
+   ──────────────────────────────────────────────────────────*/
+function onSwipe(el, handler) {
+  let x0 = null, y0 = null, t0 = 0;
+  el.addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
+  }, { passive: true });
+  el.addEventListener("touchend", e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    const dy = e.changedTouches[0].clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < 50 && Date.now() - t0 < 600) handler(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+/* ──────────────────────────────────────────────────────────
+   EVENTOS
+   Um ouvinte só, por delegação, para o HTML gerado dinamicamente.
+   ──────────────────────────────────────────────────────────*/
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a, .rv, [data-close]");
+  if (!t) return;
+  const d = t.dataset;
+
+  if (t.matches("[data-close]"))      return closeSheet();
+  if (t.classList.contains("rv"))     return toggleVerse(+d.v, t);
+
+  if (d.themeChip !== undefined)      return selectTheme(d.themeChip);
+  if (d.dev)                          return openDevotional(d.dev, d.devTheme);
+
+  if (d.book && t.classList.contains("book-btn")) return renderChapters(d.book);
+  if (d.chapter)                      return openReader(S.reader.book, +d.chapter);
+  if (d.books !== undefined)          return renderBooks();
+  if (d.chapters !== undefined)       return renderChapters(S.reader.book);
+  if (d.continue !== undefined) {
+    const last = store.get(KEYS.lastRead, null);
+    if (last) openReader(last.book, last.chapter);
+    return;
+  }
+  if (d.readerGo)                     return readerGo(+d.readerGo);
+  if (d.textSize !== undefined)       return openTextSizeSheet();
+  if (d.backToday !== undefined)      { S.reader.fromToday = false; return goView("hoje"); }
+
+  if (d.jump)                         return jumpToRef(d.jump);
+  if (d.openRef) {
+    const [b, c, v] = d.openRef.split(".");
+    return openReader(b, +c, { source: [+v] });
+  }
+  if (d.suggest) {
+    $("#searchInput").value = d.suggest;
+    $("#searchClear").hidden = false;
+    return renderSearch();
+  }
+  if (d.scope)                        return setSearchScope(d.scope);
+  if (d.scopeSwitch)                  return setSearchScope(d.scopeSwitch);
+
+  if (d.filter) { S.savedFilter = d.filter; return renderSaved(); }
+  if (d.favOpen)                      return openFavorite(+d.favOpen);
+  if (d.favCopy)                      return copyFavorite(+d.favCopy);
+  if (d.favRemove)                    return removeFavorite(+d.favRemove);
+
+  if (d.mode) {
+    setMode(d.mode);
+    $$("[data-mode]").forEach(b => b.classList.toggle("is-on", b.dataset.mode === d.mode));
+    return;
+  }
+  if (d.version)                      return setVersion(d.version);
+  if (d.export !== undefined)         return exportBackup();
+  if (d.import !== undefined)         return $("#importInput").click();
+  if (d.shareText !== undefined)      return shareTextNow();
+  if (d.shareImage !== undefined)     return shareImageNow();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    if ($("#sheet").classList.contains("is-open")) return closeSheet();
+    if (S.sel.size) return clearSelection();
+  }
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName);
+  if (typing || $("#sheet").classList.contains("is-open") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    const dir = e.key === "ArrowRight" ? 1 : -1;
+    if (S.view === "hoje") go(dir);
+    else if (S.view === "biblia" && S.reader.screen === "read") readerGo(dir);
+  }
+  if (e.key === "/" && S.view !== "busca") { e.preventDefault(); goView("busca"); }
+});
 
 /* ──────────────────────────────────────────────────────────
    INICIALIZAÇÃO
    ──────────────────────────────────────────────────────────*/
 document.addEventListener("DOMContentLoaded", () => {
-  /* O navegador restaura a rolagem da visita anterior e o app abria
-     no meio da página. Aqui ele sempre começa do topo. */
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  window.scrollTo(0, 0);
 
-  populateThemes();
-  populateVersions();
-  initThemeDropdowns();
-  loadDark();
-  loadReadingScale();
-  applyFilter(true);
+  applyMode();
+  setReadingScale(store.getRaw(KEYS.scale, "3"), false);
+  $("#versionLabel").textContent = S.version;
+
+  renderDate();
+  renderThemeChips();
+  renderStreak();
+  S.idx = dayIndex();
+  showVerse();
+
+  $("#prevBtn").addEventListener("click", () => go(-1));
+  $("#nextBtn").addEventListener("click", () => go(1));
+  $("#randomBtn").addEventListener("click", goRandom);
+  $("#todayBtn").addEventListener("click", goToday);
+  $("#favBtn").addEventListener("click", toggleFavorite);
+  $("#copyBtn").addEventListener("click", copyVerse);
+  $("#shareBtn").addEventListener("click", shareToday);
+  $("#chapterBtn").addEventListener("click", openChapterFromToday);
+  $("#doneBtn").addEventListener("click", toggleDone);
+  $("#streakBtn").addEventListener("click", showStreakInfo);
+  $("#settingsBtn").addEventListener("click", openSettings);
+  $("#versionBtn").addEventListener("click", openVersionSheet);
+
+  $("#selClear").addEventListener("click", clearSelection);
+  $("#selFav").addEventListener("click", saveSelection);
+  $("#selCopy").addEventListener("click", copySelection);
+  $("#selShare").addEventListener("click", shareSelection);
+
+  $("#searchInput").addEventListener("input", onSearchInput);
+  $("#searchInput").addEventListener("keydown", e => {
+    if (e.key === "Enter" && $(".jump-card")) { e.preventDefault(); $(".jump-card").click(); }
+  });
+  $("#searchClear").addEventListener("click", () => {
+    $("#searchInput").value = "";
+    $("#searchClear").hidden = true;
+    renderSearch();
+    $("#searchInput").focus();
+  });
+
+  $("#importInput").addEventListener("change", e => {
+    const f = e.target.files?.[0];
+    if (f) importBackup(f);
+    e.target.value = "";
+  });
+
+  onSwipe($("#card"), go);
+  onSwipe($("#bibleBody"), dir => { if (S.reader.screen === "read" && !S.sel.size) readerGo(dir); });
+
+  /* Virou o dia com o app aberto: atualiza a data e o versículo */
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    const k = dateKey();
+    if (k !== window._lastDay) {
+      window._lastDay = k;
+      renderDate();
+      renderStreak();
+      goToday();
+    }
+  });
+  window._lastDay = dateKey();
 
   /* Atalhos do app instalado (manifest.json → shortcuts) */
   const abrir = new URLSearchParams(location.search).get("abrir");
-  if (abrir === "biblia")         openBibleReader();
-  else if (abrir === "favoritos") openFavoritesModal();
+  if (abrir === "biblia")         location.hash = "biblia";
+  else if (abrir === "favoritos") location.hash = "salvos";
 
-  document.getElementById("versionSelect").addEventListener("change", (e) => {
-    currentVersion = e.target.value;
-    document.getElementById("versionSelectMobile").value = e.target.value;
-    show(pool[idx]);
-  });
-
-  document.getElementById("versionSelectMobile").addEventListener("change", (e) => {
-    currentVersion = e.target.value;
-    document.getElementById("versionSelect").value = e.target.value;
-    closeHamburgerMenu();
-    show(pool[idx]);
-  });
+  showView(viewFromHash());
 });
-
-/* ──────────────────────────────────────────────────────────
-   POPULAR SELETORES
-   ──────────────────────────────────────────────────────────*/
-function populateThemes() {
-  /* Apenas armazena os temas — o dropdown é montado em initThemeDropdowns */
-  window._allThemes = ["Todos", ...new Set(verses.map(v => v.theme))];
-}
-
-function populateVersions() {
-  const sel       = document.getElementById("versionSelect");
-  const selMobile = document.getElementById("versionSelectMobile");
-  BIBLE_VERSIONS.forEach(v => {
-    const opt = document.createElement("option");
-    opt.value = v.id; opt.textContent = v.name;
-    sel.appendChild(opt);
-    selMobile.appendChild(opt.cloneNode(true));
-  });
-}
-
-/* ──────────────────────────────────────────────────────────
-   DROPDOWN CUSTOMIZADO DE TEMAS
-   ──────────────────────────────────────────────────────────*/
-function buildDropdownPanel(panelEl, isMobile) {
-  panelEl.innerHTML = "";
-  const themes = window._allThemes || [];
-
-  /* ── "Todos os Temas" em linha única no topo ── */
-  const allRow = document.createElement("div");
-  allRow.className = "custom-dropdown__all-row";
-
-  const allBtn = document.createElement("button");
-  allBtn.className = "custom-dropdown__option" + (currentTheme === "Todos" ? " is-selected" : "");
-  allBtn.setAttribute("role", "option");
-  allBtn.dataset.value = "Todos";
-  const allDot = document.createElement("span"); allDot.className = "custom-dropdown__dot";
-  const allLabel = document.createElement("span"); allLabel.textContent = "Todos os Temas";
-  allBtn.appendChild(allDot); allBtn.appendChild(allLabel);
-  allBtn.addEventListener("click", () => selectTheme("Todos", isMobile));
-  allRow.appendChild(allBtn);
-  panelEl.appendChild(allRow);
-
-  /* separador */
-  const sep = document.createElement("div");
-  sep.className = "custom-dropdown__sep";
-  panelEl.appendChild(sep);
-
-  /* ── Grid com os temas ── */
-  const grid = document.createElement("div");
-  grid.className = "custom-dropdown__grid";
-
-  themes.filter(t => t !== "Todos").forEach(t => {
-    const btn = document.createElement("button");
-    btn.className = "custom-dropdown__option" + (t === currentTheme ? " is-selected" : "");
-    btn.setAttribute("role", "option");
-    btn.dataset.value = t;
-
-    const dot = document.createElement("span"); dot.className = "custom-dropdown__dot";
-    const label = document.createElement("span"); label.textContent = t;
-
-    btn.appendChild(dot); btn.appendChild(label);
-    btn.addEventListener("click", () => selectTheme(t, isMobile));
-    grid.appendChild(btn);
-  });
-
-  panelEl.appendChild(grid);
-}
-
-function buildVersionPanel(panelEl, isMobile) {
-  panelEl.innerHTML = "";
-  BIBLE_VERSIONS.forEach(v => {
-    const btn = document.createElement("button");
-    btn.className = "custom-dropdown__option" + (v.id === currentVersion ? " is-selected" : "");
-    btn.setAttribute("role", "option");
-    btn.dataset.value = v.id;
-
-    const dot = document.createElement("span"); dot.className = "custom-dropdown__dot";
-    const label = document.createElement("span"); label.textContent = v.name;
-
-    btn.appendChild(dot); btn.appendChild(label);
-    btn.addEventListener("click", () => selectVersion(v.id, isMobile));
-    panelEl.appendChild(btn);
-  });
-}
-
-function selectVersion(versionId, fromMobile) {
-  currentVersion = versionId;
-  closeAllDropdowns();
-  syncVersionUI();
-  /* mantém selects ocultos sincronizados */
-  const s1 = document.getElementById("versionSelect");
-  const s2 = document.getElementById("versionSelectMobile");
-  if (s1) s1.value = versionId;
-  if (s2) s2.value = versionId;
-  if (fromMobile) closeHamburgerMenu();
-  show(pool[idx]);
-
-  /* Se o leitor estiver aberto e lendo, recarrega o capítulo na nova versão */
-  if (document.getElementById("readerPanel")?.classList.contains("is-reading")) {
-    loadReaderChapter();
-  }
-  if (document.getElementById("contextModal")?.classList.contains("open")) {
-    loadContextChapter();
-  }
-}
-
-function syncVersionUI() {
-  const label  = document.getElementById("versionDropdownLabel");
-  const labelM = document.getElementById("versionDropdownLabelMobile");
-  /* Mostra só o ID curto (ex: "ARA") no trigger */
-  if (label)  label.textContent  = currentVersion;
-  if (labelM) labelM.textContent = currentVersion;
-
-  ["versionDropdownPanel","versionDropdownPanelMobile"].forEach(id => {
-    const panel = document.getElementById(id);
-    if (!panel) return;
-    panel.querySelectorAll(".custom-dropdown__option").forEach(btn => {
-      btn.classList.toggle("is-selected", btn.dataset.value === currentVersion);
-    });
-  });
-}
-
-function selectTheme(theme, fromMobile) {
-  currentTheme = theme;
-
-  /* Fecha ambos os painéis */
-  closeAllDropdowns();
-
-  /* Atualiza labels e marcações */
-  syncDropdownUI();
-
-  if (fromMobile) closeHamburgerMenu();
-  applyFilter();
-}
-
-function syncDropdownUI() {
-  const label   = document.getElementById("themeDropdownLabel");
-  const labelM  = document.getElementById("themeDropdownLabelMobile");
-  const display = currentTheme === "Todos" ? "Todos os Temas" : currentTheme;
-  const short   = currentTheme === "Todos" ? "Temas" : currentTheme;
-  if (label)  label.textContent  = display;
-  if (labelM) labelM.textContent = short;
-
-  /* Atualiza classe is-selected em todos os painéis */
-  ["themeDropdownPanel", "themeDropdownPanelMobile"].forEach(id => {
-    const panel = document.getElementById(id);
-    if (!panel) return;
-    panel.querySelectorAll(".custom-dropdown__option").forEach(btn => {
-      btn.classList.toggle("is-selected", btn.dataset.value === currentTheme);
-    });
-  });
-}
-
-function closeAllDropdowns() {
-  ["themeDropdownPanel","themeDropdownPanelMobile","versionDropdownPanel","versionDropdownPanelMobile"].forEach(id => {
-    const p = document.getElementById(id);
-    if (p) p.classList.remove("is-open");
-  });
-  ["themeDropdownTrigger","themeDropdownTriggerMobile","versionDropdownTrigger","versionDropdownTriggerMobile"].forEach(id => {
-    const t = document.getElementById(id);
-    if (t) { t.classList.remove("is-open"); t.setAttribute("aria-expanded","false"); }
-  });
-}
-
-function toggleDropdown(triggerId, panelId) {
-  const trigger = document.getElementById(triggerId);
-  const panel   = document.getElementById(panelId);
-  if (!trigger || !panel) return;
-
-  const isOpen = panel.classList.contains("is-open");
-  closeAllDropdowns();
-
-  if (!isOpen) {
-    panel.classList.add("is-open");
-    trigger.classList.add("is-open");
-    trigger.setAttribute("aria-expanded","true");
-
-    /* Dentro da gaveta o painel já ocupa a largura do gatilho e abre
-       para cima pelo CSS. Medir pelo container da página aqui daria
-       uma posição errada, então não há o que reposicionar. */
-    if (trigger.closest(".action-toolbar")) {
-      const sel = panel.querySelector(".is-selected");
-      if (sel) setTimeout(() => sel.scrollIntoView({ block: "nearest" }), 20);
-      return;
-    }
-
-    /* Reposiciona para não sair da tela.
-       Calcula a posição desejada em coordenadas absolutas e prende
-       dentro dos limites visíveis. Escrever left inline sobrepõe
-       qualquer alinhamento vindo do CSS (right:0 dos temas, por
-       exemplo), então o resultado não depende da classe do painel.
-       Usa offsetWidth: o painel está no primeiro quadro da animação
-       (scale .97 / translateY) e o getBoundingClientRect dele viria
-       distorcido. */
-    panel.style.left  = "0";
-    panel.style.right = "auto";
-
-    const triggerRect = trigger.getBoundingClientRect();
-    const panelWidth  = panel.offsetWidth;
-    const container   = document.querySelector(".app-container");
-    const cRect       = container ? container.getBoundingClientRect() : { left: 0, right: window.innerWidth };
-
-    const GUTTER   = 8;
-    const minLeft  = Math.max(cRect.left, GUTTER);
-    const maxRight = Math.min(cRect.right, window.innerWidth - GUTTER);
-
-    /* Começa alinhado à esquerda do gatilho e ajusta se estourar */
-    let absLeft = triggerRect.left;
-    if (absLeft + panelWidth > maxRight) absLeft = maxRight - panelWidth;
-    if (absLeft < minLeft)               absLeft = minLeft;
-
-    panel.style.left = `${Math.round(absLeft - triggerRect.left)}px`;
-
-    /* Scroll até o item selecionado */
-    const sel = panel.querySelector(".is-selected");
-    if (sel) setTimeout(() => sel.scrollIntoView({ block: "nearest" }), 20);
-  }
-}
-
-function initThemeDropdowns() {
-  /* Temas */
-  const panel  = document.getElementById("themeDropdownPanel");
-  const panelM = document.getElementById("themeDropdownPanelMobile");
-  if (panel)  buildDropdownPanel(panel, false);
-  if (panelM) buildDropdownPanel(panelM, true);
-
-  document.getElementById("themeDropdownTrigger")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleDropdown("themeDropdownTrigger","themeDropdownPanel");
-  });
-  document.getElementById("themeDropdownTriggerMobile")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleDropdown("themeDropdownTriggerMobile","themeDropdownPanelMobile");
-  });
-
-  /* Versões */
-  const vPanel  = document.getElementById("versionDropdownPanel");
-  const vPanelM = document.getElementById("versionDropdownPanelMobile");
-  if (vPanel)  buildVersionPanel(vPanel, false);
-  if (vPanelM) buildVersionPanel(vPanelM, true);
-
-  document.getElementById("versionDropdownTrigger")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleDropdown("versionDropdownTrigger","versionDropdownPanel");
-  });
-  document.getElementById("versionDropdownTriggerMobile")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleDropdown("versionDropdownTriggerMobile","versionDropdownPanelMobile");
-  });
-
-  /* Fecha ao clicar fora */
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".custom-dropdown")) closeAllDropdowns();
-  });
-
-  /* Fecha com Escape */
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAllDropdowns();
-  });
-}
-
-/* ──────────────────────────────────────────────────────────
-   FILTRO E NAVEGAÇÃO
-   ──────────────────────────────────────────────────────────*/
-const LAST_VERSE_KEY = "devocional-lastVerse";
-
-/* Retorna o índice do versículo do dia (0-based, baseado no dia do ano) */
-function getDayIndex(poolArr) {
-  const now   = new Date();
-  /* Diferença em dias no fuso local, sem depender de milissegundos
-     (evita erro de 1 dia em fusos com horário de verão). */
-  const start = new Date(now.getFullYear(), 0, 1);
-  const dayOfYear = Math.round(
-    (new Date(now.getFullYear(), now.getMonth(), now.getDate()) - start) / 86400000
-  ) + 1;
-  return (dayOfYear - 1) % poolArr.length;
-}
-
-function saveLastVerse(item) {
-  try { localStorage.setItem(LAST_VERSE_KEY, item.apiId); } catch {}
-}
-
-function restoreLastVerse() {
-  /* Ao abrir o app, sempre mostra o versículo do dia */
-  idx = getDayIndex(pool);
-  return true;
-}
-
-function applyFilter(restoring = false) {
-  pool = currentTheme === "Todos"
-    ? [...verses]
-    : verses.filter(v => v.theme === currentTheme);
-  idx = 0;
-  if (restoring) restoreLastVerse();
-  if (pool.length > 0) show(pool[idx]);
-  updateNav();
-}
-
-function go(dir) {
-  if (pool.length === 0) return;
-  idx += dir;
-  if (idx < 0)            idx = pool.length - 1;
-  if (idx >= pool.length) idx = 0;
-  show(pool[idx]);
-  updateNav();
-}
-
-function goRandom() {
-  if (pool.length <= 1) return;
-  let newIdx;
-  do { newIdx = Math.floor(Math.random() * pool.length); }
-  while (newIdx === idx);
-  idx = newIdx;
-  show(pool[idx]);
-  updateNav();
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   EXIBIR VERSÍCULO
-   ──────────────────────────────────────────────────────────*/
-async function show(item) {
-  if (!item) return;
-
-  const token  = ++_showToken;
-  const textEl = document.getElementById("verseText");
-
-  textEl.classList.add("loading");
-  textEl.textContent = "Carregando...";
-
-  document.getElementById("verseRef").textContent = item.ref;
-  saveLastVerse(item);
-
-  /* Coleta todos os temas associados a esse apiId */
-  const allThemesForVerse = [...new Set(
-    verses.filter(v => v.apiId === item.apiId).map(v => v.theme)
-  )];
-  const themeEl = document.getElementById("verseTheme");
-  if (allThemesForVerse.length > 1) {
-    themeEl.innerHTML = allThemesForVerse
-      .map((t, i) => i === 0
-        ? `<span>${t}</span>`
-        : `<span class="theme-badge__extra">${t}</span>`)
-      .join('<span class="theme-badge__sep">·</span>');
-  } else {
-    themeEl.textContent = item.theme;
-  }
-
-  document.getElementById("verseCtx").textContent = item.ctx;
-  document.getElementById("dayNum").textContent   = idx + 1;
-
-  try {
-    const text = await fetchVerse(item.apiId, currentVersion);
-    if (token !== _showToken) return;          // chegou atrasado: descarta
-    textEl.textContent = capitalizeFirst(stripQuotes(text));
-  } catch (err) {
-    console.error("Erro ao buscar versículo:", err);
-    if (token !== _showToken) return;
-    textEl.textContent = "Não foi possível carregar o versículo.";
-  } finally {
-    if (token === _showToken) {
-      textEl.classList.remove("loading");
-      updateFavBtn();
-      loadRelated(item);
-    }
-  }
-}
-
-/* ──────────────────────────────────────────────────────────
-   NAVEGAÇÃO: BARRA DE PROGRESSO
-   ──────────────────────────────────────────────────────────*/
-function updateNav() {
-  if (pool.length === 0) return;
-  const pct = ((idx + 1) / pool.length) * 100;
-  document.getElementById("progressFill").style.width = `${pct}%`;
-  document.getElementById("dayTotal").textContent = pool.length;
-  document.getElementById("dayNum").textContent   = idx + 1;
-}
-
-/* ──────────────────────────────────────────────────────────
-   COPIAR VERSÍCULO
-   ──────────────────────────────────────────────────────────*/
-function copyToClipboard() {
-  const txt  = document.getElementById("verseText").textContent;
-  const ref  = document.getElementById("verseRef").textContent;
-  const item = pool[idx];
-
-  const toSup = n => String(n).split("").map(d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]).join("");
-
-  let formatted;
-
-  // Passagem múltipla: apiId com hífen (ex: "PSA.145.15-PSA.145.16")
-  if (item && item.apiId.includes("-")) {
-    const [startId, endId] = item.apiId.split("-");
-    const vStart = parseInt(startId.split(".")[2]);
-    const vEnd   = parseInt(endId.split(".")[2]);
-
-    const numVerses = vEnd - vStart + 1;
-    let lines;
-    if (numVerses === 2) {
-      const splitMatch = txt.match(/^(.+?[.!?])\s+([A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇ].*)$/s);
-      lines = splitMatch ? [splitMatch[1].trim(), splitMatch[2].trim()] : [txt];
-    } else {
-      lines = [txt];
-    }
-
-    if (lines.length === numVerses) {
-      const body = lines.map((l, i) => `${toSup(vStart + i)} ${l}`).join("\n");
-      formatted = `${body}\n\n${ref}`;
-    } else {
-      formatted = `${txt}\n\n${ref}`;
-    }
-
-  // Versículo único com múltiplos sobrescritos no texto
-  } else {
-    const matches = txt.match(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g) || [];
-    if (matches.length > 1) {
-      /* Quebra linha antes de cada número sobrescrito, menos no começo.
-         Sem lookbehind de propósito: (?<!^) só existe no Safari 16.4+,
-         e como regex é validada na hora de carregar o arquivo, um iPhone
-         mais antigo derrubaria o script inteiro, não só esta função. */
-      const body = txt
-        .replace(/\s*([⁰¹²³⁴⁵⁶⁷⁸⁹])/g, "\n$1")
-        .replace(/^\n+/, "");
-      formatted = `${body}\n\n${ref}`;
-    } else {
-      formatted = `"${txt}" - ${ref}`;
-    }
-  }
-
-  navigator.clipboard.writeText(formatted).then(() => {
-    const btn    = document.querySelector(".copy-btn");
-    const status = document.getElementById("copyStatus");
-    btn.classList.add("success");
-    status.textContent = "Copiado";
-    setTimeout(() => {
-      btn.classList.remove("success");
-      status.textContent = "Copiar";
-    }, 1800);
-  }).catch(err => console.error("Erro ao copiar:", err));
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   VERSÍCULOS RELACIONADOS (mesmo tema)
-   ──────────────────────────────────────────────────────────*/
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[c]));
-}
-
-/* Escapa para uso dentro de atributo onclick="...('aqui')" */
-function escapeAttr(s) {
-  return escapeHtml(s).replace(/\\/g, "\\\\");
-}
-
-function loadRelated(item) {
-  const block = document.getElementById("relatedBlock");
-  const list  = document.getElementById("relatedList");
-  if (!block || !list || !item) return;
-
-  const related = verses
-    .filter(v => v.theme === item.theme && v.apiId !== item.apiId)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 2);
-
-  if (related.length === 0) { block.style.display = "none"; return; }
-
-  block.style.display = "block";
-  list.innerHTML = related.map(v => `
-    <button class="related-item" onclick="goToRelated('${escapeAttr(v.apiId)}','${escapeAttr(v.theme)}')">
-      <span class="related-ref">${escapeHtml(v.ref)}</span>
-      <span class="related-ctx">${escapeHtml(v.ctx.substring(0, 80))}...</span>
-    </button>`
-  ).join("");
-}
-
-function goToRelated(apiId, theme) {
-  const found = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
-  if (found === -1) return;
-  idx = found;
-  show(pool[idx]);
-  updateNav();
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-/* ──────────────────────────────────────────────────────────
-   FAVORITOS
-   ──────────────────────────────────────────────────────────*/
-const FAV_KEY = "devocional-favorites";
-
-function getFavorites() {
-  try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; }
-  catch { return []; }
-}
-
-function saveFavorites(favs) {
-  try { localStorage.setItem(FAV_KEY, JSON.stringify(favs)); } catch {}
-}
-
-function isCurrentFavorite() {
-  const item = pool[idx];
-  if (!item) return false;
-  return getFavorites().some(f => f.apiId === item.apiId && f.theme === item.theme);
-}
-
-function updateFavBtn() {
-  const btn    = document.getElementById("favBtn");
-  const status = document.getElementById("favStatus");
-  const heart  = btn?.querySelector(".icon-heart");
-  if (!btn) return;
-  const faved = isCurrentFavorite();
-  btn.classList.toggle("fav-btn--active", faved);
-  if (heart) heart.setAttribute("fill", faved ? "currentColor" : "none");
-  if (status) status.textContent = faved ? "Favoritado" : "Favoritar";
-}
-
-function toggleFavorite() {
-  const item = pool[idx];
-  if (!item) return;
-  let favs  = getFavorites();
-  const key = f => f.apiId === item.apiId && f.theme === item.theme;
-  if (favs.some(key)) {
-    favs = favs.filter(f => !key(f));
-  } else {
-    favs.push({ apiId: item.apiId, ref: item.ref, theme: item.theme, ctx: item.ctx });
-  }
-  saveFavorites(favs);
-  updateFavBtn();
-  const btn = document.getElementById("favBtn");
-  btn?.classList.add("fav-btn--pulse");
-  setTimeout(() => btn?.classList.remove("fav-btn--pulse"), 400);
-}
-
-function openFavoritesModal() {
-  openModal("favoritesModal");
-  renderFavoritesList();
-}
-
-function closeFavoritesModal() {
-  closeModal("favoritesModal");
-}
-
-function renderFavoritesList() {
-  const body = document.getElementById("favoritesBody");
-  const favs = getFavorites();
-
-  if (favs.length === 0) {
-    body.innerHTML = `
-      <div class="favs-empty">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);margin-bottom:12px"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <p>Nenhum versículo favoritado ainda.</p>
-        <p style="font-size:.88rem;margin-top:6px;color:var(--text-muted)">Toque no coração para guardar os que tocarem seu coração.</p>
-      </div>`;
-    return;
-  }
-
-  body.innerHTML = '<div class="favs-list">' + favs.map((f, i) => {
-    /* Favorito vindo do leitor da Bíblia: não tem tema nem análise,
-       e ao tocar abre o leitor na passagem, não o card do devocional. */
-    const daBiblia = f.source === "biblia";
-    const badge = daBiblia
-      ? '<span class="theme-badge theme-badge--sm theme-badge--bible">Bíblia</span>'
-      : `<span class="theme-badge theme-badge--sm">${escapeHtml(f.theme)}</span>`;
-    const abrir = daBiblia
-      ? `goToFavoriteBible('${escapeAttr(f.apiId)}')`
-      : `goToFavorite('${escapeAttr(f.apiId)}','${escapeAttr(f.theme)}')`;
-
-    return `
-    <div class="fav-item">
-      <div class="fav-item__header">
-        ${badge}
-        <button class="fav-item__remove" onclick="removeFavorite(${i})" title="Remover dos favoritos" aria-label="Remover dos favoritos">
-          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        </button>
-      </div>
-      <button class="fav-item__ref" onclick="${abrir};closeFavoritesModal();">${escapeHtml(f.ref)}</button>
-      <p class="fav-item__ctx">${escapeHtml(f.ctx)}</p>
-    </div>`;
-  }).join("") + '</div>';
-}
-
-/* Abre o leitor direto na passagem favoritada */
-function goToFavoriteBible(apiId) {
-  const base = apiId.includes("-") ? apiId.split("-")[0] : apiId;
-  const [livro, cap] = base.split(".");
-  readerBook    = livro;
-  readerChapter = parseInt(cap);
-  readerVerse   = base;
-  openModal("bibleModal");
-  loadReaderChapter();
-}
-
-function removeFavorite(i) {
-  const favs = getFavorites();
-  favs.splice(i, 1);
-  saveFavorites(favs);
-  renderFavoritesList();
-  updateFavBtn();
-}
-
-/* Vai até um favorito. Se o tema atual não incluir esse versículo,
-   volta o filtro para "Todos" e sincroniza os dropdowns customizados. */
-function goToFavorite(apiId, theme) {
-  const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
-  if (found === -1) return;
-  if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
-    currentTheme = "Todos";
-    syncDropdownUI();
-    pool = [...verses];
-  }
-  const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
-  if (newIdx === -1) return;
-  idx = newIdx;
-  show(pool[idx]);
-  updateNav();
-}
-
-/* ──────────────────────────────────────────────────────────
-   BUSCA POR PALAVRA-CHAVE
-   ──────────────────────────────────────────────────────────*/
-function openSearchModal() {
-  openModal("searchModal");
-  const input = document.getElementById("searchInput");
-  if (input) { input.value = ""; setTimeout(() => input.focus(), 100); }
-  document.getElementById("searchBody").innerHTML =
-    '<p class="search-hint">Digite para buscar entre os ' + verses.length + ' versículos.</p>';
-}
-
-function closeSearchModal() {
-  closeModal("searchModal");
-}
-
-function onSearchInput() {
-  const q    = normalizeForSearch(document.getElementById("searchInput").value || "").trim();
-  const body = document.getElementById("searchBody");
-  if (q.length < 2) {
-    body.innerHTML = '<p class="search-hint">Continue digitando...</p>';
-    return;
-  }
-  /* Busca sem acento: "salmo" acha "Salmos", "coracao" acha "coração" */
-  const results = verses.filter(v =>
-    normalizeForSearch(v.ref).includes(q) ||
-    normalizeForSearch(v.theme).includes(q) ||
-    normalizeForSearch(v.ctx).includes(q)
-  );
-  if (results.length === 0) {
-    body.innerHTML = '<p class="search-hint">Nenhum resultado encontrado.</p>';
-    return;
-  }
-  body.innerHTML = '<div class="favs-list">' + results.map(v => `
-    <div class="fav-item">
-      <div class="fav-item__header">
-        <span class="theme-badge theme-badge--sm">${escapeHtml(v.theme)}</span>
-      </div>
-      <button class="fav-item__ref" onclick="goToVerseFromSearch('${escapeAttr(v.apiId)}','${escapeAttr(v.theme)}');closeSearchModal();">${escapeHtml(v.ref)}</button>
-      <p class="fav-item__ctx">${escapeHtml(v.ctx.substring(0, 120))}...</p>
-    </div>`
-  ).join("") + '</div>';
-}
-
-function goToVerseFromSearch(apiId, theme) {
-  const found = verses.findIndex(v => v.apiId === apiId && v.theme === theme);
-  if (found === -1) return;
-  if (currentTheme !== "Todos" && verses[found].theme !== currentTheme) {
-    currentTheme = "Todos";
-    syncDropdownUI();
-    pool = [...verses];
-  }
-  const newIdx = pool.findIndex(v => v.apiId === apiId && v.theme === theme);
-  if (newIdx === -1) return;
-  idx = newIdx;
-  show(pool[idx]);
-  updateNav();
-}
-
-/* ──────────────────────────────────────────────────────────
-   MODO ESCURO / CLARO
-   ──────────────────────────────────────────────────────────*/
-function toggleDark() {
-  document.body.classList.toggle("light");
-  const isLight = document.body.classList.contains("light");
-  document.getElementById("modeIcon").textContent = isLight ? "☀" : "☽";
-  const lbl = document.getElementById("themeLabel");
-  if (lbl) lbl.textContent = isLight ? "Modo claro" : "Modo escuro";
-  localStorage.setItem("devocional-mode", isLight ? "light" : "dark");
-}
-
-function loadDark() {
-  const saved = localStorage.getItem("devocional-mode");
-  if (saved === "light") {
-    document.body.classList.add("light");
-    document.getElementById("modeIcon").textContent = "☀";
-    const lbl = document.getElementById("themeLabel");
-    if (lbl) lbl.textContent = "Modo claro";
-  } else {
-    document.body.classList.remove("light");
-    document.getElementById("modeIcon").textContent = "☽";
-    const lbl = document.getElementById("themeLabel");
-    if (lbl) lbl.textContent = "Modo escuro";
-  }
-}
-
-
-/* ──────────────────────────────────────────────────────────
-   TAMANHO DO TEXTO DE LEITURA (5 níveis, arrastando)
-   Grava a preferência e vale para o leitor e para o modal
-   de passagem, já que altera a variável --reading-size.
-   ──────────────────────────────────────────────────────────*/
-const READING_SCALE_KEY = "devocional-readingScale";
-
-const READING_SCALES = [
-  { label: "Pequeno",       size: "1.02rem", line: "1.8"  },
-  { label: "Pequeno-médio", size: "1.13rem", line: "1.82" },
-  { label: "Médio",         size: "1.26rem", line: "1.85" },
-  { label: "Médio-grande",  size: "1.42rem", line: "1.88" },
-  { label: "Grande",        size: "1.62rem", line: "1.9"  },
-];
-
-function setReadingScale(step, persist = true) {
-  const i = Math.min(READING_SCALES.length - 1, Math.max(0, parseInt(step) - 1));
-  const s = READING_SCALES[i];
-
-  document.documentElement.style.setProperty("--reading-size", s.size);
-  document.documentElement.style.setProperty("--reading-line", s.line);
-
-  const input = document.getElementById("fontScaleInput");
-  const label = document.getElementById("fontScaleLabel");
-  if (input) input.value = i + 1;
-  if (label) label.textContent = s.label;
-
-  if (persist) {
-    try { localStorage.setItem(READING_SCALE_KEY, String(i + 1)); } catch {}
-  }
-}
-
-function loadReadingScale() {
-  let saved = 3;
-  try { saved = parseInt(localStorage.getItem(READING_SCALE_KEY)) || 3; } catch {}
-  setReadingScale(saved, false);
-}
-
-/* ──────────────────────────────────────────────────────────
-   ABRIR / FECHAR MODAIS
-   Trava a rolagem do fundo: sem isso, rolar dentro do modal
-   no celular arrasta a página atrás quando o conteúdo chega
-   ao fim, e ao fechar você aparece em outro ponto da página.
-   ──────────────────────────────────────────────────────────*/
-function openModal(id) {
-  document.getElementById(id)?.classList.add("open");
-  document.body.classList.add("modal-open");
-}
-
-function closeModal(id) {
-  document.getElementById(id)?.classList.remove("open");
-  /* Só libera a rolagem se não sobrou nenhum outro modal aberto */
-  if (!document.querySelector(".modal-overlay.open")) {
-    document.body.classList.remove("modal-open");
-  }
-}
-
-/* ──────────────────────────────────────────────────────────
-   MODAL — LER CAPÍTULO COMPLETO (contexto do versículo)
-   ──────────────────────────────────────────────────────────*/
-let contextBook      = "JHN";
-let contextChapter   = 3;
-let contextHighVerse = null;
-
-async function openContextModal() {
-  const item = pool[idx];
-  if (!item) return;
-
-  const baseId = item.apiId.includes("-") ? item.apiId.split("-")[0] : item.apiId;
-  const parts  = baseId.split(".");
-
-  contextBook      = parts[0];
-  contextChapter   = parseInt(parts[1]) || 1;
-  contextHighVerse = baseId;
-
-  openModal("contextModal");
-  await loadContextChapter();
-}
-
-let _contextPrevCh = null;
-let _contextNextCh = null;
-
-async function loadContextChapter() {
-  const body    = document.getElementById("contextBody");
-  const title   = document.getElementById("contextTitle");
-  const prevBtn = document.getElementById("contextPrev");
-  const nextBtn = document.getElementById("contextNext");
-
-  const bookName = BOOKS_PT.find(b => b[0] === contextBook)?.[1] ?? contextBook;
-  title.textContent = bookName;
-  document.getElementById("contextChapterLabel").textContent = `Cap. ${contextChapter}`;
-
-  _contextPrevCh = _contextNextCh = null;
-  prevBtn.disabled = true;
-  nextBtn.disabled = true;
-
-  body.innerHTML = `<div class="modal-loading">Carregando capítulo...</div>`;
-
-  try {
-    const data   = await loadBibleVersion(currentVersion);
-    const abbrev = USFM_TO_ABBREV[contextBook];
-    const book   = data.find(b => b.abbrev === abbrev);
-    if (!book) throw new Error("Livro não encontrado");
-    const chapArr = book.chapters[contextChapter - 1] || [];
-
-    _contextPrevCh = neighborChapter(data, contextBook, contextChapter, -1);
-    _contextNextCh = neighborChapter(data, contextBook, contextChapter, 1);
-
-    prevBtn.disabled = !_contextPrevCh;
-    nextBtn.disabled = !_contextNextCh;
-    prevBtn.title = _contextPrevCh ? chapRef(_contextPrevCh) : "";
-    nextBtn.title = _contextNextCh ? chapRef(_contextNextCh) : "";
-
-    const content = chapArr.map((text, i) => ({
-      name: "verse-span",
-      attrs: { verseId: `${contextBook}.${contextChapter}.${i + 1}` },
-      items: [{ type: "text", text }]
-    }));
-
-    renderChapter({ content, next: !!_contextNextCh }, contextHighVerse, body);
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Não foi possível carregar o capítulo.</p>`;
-  }
-}
-
-function contextGo(dir) {
-  const alvo = dir > 0 ? _contextNextCh : _contextPrevCh;
-  if (!alvo) return;
-  contextBook      = alvo.book;
-  contextChapter   = alvo.chapter;
-  contextHighVerse = null;
-  loadContextChapter();
-}
-
-function closeContextModal() {
-  const modal = document.getElementById("contextModal");
-  closeModal("contextModal");
-  _resetVerseSelection(modal.querySelector(".modal-panel"));
-}
-
-/* ──────────────────────────────────────────────────────────
-   RENDER CAPÍTULO
-   ──────────────────────────────────────────────────────────*/
-
-/* Estado da seleção de versículos */
-let _selVerseMap   = {};
-let _selVerseOrder = [];
-let _selBookId     = "";
-let _selChapNum    = "";
-let _selectedVids  = new Set();
-
-function renderChapter(chapterData, highlightId, container) {
-  const items    = chapterData.content || [];
-  const verseMap = {};
-
-  function flatText(nodes) {
-    if (!nodes) return "";
-    if (typeof nodes === "string") return nodes;
-    return nodes.map(n => {
-      if (typeof n === "string") return n;
-      if (n.type === "text" && n.text) return n.text;
-      if (n.items) return flatText(n.items);
-      return "";
-    }).join("");
-  }
-
-  function collectVerses(nodes) {
-    if (!Array.isArray(nodes)) return;
-    for (const node of nodes) {
-      if (node.name === "verse-span" && node.attrs?.verseId) {
-        const vid = node.attrs.verseId;
-        verseMap[vid] = (verseMap[vid] || "") + flatText(node.items);
-      } else if (node.items) {
-        collectVerses(node.items);
-      }
-    }
-  }
-
-  collectVerses(items);
-
-  const entries = Object.entries(verseMap);
-
-  if (entries.length === 0) {
-    container.innerHTML = `<p class="modal-error">Capítulo vazio nesta versão.</p>`;
-    return;
-  }
-
-  /* Salva mapa global para uso na cópia */
-  _selVerseMap   = {};
-  _selVerseOrder = [];
-  _selectedVids  = new Set();
-
-  _selBookId  = entries[0][0].split(".")[0];
-  _selChapNum = entries[0][0].split(".")[1];
-
-  entries.forEach(([vid, text]) => {
-    const clean = stripQuotes(text.trim().replace(/^\d+\s*/, ""));
-    _selVerseMap[vid]  = clean;
-    _selVerseOrder.push(vid);
-  });
-
-  const chapNum  = entries[0][0].split(".")[1];
-  const bookId   = entries[0][0].split(".")[0];
-  const bookName = BOOKS_PT.find(b => b[0] === bookId)?.[1] ?? bookId;
-
-  const rows = entries.map(([vid]) => {
-    const verseNum    = vid.split(".")[2] || "";
-    const isHighlight = highlightId && vid === highlightId;
-    return `
-      <div class="reading-verse ${isHighlight ? "reading-verse--source" : ""}" data-id="${vid}" onclick="toggleVerseSelect('${vid}', this)">
-        <span class="reading-verse__num">${verseNum}</span>
-        <span class="reading-verse__text">${escapeHtml(_selVerseMap[vid])}</span>
-      </div>`;
-  }).join("");
-
-  container.innerHTML = `
-    <article class="reading">
-      <header class="reading__head">
-        <span class="reading__book">${bookName}</span>
-        <span class="reading__chap">${chapNum}</span>
-      </header>
-      <div class="reading__body">${rows}</div>
-    </article>`;
-
-  /* Garante que a barra de seleção existe no modal correto */
-  const panel = container.closest(".modal-panel");
-  _ensureSelectionBar(container);
-  /* Zera o rótulo/visibilidade — senão a barra fica pendurada com a
-     contagem do capítulo anterior depois de trocar de capítulo. */
-  _updateSelectionBar(panel);
-
-  setTimeout(() => {
-    const target = container.querySelector(".reading-verse--source");
-    if (!target) { container.scrollTop = 0; return; }
-
-    /* Rola só este contêiner. scrollIntoView rolaria todos os ancestrais
-       roláveis, inclusive o painel — que tem overflow:hidden e, por isso,
-       não rola com o dedo, mas rola por script. Era isso que empurrava a
-       barra do topo do leitor para fora da tela. */
-    const cRect = container.getBoundingClientRect();
-    const tRect = target.getBoundingClientRect();
-    const top   = container.scrollTop + (tRect.top - cRect.top) - container.clientHeight / 3;
-
-    container.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-  }, 100);
-}
-
-/* Injeta a barra flutuante dentro do modal-panel pai */
-function _ensureSelectionBar(container) {
-  const panel = container.closest(".modal-panel");
-  if (!panel) return;
-  if (panel.querySelector(".verse-sel-bar")) return;
-  const bar = document.createElement("div");
-  bar.className = "verse-sel-bar";
-  bar.innerHTML = `
-    <span class="verse-sel-label">0 versículos</span>
-    <div class="verse-sel-actions">
-      <button class="verse-sel-btn verse-sel-btn--ghost" onclick="_clearVerseSelection(this)">Limpar</button>
-      <button class="verse-sel-btn verse-sel-btn--fav" onclick="_favoriteVerseSelection(this)" aria-label="Favoritar seleção">
-        <svg aria-hidden="true" class="icon-heart" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <span class="verse-sel-fav-label">Favoritar</span>
-      </button>
-      <button class="verse-sel-btn verse-sel-btn--copy" onclick="_copyVerseSelection(this)" aria-label="Copiar seleção">
-        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        <span class="verse-sel-copy-label">Copiar</span>
-      </button>
-    </div>`;
-  panel.appendChild(bar);
-}
-
-function toggleVerseSelect(vid, el) {
-  if (_selectedVids.has(vid)) {
-    _selectedVids.delete(vid);
-    el.classList.remove("reading-verse--selected");
-  } else {
-    _selectedVids.add(vid);
-    el.classList.add("reading-verse--selected");
-  }
-  _updateSelectionBar(el.closest(".modal-panel"));
-}
-
-function _updateSelectionBar(panel) {
-  if (!panel) return;
-  const bar   = panel.querySelector(".verse-sel-bar");
-  const label = panel.querySelector(".verse-sel-label");
-  if (!bar || !label) return;
-  const count = _selectedVids.size;
-  bar.classList.toggle("verse-sel-bar--visible", count > 0);
-  label.textContent = count === 1 ? "1 versículo" : `${count} versículos`;
-
-  /* Estado do favoritar para a seleção atual */
-  const favBtn = panel.querySelector(".verse-sel-btn--fav");
-  if (favBtn) {
-    const d = _selectionData();
-    const ativo = !!d && getFavorites().some(f => f.apiId === d.apiId && f.source === "biblia");
-    favBtn.classList.toggle("verse-sel-btn--fav-active", ativo);
-    const lbl = favBtn.querySelector(".verse-sel-fav-label");
-    if (lbl) lbl.textContent = ativo ? "Favoritado" : "Favoritar";
-  }
-}
-
-/* Limpa seleção e esconde a barra — usado ao fechar os modais */
-function _resetVerseSelection(panel) {
-  _selectedVids.clear();
-  if (!panel) return;
-  panel.querySelectorAll(".reading-verse--selected").forEach(el => el.classList.remove("reading-verse--selected"));
-  _updateSelectionBar(panel);
-}
-
-function _clearVerseSelection(btn) {
-  _resetVerseSelection(btn.closest(".modal-panel"));
-}
-
-/* Dados da seleção atual, usados tanto para copiar quanto para
-   favoritar. Devolve null se não há nada selecionado. */
-function _selectionData() {
-  const ordered = _selVerseOrder.filter(vid => _selectedVids.has(vid));
-  if (ordered.length === 0) return null;
-
-  const bookName = BOOKS_PT.find(b => b[0] === _selBookId)?.[1] ?? _selBookId;
-  const nums = ordered.map(vid => parseInt(vid.split(".")[2]));
-  const min  = Math.min(...nums);
-  const max  = Math.max(...nums);
-
-  const ref = min === max
-    ? `${bookName} ${_selChapNum}:${min}`
-    : `${bookName} ${_selChapNum}:${min}-${max}`;
-
-  /* Mesmo formato dos apiId do devocional, para os favoritos
-     guardarem tudo numa lista só. */
-  const apiId = min === max
-    ? `${_selBookId}.${_selChapNum}.${min}`
-    : `${_selBookId}.${_selChapNum}.${min}-${_selBookId}.${_selChapNum}.${max}`;
-
-  return { ordered, ref, apiId, texto: ordered.map(v => _selVerseMap[v]).join(" ") };
-}
-
-/* Favoritar a seleção — alterna: se já está salva, remove */
-function _favoriteVerseSelection(btn) {
-  const d = _selectionData();
-  if (!d) return;
-
-  let favs = getFavorites();
-  const i = favs.findIndex(f => f.apiId === d.apiId && f.source === "biblia");
-  const salvando = i === -1;
-
-  if (salvando) {
-    favs.push({ apiId: d.apiId, ref: d.ref, theme: null, ctx: d.texto, source: "biblia" });
-  } else {
-    favs.splice(i, 1);
-  }
-  saveFavorites(favs);
-
-  const lbl = btn.querySelector(".verse-sel-fav-label");
-  if (lbl) {
-    lbl.textContent = salvando ? "Salvo" : "Removido";
-    setTimeout(() => _updateSelectionBar(btn.closest(".modal-panel")), 1400);
-  }
-  btn.classList.toggle("verse-sel-btn--fav-active", salvando);
-}
-
-function _copyVerseSelection(btn) {
-  const d = _selectionData();
-  if (!d) return;
-
-  /* Monta o texto final */
-  const toSup = n => String(n).split("").map(x => "⁰¹²³⁴⁵⁶⁷⁸⁹"[x]).join("");
-  let formatted;
-  if (d.ordered.length === 1) {
-    formatted = `"${_selVerseMap[d.ordered[0]]}" - ${d.ref}`;
-  } else {
-    const lines = d.ordered.map(vid => {
-      const n = parseInt(vid.split(".")[2]);
-      return `${toSup(n)} ${_selVerseMap[vid]}`;
-    }).join("\n");
-    formatted = `${lines}\n\n${d.ref}`;
-  }
-
-  navigator.clipboard.writeText(formatted).then(() => {
-    const lbl = btn.querySelector(".verse-sel-copy-label");
-    if (lbl) { lbl.textContent = "Copiado"; setTimeout(() => { lbl.textContent = "Copiar"; }, 1800); }
-    btn.classList.add("verse-sel-btn--success");
-    setTimeout(() => btn.classList.remove("verse-sel-btn--success"), 1800);
-  }).catch(err => console.error("Erro ao copiar:", err));
-}
-
-/* ──────────────────────────────────────────────────────────
-   LEITOR DE BÍBLIA LIVRE
-   ──────────────────────────────────────────────────────────*/
-const BOOKS_PT = [
-  ["GEN","Gênesis"],["EXO","Êxodo"],["LEV","Levítico"],["NUM","Números"],["DEU","Deuteronômio"],
-  ["JOS","Josué"],["JDG","Juízes"],["RUT","Rute"],["1SA","1 Samuel"],["2SA","2 Samuel"],
-  ["1KI","1 Reis"],["2KI","2 Reis"],["1CH","1 Crônicas"],["2CH","2 Crônicas"],["EZR","Esdras"],
-  ["NEH","Neemias"],["EST","Ester"],["JOB","Jó"],["PSA","Salmos"],["PRO","Provérbios"],
-  ["ECC","Eclesiastes"],["SNG","Cantares"],["ISA","Isaías"],["JER","Jeremias"],["LAM","Lamentações"],
-  ["EZK","Ezequiel"],["DAN","Daniel"],["HOS","Oséias"],["JOL","Joel"],["AMO","Amós"],
-  ["OBA","Obadias"],["JON","Jonas"],["MIC","Miquéias"],["NAM","Naum"],["HAB","Habacuque"],
-  ["ZEP","Sofonias"],["HAG","Ageu"],["ZEC","Zacarias"],["MAL","Malaquias"],
-  ["MAT","Mateus"],["MRK","Marcos"],["LUK","Lucas"],["JHN","João"],["ACT","Atos"],
-  ["ROM","Romanos"],["1CO","1 Coríntios"],["2CO","2 Coríntios"],["GAL","Gálatas"],
-  ["EPH","Efésios"],["PHP","Filipenses"],["COL","Colossenses"],["1TH","1 Tessalonicenses"],
-  ["2TH","2 Tessalonicenses"],["1TI","1 Timóteo"],["2TI","2 Timóteo"],["TIT","Tito"],
-  ["PHM","Filemom"],["HEB","Hebreus"],["JAS","Tiago"],["1PE","1 Pedro"],["2PE","2 Pedro"],
-  ["1JN","1 João"],["2JN","2 João"],["3JN","3 João"],["JUD","Judas"],["REV","Apocalipse"]
-];
-
-const OT_BOOKS = ["GEN","EXO","LEV","NUM","DEU","JOS","JDG","RUT","1SA","2SA","1KI","2KI","1CH","2CH","EZR","NEH","EST","JOB","PSA","PRO","ECC","SNG","ISA","JER","LAM","EZK","DAN","HOS","JOL","AMO","OBA","JON","MIC","NAM","HAB","ZEP","HAG","ZEC","MAL"];
-const NT_BOOKS = ["MAT","MRK","LUK","JHN","ACT","ROM","1CO","2CO","GAL","EPH","PHP","COL","1TH","2TH","1TI","2TI","TIT","PHM","HEB","JAS","1PE","2PE","1JN","2JN","3JN","JUD","REV"];
-
-/* ── Capítulo vizinho, atravessando livros ──
-  dir = 1 (próximo) ou -1 (anterior). Devolve { book, chapter },
-  ou null antes de Gênesis 1 e depois de Apocalipse 22. */
-  function neighborChapter(data, bookId, chapter, dir) {
-  const count = id => data.find(b => b.abbrev === USFM_TO_ABBREV[id])?.chapters.length ?? 0;
-
-  const c = chapter + dir;
-  if (c >= 1 && c <= count(bookId)) return { book: bookId, chapter: c };
-
-  const order = BOOKS_PT.map(b => b[0]);
-  const i = order.indexOf(bookId) + dir;
-  if (i < 0 || i >= order.length) return null;
-
-  const outro = order[i];
-  const total = count(outro);
-  if (!total) return null;
-  return { book: outro, chapter: dir > 0 ? 1 : total };
-}
-
-/* "Êxodo 1" */
-function chapRef(n) {
-  const nome = BOOKS_PT.find(b => b[0] === n.book)?.[1] ?? n.book;
-  return `${nome} ${n.chapter}`;
-}
-
-/* No mesmo livro o botão fica genérico; ao virar de livro, mostra o destino */
-function neighborLabel(n, currentBook, generic) {
-  if (!n || n.book === currentBook) return generic;
-  return chapRef(n);
-}
-
-/* Setas do topo do leitor: só aparecem com a leitura aberta */
-function syncReaderTopNav(visible) {
-  [["readerTopPrev", _readerPrev], ["readerTopNext", _readerNext]].forEach(([id, alvo]) => {
-    const b = document.getElementById(id);
-    if (!b) return;
-    b.style.display = visible ? "" : "none";
-    b.disabled = !alvo;
-    b.title = alvo ? chapRef(alvo) : "";
-  });
-}
-  
-let _readerPrev = null;
-let _readerNext = null;
-
-let readerBook      = null;
-let readerChapter   = null;
-let readerVerse     = null;
-let _readerChapCount = 0;   // total de capítulos do livro aberto
-
-/* Abre sempre na lista de livros, sem herdar a passagem do devocional.
-Para ler o capítulo do versículo do dia existe o botão "Passagem". */
-function openBibleReader() {
-  readerBook       = null;
-  readerChapter    = null;
-  readerVerse      = null;
-  _readerChapCount = 0;
-
-  openModal("bibleModal");
-  renderBookPanel();
-}
-
-function closeBibleReader() {
-  const modal = document.getElementById("bibleModal");
-  closeModal("bibleModal");
-  document.getElementById("readerPanel")?.classList.remove("is-reading");
-  _resetVerseSelection(modal.querySelector(".modal-panel"));
-}
-
-/* ──────────────────────────────────────────────────────────
-   SELETOR DE PASSAGEM — três passos
-   Livro → Capítulo → Versículo. Cada passo substitui o anterior
-   na tela, com a volta explícita no topo.
-   ──────────────────────────────────────────────────────────*/
-
-/* ── Passo 1: livros ── */
-function renderBookPanel() {
-  const body  = document.getElementById("readerBody");
-  const panel = document.getElementById("readerPanel");
-  /* Modo seleção: esconde o botão de referência do topo */
-  panel?.classList.remove("is-reading");
-  syncReaderTopNav(false);
-
-  const bookGrid = (ids, label) => {
-    const items = ids.map(id => {
-      const name   = BOOKS_PT.find(b => b[0] === id)?.[1] ?? id;
-      const active = id === readerBook ? "panel-btn--active" : "";
-      return `<button class="panel-btn panel-btn--book ${active}"
-                      data-book="${id}"
-                      data-name="${normalizeForSearch(name)}"
-                      onclick="selectBook('${id}')">${name}</button>`;
-    }).join("");
-    return `
-      <div class="panel-section" data-testament>
-        <span class="panel-testament-label">${label}</span>
-        <div class="panel-grid panel-grid--books">${items}</div>
-      </div>`;
-  };
-
-  body.innerHTML = `
-    <div class="reader-picker">
-
-      <div class="picker-head">
-        <div class="picker-head__text">
-          <span class="picker-head__title">Escolha o livro</span>
-          <span class="picker-head__sub">${BOOKS_PT.length} livros</span>
-        </div>
-      </div>
-
-      <div class="picker-search">
-        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" id="bookFilterInput" class="picker-search__input"
-               placeholder="Ex: salmos 23:1"
-               autocomplete="off" enterkeyhint="go"
-               oninput="filterBooks(this.value)"
-               onkeydown="onBookFilterKey(event)" />
-      </div>
-
-      <p class="picker-hint" id="bookFilterHint" style="display:none"></p>
-
-      <div id="bookGrids">
-        ${bookGrid(OT_BOOKS, "Antigo Testamento")}
-        ${bookGrid(NT_BOOKS, "Novo Testamento")}
-        <p class="picker-empty" id="bookFilterEmpty" style="display:none">Nenhum livro com esse nome.</p>
-      </div>
-
-    </div>
-  `;
-
-  body.scrollTop = 0;
-}
-
-/* ── Filtro de livros: entende também capítulo e versículo ──
-   Aceita "salmos", "salmos 23", "salmos 23:1", "sl 23 1", "1 co 13:4".
-   A parte numérica só é lida quando vem no fim, depois de um espaço —
-   assim "1 João" e "2 Samuel" continuam sendo nome de livro. */
-let _pendingRef = { chapter: null, verse: null };
-
-function parseBookQuery(raw) {
-  const q = (raw || "").trim();
-  const m = q.match(/^(.+?)[\s,]+(\d+)(?:\s*[:.\s]\s*(\d+))?\s*$/);
-  if (!m) return { book: normalizeForSearch(q), chapter: null, verse: null };
-  return {
-    book:    normalizeForSearch(m[1]),
-    chapter: parseInt(m[2]),
-    verse:   m[3] ? parseInt(m[3]) : null
-  };
-}
-
-function filterBooks(query) {
-  const { book, chapter, verse } = parseBookQuery(query);
-  _pendingRef = { chapter, verse };
-
-  const grids = document.getElementById("bookGrids");
-  if (!grids) return;
-
-  let anyVisible = false;
-
-  grids.querySelectorAll("[data-testament]").forEach(section => {
-    let sectionVisible = false;
-    section.querySelectorAll(".panel-btn--book").forEach(btn => {
-      const match = !book || btn.dataset.name.includes(book);
-      btn.style.display = match ? "" : "none";
-      if (match) sectionVisible = true;
-    });
-    section.style.display = sectionVisible ? "" : "none";
-    if (sectionVisible) anyVisible = true;
-  });
-
-  const empty = document.getElementById("bookFilterEmpty");
-  if (empty) empty.style.display = anyVisible ? "none" : "block";
-
-  /* Dica do que foi entendido, quando há número na busca */
-  const hint = document.getElementById("bookFilterHint");
-  if (hint) {
-    const alvo = bestBookMatch(book);
-    if (chapter && alvo && anyVisible) {
-      const nome = BOOKS_PT.find(b => b[0] === alvo)?.[1] ?? alvo;
-      hint.textContent = `Enter para abrir ${nome} ${chapter}${verse ? ":" + verse : ""}`;
-      hint.style.display = "block";
-    } else {
-      hint.style.display = "none";
-    }
-  }
-}
-
-/* Melhor livro para a busca: nome exato ganha de "começa com",
-   que ganha de "contém". Sem isso, "jo" abriria Jó em vez de João. */
-function bestBookMatch(book) {
-  if (!book) return null;
-  const candidatos = BOOKS_PT
-    .map(([id, nome]) => ({ id, n: normalizeForSearch(nome) }))
-    .filter(c => c.n.includes(book));
-  if (candidatos.length === 0) return null;
-  return (candidatos.find(c => c.n === book)
-       ?? candidatos.find(c => c.n.startsWith(book))
-       ?? candidatos[0]).id;
-}
-
-/* Enter abre direto o melhor resultado */
-function onBookFilterKey(e) {
-  if (e.key !== "Enter") return;
-  e.preventDefault();
-  const { book } = parseBookQuery(e.target.value);
-  const alvo = bestBookMatch(book);
-  if (alvo) selectBook(alvo);
-}
-
-/* ── Passo 2: capítulos do livro escolhido ── */
-async function selectBook(bookId) {
-  readerBook    = bookId;
-  readerChapter = null;
-  readerVerse   = null;
-
-  /* Se a busca trouxe capítulo (e talvez versículo), pula direto */
-  const salto  = _pendingRef;
-  _pendingRef  = { chapter: null, verse: null };
-
-  const body     = document.getElementById("readerBody");
-  const bookName = BOOKS_PT.find(b => b[0] === bookId)?.[1] ?? bookId;
-
-  body.innerHTML = `<div class="modal-loading">Carregando capítulos de ${bookName}...</div>`;
-
-  try {
-    const data = await loadBibleVersion(currentVersion);
-    const book = data.find(b => b.abbrev === USFM_TO_ABBREV[bookId]);
-    if (!book) throw new Error("Livro não encontrado");
-
-    _readerChapCount = book.chapters.length;
-
-    if (salto.chapter && salto.chapter >= 1 && salto.chapter <= _readerChapCount) {
-      readerChapter = salto.chapter;
-      const versos = book.chapters[readerChapter - 1] || [];
-      if (salto.verse && salto.verse >= 1 && salto.verse <= versos.length) {
-        /* Referência completa: abre a leitura no versículo */
-        readerVerse = `${readerBook}.${readerChapter}.${salto.verse}`;
-        loadReaderChapter();
-      } else {
-        /* Só o capítulo: mostra a lista de versículos dele */
-        selectChapter(readerChapter);
-      }
-      return;
-    }
-
-    const nums = book.chapters.map((_, i) => {
-      const n = i + 1;
-      return `<button class="panel-btn panel-btn--num" onclick="selectChapter(${n})">${n}</button>`;
-    }).join("");
-
-    body.innerHTML = `
-      <div class="reader-picker">
-        <div class="picker-head">
-          <button class="picker-back" onclick="renderBookPanel()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            <span>Livros</span>
-          </button>
-          <div class="picker-head__text">
-            <span class="picker-head__title">${bookName}</span>
-            <span class="picker-head__sub">${_readerChapCount} ${_readerChapCount === 1 ? "capítulo" : "capítulos"}</span>
-          </div>
-        </div>
-        <div class="panel-grid panel-grid--nums">${nums}</div>
-      </div>`;
-
-    body.scrollTop = 0;
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar os capítulos.</p>`;
-  }
-}
-
-/* ── Passo 3: versículos do capítulo escolhido ── */
-async function selectChapter(num) {
-  readerChapter = parseInt(num);
-  readerVerse   = null;
-
-  const body     = document.getElementById("readerBody");
-  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
-
-  body.innerHTML = `<div class="modal-loading">Carregando versículos...</div>`;
-
-  try {
-    const data = await loadBibleVersion(currentVersion);
-    const book = data.find(b => b.abbrev === USFM_TO_ABBREV[readerBook]);
-    if (!book) throw new Error("Livro não encontrado");
-
-    const chapArr = book.chapters[readerChapter - 1] || [];
-    const total   = chapArr.length;
-
-    const nums = chapArr.map((_, i) => {
-      const n = i + 1;
-      return `<button class="panel-btn panel-btn--num" onclick="selectVerse(${n})">${n}</button>`;
-    }).join("");
-
-    body.innerHTML = `
-      <div class="reader-picker">
-        <div class="picker-head">
-          <button class="picker-back" onclick="selectBook('${readerBook}')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            <span>Capítulos</span>
-          </button>
-          <div class="picker-head__text">
-            <span class="picker-head__title">${bookName} ${readerChapter}</span>
-            <span class="picker-head__sub">${total} ${total === 1 ? "versículo" : "versículos"}</span>
-          </div>
-          <button class="picker-open-btn" onclick="openWholeChapter()">
-            Ler o capítulo
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l6 6-6 6"/></svg>
-          </button>
-        </div>
-        <span class="panel-section-label">ou comece em um versículo</span>
-        <div class="panel-grid panel-grid--nums">${nums}</div>
-      </div>`;
-
-    body.scrollTop = 0;
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar os versículos.</p>`;
-  }
-}
-
-/* ── Abre a leitura destacando um versículo ── */
-function selectVerse(num) {
-  readerVerse = `${readerBook}.${readerChapter}.${num}`;
-  loadReaderChapter();
-}
-
-/* ── Abre a leitura do capítulo inteiro, do começo ── */
-function openWholeChapter() {
-  readerVerse = null;
-  loadReaderChapter();
-}
-
-/* ── Atualiza o label de referência no header do modal ── */
-function updateReaderRefLabel() {
-  const el = document.getElementById("readerRefLabel");
-  if (!el) return;
-  const bookName = BOOKS_PT.find(b => b[0] === readerBook)?.[1] ?? readerBook;
-  const verseNum = readerVerse ? readerVerse.split(".")[2] : null;
-  el.textContent = verseNum
-    ? `${bookName} ${readerChapter}:${verseNum}`
-    : `${bookName} ${readerChapter}`;
-}
-
-async function loadReaderChapter() {
-  const body = document.getElementById("readerBody");
-
-  _readerPrev = _readerNext = null;
-  updateReaderRefLabel();
-  document.getElementById("readerPanel")?.classList.add("is-reading");
-  syncReaderTopNav(true);
-  body.innerHTML = `<div class="modal-loading">Carregando...</div>`;
-
-  try {
-    const data = await loadBibleVersion(currentVersion);
-    const book = data.find(b => b.abbrev === USFM_TO_ABBREV[readerBook]);
-    if (!book) throw new Error("Livro não encontrado");
-
-    _readerChapCount = book.chapters.length;
-    if (readerChapter > _readerChapCount) readerChapter = _readerChapCount;
-
-    const chapArr = book.chapters[readerChapter - 1] || [];
-    _readerPrev = neighborChapter(data, readerBook, readerChapter, -1);
-    _readerNext = neighborChapter(data, readerBook, readerChapter, 1);
-
-    const content = chapArr.map((text, i) => ({
-      name: "verse-span",
-      attrs: { verseId: `${readerBook}.${readerChapter}.${i + 1}` },
-      items: [{ type: "text", text }]
-    }));
-
-    renderChapter({ content, next: !!_readerNext }, readerVerse ?? "", body);
-
-    const prevTxt = neighborLabel(_readerPrev, readerBook, "Anterior");
-    const nextTxt = neighborLabel(_readerNext, readerBook, "Próximo");
-
-    body.insertAdjacentHTML("beforeend", `
-      <div class="reader-chapter-nav">
-        <button class="reader-nav-btn" ${_readerPrev ? "" : "disabled"} onclick="readerGo(-1)">‹ ${prevTxt}</button>
-        <button class="reader-nav-btn reader-nav-btn--ghost" onclick="renderBookPanel()">Trocar passagem</button>
-        <button class="reader-nav-btn" ${_readerNext ? "" : "disabled"} onclick="readerGo(1)">${nextTxt} ›</button>
-      </div>`);
-
-    syncReaderTopNav(true);
-  } catch(e) {
-    body.innerHTML = `<p class="modal-error">Erro ao carregar. Verifique o arquivo da versão.</p>`;
-  }
-}
-
-/* ── Navegar capítulos com a leitura aberta (vira de livro no fim) ── */
-function readerGo(dir) {
-  const alvo = dir > 0 ? _readerNext : _readerPrev;
-  if (!alvo) return;
-  readerBook    = alvo.book;
-  readerChapter = alvo.chapter;
-  readerVerse   = null;
-  loadReaderChapter();
-}
-
-/* ──────────────────────────────────────────────────────────
-   MENU HAMBURGUER (mobile)
-   ──────────────────────────────────────────────────────────*/
-function handleModalClick(e, modalId) {
-  if (e.target.id === modalId) {
-    if (modalId === 'contextModal') closeContextModal();
-    else if (modalId === 'favoritesModal') closeFavoritesModal();
-    else if (modalId === 'searchModal') closeSearchModal();
-    else closeBibleReader();
-  }
-}
-
-/* Escape fecha o modal aberto (antes só fechava os dropdowns) */
-document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape") return;
-  const open = document.querySelector(".modal-overlay.open");
-  if (!open) return;
-  if (open.id === "contextModal")        closeContextModal();
-  else if (open.id === "bibleModal")     closeBibleReader();
-  else if (open.id === "favoritesModal") closeFavoritesModal();
-  else if (open.id === "searchModal")    closeSearchModal();
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const hamburgerBtn      = document.getElementById('hamburgerBtn');
-  const hamburgerToolbar  = document.getElementById('actionToolbar');
-  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
-
-  if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
-
-  hamburgerBtn.addEventListener('click', function() {
-    const isOpen = hamburgerBtn.classList.contains('is-open');
-    if (isOpen) { closeHamburgerMenu(); } else { openHamburgerMenu(); }
-  });
-
-  hamburgerBackdrop.addEventListener('click', closeHamburgerMenu);
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeHamburgerMenu();
-  });
-});
-
-function openHamburgerMenu() {
-  const hamburgerBtn      = document.getElementById('hamburgerBtn');
-  const hamburgerToolbar  = document.getElementById('actionToolbar');
-  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
-  if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
-
-  /* A gaveta é position:fixed e ocupa a lateral inteira — não precisa
-     mais ser ancorada no header por estilo inline. */
-  hamburgerBtn.classList.add('is-open');
-  hamburgerBtn.setAttribute('aria-expanded', 'true');
-  hamburgerToolbar.classList.add('is-open');
-  hamburgerBackdrop.classList.add('is-active');
-  document.body.classList.add('modal-open');
-}
-
-function closeHamburgerMenu() {
-  const hamburgerBtn      = document.getElementById('hamburgerBtn');
-  const hamburgerToolbar  = document.getElementById('actionToolbar');
-  const hamburgerBackdrop = document.getElementById('hamburgerBackdrop');
-  if (!hamburgerBtn || !hamburgerToolbar || !hamburgerBackdrop) return;
-
-  hamburgerBtn.classList.remove('is-open');
-  hamburgerBtn.setAttribute('aria-expanded', 'false');
-  hamburgerToolbar.classList.remove('is-open');
-  hamburgerBackdrop.classList.remove('is-active');
-
-  /* Só libera a rolagem se nenhum modal ficou aberto */
-  if (!document.querySelector('.modal-overlay.open')) {
-    document.body.classList.remove('modal-open');
-  }
-}
