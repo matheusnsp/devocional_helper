@@ -208,6 +208,32 @@ function bestBookMatch(q, raw = "") {
 }
 
 /* ──────────────────────────────────────────────────────────
+   ORDEM DO DEVOCIONAL
+   versiculos.js está agrupado por tema; na ordem do arquivo o app
+   passava 12 dias seguidos em "Amor", depois 12 em "Fé"... Aqui a
+   lista é embaralhada com semente fixa: a ordem é sempre a mesma em
+   todo aparelho, mas os temas se alternam. Mudar a semente muda a
+   ordem para todo mundo, então não mexa sem motivo.
+   ──────────────────────────────────────────────────────────*/
+function seededShuffle(arr, seed) {
+  const a = [...arr];
+  let t = seed >>> 0;
+  const rand = () => {           // mulberry32
+    t = (t + 0x6D2B79F5) >>> 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const ORDERED = seededShuffle(verses, 20240101);
+
+/* ──────────────────────────────────────────────────────────
    ESTADO
    ──────────────────────────────────────────────────────────*/
 const KEYS = {
@@ -217,13 +243,16 @@ const KEYS = {
   version:  "devocional-version",
   readDays: "devocional-readDays",
   lastRead: "devocional-lastRead",
+  notes:    "devocional-notes",
+  plans:    "devocional-plans",
+  ttsRate:  "devocional-ttsRate",
 };
 
 const S = {
   view:    "hoje",
   theme:   "Todos",
   version: store.getRaw(KEYS.version, "ARA"),
-  pool:    [...verses],
+  pool:    ORDERED,
   idx:     0,
   reader:  { book: null, chapter: null, source: null, fromToday: false, screen: "books" },
   sel:     new Set(),
@@ -316,14 +345,16 @@ window.addEventListener("hashchange", () => showView(viewFromHash()));
    ──────────────────────────────────────────────────────────*/
 let _showToken = 0;
 
-function dayOfYear(d = new Date()) {
-  const start = new Date(d.getFullYear(), 0, 1);
-  /* Conta em dias no fuso local, sem depender de milissegundos
-     (evita erro de 1 dia em fusos com horário de verão). */
-  return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000) + 1;
+/* Dias corridos desde uma data fixa, no fuso local. Usar o dia do
+   ano deixava de fora tudo depois do item 365 e repetia a mesma
+   sequência todo ano. Date.UTC com a data local evita o erro de
+   1 dia em fusos com horário de verão. */
+const EPOCH = Date.UTC(2024, 0, 1);
+function daysSinceEpoch(d = new Date()) {
+  return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - EPOCH) / 86400000);
 }
 
-const dayIndex = () => (dayOfYear() - 1) % S.pool.length;
+const dayIndex = () => ((daysSinceEpoch() % S.pool.length) + S.pool.length) % S.pool.length;
 
 function renderDate() {
   const d = new Date();
@@ -343,7 +374,7 @@ function renderThemeChips() {
 
 function selectTheme(theme) {
   S.theme = theme;
-  S.pool  = theme === "Todos" ? [...verses] : verses.filter(v => v.theme === theme);
+  S.pool  = theme === "Todos" ? ORDERED : ORDERED.filter(v => v.theme === theme);
   S.idx   = dayIndex();
   $$("#themeChips .chip").forEach(c => {
     const on = c.dataset.themeChip === theme;
@@ -357,6 +388,7 @@ function selectTheme(theme) {
 async function showVerse() {
   const item = S.pool[S.idx];
   if (!item) return;
+  flushNote();
   const token  = ++_showToken;
   const textEl = $("#verseText");
   const isToday = S.idx === dayIndex();
@@ -376,6 +408,8 @@ async function showVerse() {
 
   updateFavBtn();
   renderRelated(item);
+  loadTodayNote(item);
+  if (TTS.kind === "today") ttsStop();
 
   try {
     const items = await getPassage(item.apiId, S.version);
@@ -416,7 +450,7 @@ function openDevotional(apiId, theme) {
   let i = S.pool.findIndex(v => v.apiId === apiId && v.theme === theme);
   if (i === -1) {
     S.theme = "Todos";
-    S.pool  = [...verses];
+    S.pool  = ORDERED;
     renderThemeChips();
     i = S.pool.findIndex(v => v.apiId === apiId && v.theme === theme);
   }
@@ -581,17 +615,23 @@ function toggleFavorite() {
 async function renderSaved() {
   const all  = getFavorites();
   const list = $("#savedList");
+  const nNotes = Object.keys(getNotes()).length;
   const favs = all
     .map((f, i) => ({ ...f, _i: i }))
     .filter(f => S.savedFilter === "all"
       || (S.savedFilter === "bible" ? f.source === "biblia" : f.source !== "biblia"));
 
-  $("#savedCount").textContent = all.length ? plural(all.length, "item", "itens") : "";
+  $("#savedCount").textContent = [
+    all.length ? plural(all.length, "salvo", "salvos") : "",
+    nNotes ? plural(nNotes, "anotação", "anotações") : ""
+  ].filter(Boolean).join(" · ");
   $$("#savedFilter button").forEach(b => {
     const on = b.dataset.filter === S.savedFilter;
     b.classList.toggle("is-on", on);
     b.setAttribute("aria-selected", on);
   });
+
+  if (S.savedFilter === "notes") return renderNotesList(list);
 
   if (!favs.length) {
     list.innerHTML = `
@@ -667,6 +707,8 @@ function exportBackup() {
     exportedAt: new Date().toISOString(),
     favorites: getFavorites(),
     readDays: [...getReadDays()],
+    notes: getNotes(),
+    plans: getPlanState(),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
@@ -702,7 +744,27 @@ function importBackup(file) {
         store.set(KEYS.readDays, [...days].sort().slice(-400));
         renderStreak();
       }
+      /* Anotações: fica a mais recente. Planos: soma o que foi lido. */
+      if (data.notes && typeof data.notes === "object") {
+        const notes = getNotes();
+        Object.entries(data.notes).forEach(([k, n]) => {
+          if (!n || typeof n.text !== "string") return;
+          if (!notes[k] || (n.updatedAt || 0) > (notes[k].updatedAt || 0)) { notes[k] = n; added++; }
+        });
+        store.set(KEYS.notes, notes);
+      }
+      if (data.plans && typeof data.plans === "object") {
+        const st = getPlanState();
+        Object.entries(data.plans).forEach(([id, p]) => {
+          if (!PLANS.some(x => x.id === id) || !p) return;
+          if (!st[id]) st[id] = p;
+          else st[id].done = { ...(st[id].done || {}), ...(p.done || {}) };
+        });
+        savePlanState(st);
+        renderPlanToday();
+      }
       updateFavBtn();
+      loadTodayNote(S.pool[S.idx]);
       if (S.view === "salvos") renderSaved();
       closeSheet();
       toast(added ? `${plural(added, "item importado", "itens importados")}` : "Nada novo para importar");
@@ -722,6 +784,8 @@ function saveLastRead() {
 }
 
 function renderBible() {
+  if (S.reader.screen === "plans") return renderPlans();
+  if (S.reader.screen === "plan" && S.reader.planId) return renderPlan(S.reader.planId);
   if (S.reader.screen === "read" && S.reader.book) return renderReader();
   if (S.reader.screen === "chapters" && S.reader.book) return renderChapters(S.reader.book);
   renderBooks();
@@ -749,6 +813,7 @@ function renderBooks() {
           </span>
           ${icon("chev-r", 18)}
         </button>` : ""}
+      ${plansHomeHtml()}
       <label class="search-field">
         ${icon("search", 18)}
         <input type="search" id="bookFilter" placeholder="Livro ou referência (ex: sl 23)" autocomplete="off" enterkeyhint="go" />
@@ -857,11 +922,12 @@ function openReader(book, chapter, opts = {}) {
 let _readerToken = 0;
 let _chapterVerses = [];   // textos do capítulo aberto, para copiar
 
-async function renderReader() {
+async function renderReader(opts = {}) {
   const r     = S.reader;
   const body  = $("#bibleBody");
   const token = ++_readerToken;
   clearSelection();
+  if (TTS.kind === "chapter" && !opts.autoplay) ttsStop();
 
   body.innerHTML = `
     <div class="reader-bar">
@@ -871,6 +937,7 @@ async function renderReader() {
         <span>${escapeHtml(bookName(r.book))} ${r.chapter}</span>${icon("chev-d", 14)}
       </button>
       <button class="icon-btn" data-reader-go="1" aria-label="Próximo capítulo">${icon("chev-r", 20)}</button>
+      ${TTS.supported ? `<button class="icon-btn" data-listen-chapter aria-label="Ouvir o capítulo">${icon("volume", 18)}</button>` : ""}
       <button class="icon-btn" data-text-size aria-label="Tamanho do texto">${icon("text", 18)}</button>
     </div>
     ${r.fromToday ? `<button class="back-banner" data-back-today>${icon("arrow-l", 15)} Voltar ao devocional</button>` : ""}
@@ -903,7 +970,9 @@ async function renderReader() {
           <span class="reading__book">${escapeHtml(bookName(r.book))} · ${S.version}</span>
           <span class="reading__chap">${r.chapter}</span>
         </header>
+        <div id="planChip"></div>
         <div class="reading__body">${verseHtml}</div>
+        <div id="planFoot"></div>
         <nav class="chapter-nav">
           <button class="chapter-nav__btn" data-reader-go="-1" ${prev ? "" : "disabled"}>
             <small>Anterior</small><span>${prev ? escapeHtml(`${bookName(prev.book)} ${prev.chapter}`) : "—"}</span>
@@ -917,11 +986,15 @@ async function renderReader() {
     $$("[data-reader-go='-1']", body).forEach(b => b.disabled = !prev);
     $$("[data-reader-go='1']", body).forEach(b => b.disabled = !next);
     saveLastRead();
+    decorateReader();
+    renderPlanReader();
+    if (opts.autoplay) listenChapter();
 
     const first = r.source?.[0];
     if (first && $(`#v${first}`)) {
       requestAnimationFrame(() => {
         const el  = $(`#v${first}`);
+        if (!el) return;
         const top = el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 3;
         window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
       });
@@ -935,13 +1008,13 @@ async function renderReader() {
   }
 }
 
-function readerGo(dir) {
+function readerGo(dir, opts) {
   const target = dir > 0 ? S.reader.next : S.reader.prev;
   if (!target) return;
   S.reader.book    = target.book;
   S.reader.chapter = target.chapter;
   S.reader.source  = null;
-  renderReader();
+  renderReader(opts);
 }
 
 /* Versículos deste capítulo que já estão nos salvos */
@@ -1026,14 +1099,24 @@ function saveSelection() {
     toast("Removido dos salvos");
   }
   saveFavorites(favs);
-  const saved = savedVersesIn(S.reader.book, S.reader.chapter);
-  $$(".rv").forEach(el => el.classList.toggle("is-saved", saved.has(+el.dataset.v)));
+  decorateReader();
   updateSelBar();
 }
 
-function copySelection() {
+function noteSelection() {
   const d = selectionData();
-  if (d) copyText(formatPassage(d.items, `${d.ref} (${S.version})`));
+  if (d) openNoteEditor(d.apiId, d.ref, d.items.map(i => i.text).join(" "));
+}
+
+function compareSelection() {
+  const d = selectionData();
+  if (!d) return;
+  const { book, chapter } = S.reader;
+  openCompare(d.ref, async v => {
+    const data = await loadBibleVersion(v);
+    const arr  = getBook(data, book)?.chapters[chapter - 1] || [];
+    return d.nums.map(n => ({ n, text: stripQuotes(arr[n - 1] || "").trim() }));
+  });
 }
 
 function shareSelection() {
@@ -1245,13 +1328,20 @@ function openSettings() {
       <span class="field__label">Versão da Bíblia</span>
       ${versionOptions()}
     </div>
+    ${TTS.supported ? `
+    <div class="field">
+      <span class="field__label">Velocidade da leitura em voz alta</span>
+      <div class="segmented" role="tablist">
+        ${TTS_RATES.map(r => `<button class="${r === TTS.rate ? "is-on" : ""}" data-rate="${r}">${String(r).replace(".", ",")}x</button>`).join("")}
+      </div>
+    </div>` : ""}
     <div class="field">
       <span class="field__label">Backup</span>
       <div class="btn-row">
         <button class="btn" data-export>${icon("download", 16)} Exportar</button>
         <button class="btn" data-import>${icon("upload", 16)} Importar</button>
       </div>
-      <p class="foot-note">Guarda seus salvos e sua sequência num arquivo, para levar a outro aparelho.</p>
+      <p class="foot-note">Guarda salvos, anotações, planos e sequência num arquivo, para levar a outro aparelho.</p>
     </div>
   `);
   $("#scaleInput").addEventListener("input", e => setReadingScale(e.target.value));
@@ -1282,7 +1372,7 @@ function setVersion(id) {
   if (S.view === "salvos") renderSaved();
   if (S.view === "busca") renderSearch();
   toast(`Versão ${id}`);
-  if ($("#sheetTitle").textContent === "Versão da Bíblia") closeSheet();
+  if (["Versão da Bíblia", "Comparar versões"].includes($("#sheetTitle").textContent)) closeSheet();
 }
 
 /* ── Compartilhar ── */
@@ -1298,7 +1388,8 @@ function openShareSheet(items, ref) {
   _shareData = { items, ref, text };
   openSheet("Compartilhar", `
     <canvas id="shareCanvas" class="share-preview" width="1080" height="1350" aria-label="Prévia da imagem"></canvas>
-    <div class="btn-row">
+    <div class="btn-row btn-row--3">
+      <button class="btn" data-share-copy>${icon("copy", 16)} Copiar</button>
       <button class="btn" data-share-text>${icon("text", 16)} Texto</button>
       <button class="btn btn--primary" data-share-image>${icon("image", 16)} Imagem</button>
     </div>`);
@@ -1402,6 +1493,757 @@ async function drawShareImage(canvas, items, ref) {
 }
 
 /* ──────────────────────────────────────────────────────────
+   ANOTAÇÕES
+   { [apiId]: { ref, text, updatedAt } } — a chave é a passagem,
+   então a anotação feita no devocional aparece também no leitor.
+   ──────────────────────────────────────────────────────────*/
+const getNotes = () => store.get(KEYS.notes, {});
+
+function setNote(apiId, ref, text) {
+  const notes = getNotes();
+  const t = (text || "").trim();
+  if (t) notes[apiId] = { ref, text: t, updatedAt: Date.now() };
+  else delete notes[apiId];
+  store.set(KEYS.notes, notes);
+  return !!t;
+}
+
+const formatDay = ts => new Date(ts).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+
+/* ── Campo do Hoje: salva sozinho enquanto você escreve ── */
+let _noteTimer = null;
+let _notePending = null;
+
+function autoGrow(el) {
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight + 2}px`;
+}
+
+function loadTodayNote(item) {
+  if (!item) return;
+  const input = $("#noteInput");
+  const note  = getNotes()[item.apiId];
+  input.value = note?.text || "";
+  $("#noteStatus").textContent = note ? `Editada em ${formatDay(note.updatedAt)}` : "";
+  autoGrow(input);
+}
+
+function onTodayNoteInput(e) {
+  const item = S.pool[S.idx];
+  if (!item) return;
+  autoGrow(e.target);
+  _notePending = { apiId: item.apiId, ref: item.ref, text: e.target.value };
+  $("#noteStatus").textContent = "…";
+  clearTimeout(_noteTimer);
+  _noteTimer = setTimeout(flushNote, 600);
+}
+
+function flushNote() {
+  clearTimeout(_noteTimer);
+  if (!_notePending) return;
+  const { apiId, ref, text } = _notePending;
+  _notePending = null;
+  const saved = setNote(apiId, ref, text);
+  if (S.pool[S.idx]?.apiId === apiId) $("#noteStatus").textContent = saved ? "Salva" : "";
+}
+
+/* ── Editor em folha (leitor e lista de anotações) ── */
+let _noteEditing = null;
+
+function openNoteEditor(apiId, ref, quote) {
+  _noteEditing = { apiId, ref };
+  const note = getNotes()[apiId];
+  openSheet("Anotação", `
+    <p class="note-ref">${escapeHtml(ref)}</p>
+    ${quote ? `<blockquote class="note-quote">${escapeHtml(capitalizeFirst(quote))}</blockquote>` : ""}
+    <textarea id="noteEditor" class="note-input note-input--sheet" rows="5"
+      placeholder="Escreva o que você aprendeu, uma oração ou uma pergunta…">${escapeHtml(note?.text || "")}</textarea>
+    ${note ? `<p class="foot-note" style="margin:0 0 12px">Editada em ${formatDay(note.updatedAt)}</p>` : ""}
+    <div class="btn-row">
+      ${note
+        ? `<button class="btn" data-note-delete="${escapeHtml(apiId)}">${icon("trash", 16)} Excluir</button>`
+        : `<button class="btn" data-close>Cancelar</button>`}
+      <button class="btn btn--primary" data-note-save>${icon("check", 16)} Salvar</button>
+    </div>`);
+  const ta = $("#noteEditor");
+  autoGrow(ta);
+  ta.addEventListener("input", () => autoGrow(ta));
+  setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 120);
+}
+
+function afterNotesChanged() {
+  decorateReader();
+  loadTodayNote(S.pool[S.idx]);
+  if (S.view === "salvos") renderSaved();
+}
+
+function saveNoteEditor() {
+  if (!_noteEditing) return;
+  const saved = setNote(_noteEditing.apiId, _noteEditing.ref, $("#noteEditor").value);
+  closeSheet();
+  clearSelection();
+  toast(saved ? "Anotação salva" : "Anotação removida");
+  afterNotesChanged();
+}
+
+function deleteNote(apiId) {
+  if (!confirm("Excluir esta anotação?")) return;
+  setNote(apiId, "", "");
+  closeSheet();
+  toast("Anotação excluída");
+  afterNotesChanged();
+}
+
+/* Texto da passagem dentro do capítulo aberto, se couber nele */
+function chapterQuote(apiId) {
+  const p = parseApiId(apiId);
+  const { book, chapter } = S.reader;
+  if (p.book !== book || chapter < p.chapter || chapter > p.endChapter) return "";
+  const from = p.chapter === chapter ? p.verse : 1;
+  const to   = p.endChapter === chapter ? p.endVerse : _chapterVerses.length;
+  return _chapterVerses.slice(from - 1, to).join(" ");
+}
+
+function openNoteFromReader(apiId) {
+  const note = getNotes()[apiId];
+  if (note) openNoteEditor(apiId, note.ref, chapterQuote(apiId));
+}
+
+async function editNoteFromList(apiId) {
+  const note = getNotes()[apiId];
+  if (!note) return;
+  let quote = "";
+  try { quote = (await getPassage(apiId, S.version)).map(i => i.text).join(" "); } catch {}
+  openNoteEditor(apiId, note.ref, quote);
+}
+
+function openNoteTarget(apiId) {
+  const p = parseApiId(apiId);
+  const ids = [];
+  for (let v = p.verse; v <= (p.chapter === p.endChapter ? p.endVerse : p.verse); v++) ids.push(v);
+  openReader(p.book, p.chapter, { source: ids });
+}
+
+function renderNotesList(list) {
+  const notes = Object.entries(getNotes()).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
+  if (!notes.length) {
+    list.innerHTML = `
+      <div class="empty">
+        ${icon("pen", 44)}
+        <p class="empty__title">Nenhuma anotação ainda</p>
+        <p>Escreva no fim da reflexão de cada dia, ou selecione versículos na Bíblia e toque no lápis.</p>
+      </div>`;
+    return;
+  }
+  list.innerHTML = notes.map(([k, n]) => `
+    <article class="saved-item">
+      <div class="saved-item__top">
+        <span class="saved-item__ref">${escapeHtml(n.ref)}</span>
+        <span class="muted" style="font-size:.8rem">${formatDay(n.updatedAt)}</span>
+      </div>
+      <p class="note-text">${escapeHtml(n.text)}</p>
+      <div class="saved-item__acts">
+        <button class="text-btn" data-note-open="${escapeHtml(k)}">${icon("book", 14)} Abrir</button>
+        <button class="text-btn" data-note-edit="${escapeHtml(k)}">${icon("pen", 14)} Editar</button>
+        <button class="text-btn" data-note-delete="${escapeHtml(k)}" aria-label="Excluir anotação">${icon("trash", 14)}</button>
+      </div>
+    </article>`).join("");
+}
+
+/* Sublinha salvos e põe o lápis depois das passagens anotadas */
+function decorateReader() {
+  const reading = $("#reading");
+  if (!reading) return;
+  const { book, chapter } = S.reader;
+  const saved = savedVersesIn(book, chapter);
+  $$(".rv", reading).forEach(el => el.classList.toggle("is-saved", saved.has(+el.dataset.v)));
+  $$(".rv__note", reading).forEach(el => el.remove());
+  Object.keys(getNotes()).forEach(k => {
+    const p = parseApiId(k);
+    if (p.book !== book || chapter < p.chapter || chapter > p.endChapter) return;
+    const last = p.endChapter === chapter ? p.endVerse : _chapterVerses.length;
+    $(`#v${last}`, reading)?.insertAdjacentHTML("afterend",
+      `<button class="rv__note" data-note-key="${escapeHtml(k)}" aria-label="Ver anotação">${icon("pen", 12)}</button>`);
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
+   PLANOS DE LEITURA
+   Os capítulos do plano são divididos por igual entre os dias.
+   O progresso fica por capítulo: { [planId]: { started, done: {i: 1} } }.
+   O ritmo é seu: o "dia atual" é o primeiro que ainda tem leitura.
+   ──────────────────────────────────────────────────────────*/
+const CHAPTER_COUNTS = [50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4,
+                        28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22];
+const chapterCount = id => CHAPTER_COUNTS[BOOK_ORDER.indexOf(id)] || 0;
+
+const PLANS = [
+  { id: "biblia-1-ano",   days: 365, title: "Bíblia em 1 ano",
+    desc: "De Gênesis a Apocalipse, uns 3 capítulos por dia.", books: BOOK_ORDER },
+  { id: "nt-90",          days: 90,  title: "Novo Testamento em 90 dias",
+    desc: "De Mateus a Apocalipse: a vida de Jesus e da igreja.", books: BOOK_ORDER.slice(OT_COUNT) },
+  { id: "evangelhos-30",  days: 30,  title: "Os Evangelhos em 30 dias",
+    desc: "Mateus, Marcos, Lucas e João — a vida de Jesus.", books: ["MAT", "MRK", "LUK", "JHN"] },
+  { id: "paulo-30",       days: 30,  title: "Cartas de Paulo em 30 dias",
+    desc: "De Romanos a Filemom, a fé explicada às igrejas.", books: BOOK_ORDER.slice(44, 57) },
+  { id: "salmos-30",      days: 30,  title: "Salmos em 30 dias",
+    desc: "Cinco salmos por dia para orar, chorar e louvar.", books: ["PSA"] },
+  { id: "proverbios-31",  days: 31,  title: "Provérbios em 31 dias",
+    desc: "Um capítulo de sabedoria para cada dia do mês.", books: ["PRO"] },
+];
+
+const _planCache = {};
+function planDays(plan) {
+  if (_planCache[plan.id]) return _planCache[plan.id];
+  const flat = [];
+  plan.books.forEach(b => {
+    for (let c = 1; c <= chapterCount(b); c++) flat.push({ book: b, chapter: c, i: flat.length });
+  });
+  const days = Array.from({ length: plan.days }, (_, d) =>
+    flat.slice(Math.floor(d * flat.length / plan.days), Math.floor((d + 1) * flat.length / plan.days)));
+  return (_planCache[plan.id] = { flat, days });
+}
+
+const getPlanState  = () => store.get(KEYS.plans, {});
+const savePlanState = st => store.set(KEYS.plans, st);
+const planById      = id => PLANS.find(p => p.id === id);
+
+function daysBetween(a, b) {
+  const [y1, m1, d1] = a.split("-").map(Number);
+  const [y2, m2, d2] = b.split("-").map(Number);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+}
+
+function planProgress(plan) {
+  const st = getPlanState()[plan.id];
+  if (!st) return null;
+  const { flat, days } = planDays(plan);
+  const done = st.done || {};
+  const doneCount = flat.filter(x => done[x.i]).length;
+  let current = days.findIndex(day => day.some(x => !done[x.i]));
+  const finished = current === -1;
+  if (finished) current = days.length - 1;
+  /* Em que dia o plano estaria se seguisse o calendário à risca */
+  const expected = Math.min(days.length - 1, Math.max(0, daysBetween(st.started, dateKey())));
+  return {
+    done, doneCount, days, current, finished,
+    total: flat.length,
+    pct: Math.floor(doneCount / flat.length * 100),
+    behind: finished ? 0 : Math.max(0, expected - current),
+  };
+}
+
+/* "Gênesis 1–3 · Êxodo 1" */
+function dayLabel(day) {
+  const groups = [];
+  day.forEach(x => {
+    const g = groups[groups.length - 1];
+    if (g && g.book === x.book && g.to === x.chapter - 1) g.to = x.chapter;
+    else groups.push({ book: x.book, from: x.chapter, to: x.chapter });
+  });
+  return groups.map(g => `${bookName(g.book)} ${g.from}${g.to !== g.from ? "–" + g.to : ""}`).join(" · ");
+}
+
+/* Planos em andamento, o mais usado por último primeiro */
+function activePlans() {
+  const st = getPlanState();
+  return PLANS.filter(p => st[p.id]).sort((a, b) => (st[b.id].touched || 0) - (st[a.id].touched || 0));
+}
+
+const progressBar = pct => `<span class="bar"><i style="width:${pct}%"></i></span>`;
+
+function openPlans() {
+  S.reader.screen = "plans";
+  if (S.view !== "biblia") goView("biblia");
+  renderPlans();
+}
+
+function openPlanDetail(id) {
+  S.reader.screen = "plan";
+  S.reader.planId = id;
+  if (S.view !== "biblia") goView("biblia");
+  renderPlan(id);
+}
+
+function startPlan(id) {
+  const st = getPlanState();
+  st[id] = { started: dateKey(), done: {}, touched: Date.now() };
+  savePlanState(st);
+  toast("Plano iniciado. Bom começo!");
+  renderPlan(id);
+  renderPlanToday();
+}
+
+function stopPlan(id) {
+  if (!confirm("Parar este plano? O progresso dele será apagado.")) return;
+  const st = getPlanState();
+  delete st[id];
+  savePlanState(st);
+  toast("Plano encerrado");
+  renderPlan(id);
+  renderPlanToday();
+}
+
+/* Abre a próxima leitura pendente do dia (ou do dia atual) */
+function openPlanReading(id, dayIdx) {
+  const plan = planById(id);
+  const pr   = plan && planProgress(plan);
+  if (!pr) return openPlanDetail(id);
+  const day  = pr.days[dayIdx ?? pr.current];
+  const next = day.find(x => !pr.done[x.i]) || day[0];
+  const st = getPlanState();
+  st[id].touched = Date.now();
+  savePlanState(st);
+  S.reader.planId = id;
+  openReader(next.book, next.chapter);
+}
+
+function markReadToday() {
+  const days = getReadDays();
+  days.add(dateKey());
+  store.set(KEYS.readDays, [...days].sort().slice(-400));
+  renderStreak();
+}
+
+function markPlanChapter(id, i) {
+  const st = getPlanState();
+  if (!st[id]) return;
+  st[id].done = { ...(st[id].done || {}), [i]: 1 };
+  st[id].touched = Date.now();
+  savePlanState(st);
+
+  const plan = planById(id);
+  const { days } = planDays(plan);
+  const dayIdx = days.findIndex(d => d.some(x => x.i === i));
+  const remaining = days[dayIdx].filter(x => !st[id].done[x.i]);
+  renderPlanToday();
+
+  if (remaining.length) {
+    toast(`Lido · ${plural(remaining.length, "capítulo falta", "capítulos faltam")} hoje`);
+    S.reader.planId = id;
+    return openReader(remaining[0].book, remaining[0].chapter);
+  }
+
+  /* Dia completo: conta para a sequência */
+  markReadToday();
+  const pr = planProgress(plan);
+  toast(pr.finished ? "Plano concluído! Glória a Deus." : `Dia ${dayIdx + 1} concluído!`);
+  $("#planFoot").innerHTML = `
+    <div class="plan-foot plan-foot--done">
+      <span class="plan-foot__badge">${icon("check", 18)}</span>
+      <div class="plan-foot__txt">
+        <small>${escapeHtml(plan.title)}</small>
+        <span>${pr.finished ? "Plano concluído!" : `Dia ${dayIdx + 1} concluído`}</span>
+      </div>
+      <button class="btn" data-plan-open="${id}">Ver plano</button>
+    </div>`;
+  $("#planChip").innerHTML = "";
+}
+
+/* Leitor: se o capítulo faz parte do dia atual de algum plano */
+function renderPlanReader() {
+  const { book, chapter } = S.reader;
+  const matches = activePlans().map(plan => {
+    const pr = planProgress(plan);
+    if (pr.finished) return null;
+    const day  = pr.days[pr.current];
+    const item = day.find(x => x.book === book && x.chapter === chapter);
+    return item ? { plan, pr, day, item } : null;
+  }).filter(Boolean);
+  /* Prefere o plano pelo qual a leitura foi aberta */
+  matches.sort((a, b) => (b.plan.id === S.reader.planId) - (a.plan.id === S.reader.planId));
+  const m = matches[0];
+  if (!m) { $("#planChip").innerHTML = $("#planFoot").innerHTML = ""; return; }
+
+  const read = m.day.filter(x => m.pr.done[x.i]).length;
+  $("#planChip").innerHTML = `
+    <button class="plan-chip" data-plan-open="${m.plan.id}">
+      ${icon("calendar", 14)} ${escapeHtml(m.plan.title)} · Dia ${m.pr.current + 1} · ${read}/${m.day.length}
+    </button>`;
+  const isDone = !!m.pr.done[m.item.i];
+  const nextUnread = m.day.find(x => !m.pr.done[x.i]);
+  $("#planFoot").innerHTML = `
+    <div class="plan-foot">
+      <div class="plan-foot__txt">
+        <small>${escapeHtml(m.plan.title)} · Dia ${m.pr.current + 1}</small>
+        <span>${escapeHtml(dayLabel(m.day))}</span>
+      </div>
+      ${isDone
+        ? (nextUnread ? `<button class="btn btn--primary" data-plan-read="${m.plan.id}">Próximo: ${escapeHtml(bookName(nextUnread.book))} ${nextUnread.chapter}</button>` : "")
+        : `<button class="btn btn--primary" data-plan-mark="${m.plan.id}:${m.item.i}">${icon("check", 16)} Marcar como lido</button>`}
+    </div>`;
+}
+
+/* Cartão de planos no início da Bíblia */
+function plansHomeHtml() {
+  const plans = activePlans().slice(0, 2);
+  const cards = plans.map(plan => {
+    const pr = planProgress(plan);
+    return `
+      <div class="plan-card">
+        <button class="plan-card__top" data-plan-open="${plan.id}">
+          <strong>${escapeHtml(plan.title)}</strong>
+          <span>${pr.finished ? "Concluído" : `Dia ${pr.current + 1} de ${plan.days}`} ${icon("chev-r", 14)}</span>
+        </button>
+        ${progressBar(pr.pct)}
+        ${pr.finished ? "" : `
+          <div class="plan-card__row">
+            <span class="plan-card__today">${escapeHtml(dayLabel(pr.days[pr.current]))}</span>
+            <button class="btn btn--primary btn--sm" data-plan-read="${plan.id}">Ler</button>
+          </div>`}
+      </div>`;
+  }).join("");
+  return `
+    <section class="plans-home">
+      <div class="testament__head">
+        <h2 class="section-label">Planos de leitura</h2>
+        <button class="text-btn text-btn--accent" data-plans>Ver todos</button>
+      </div>
+      ${cards || `
+        <button class="plan-cta" data-plans>
+          <span class="plan-cta__icon">${icon("calendar", 20)}</span>
+          <span class="plan-cta__txt"><strong>Comece um plano de leitura</strong>
+            <small>Bíblia em 1 ano, Salmos em 30 dias e outros</small></span>
+          ${icon("chev-r", 18)}
+        </button>`}
+    </section>`;
+}
+
+/* Cartão no Hoje: a leitura do plano do dia */
+function renderPlanToday() {
+  const el = $("#planToday");
+  if (!el) return;
+  const plan = activePlans().find(p => !planProgress(p).finished);
+  if (!plan) {
+    el.hidden = false;
+    el.innerHTML = `
+      <button class="plan-cta plan-cta--ghost" data-plans>
+        <span class="plan-cta__icon">${icon("calendar", 20)}</span>
+        <span class="plan-cta__txt"><strong>Quer ir além do versículo?</strong>
+          <small>Escolha um plano para ler a Bíblia todo dia</small></span>
+        ${icon("chev-r", 18)}
+      </button>`;
+    return;
+  }
+  const pr = planProgress(plan);
+  const day = pr.days[pr.current];
+  const read = day.filter(x => pr.done[x.i]).length;
+  el.hidden = false;
+  el.innerHTML = `
+    <h2 class="section-label">Plano de leitura</h2>
+    <div class="plan-card plan-card--today">
+      <button class="plan-card__top" data-plan-open="${plan.id}">
+        <strong>${escapeHtml(plan.title)}</strong>
+        <span>Dia ${pr.current + 1} de ${plan.days} ${icon("chev-r", 14)}</span>
+      </button>
+      ${progressBar(pr.pct)}
+      <div class="plan-card__row">
+        <span class="plan-card__today">${escapeHtml(dayLabel(day))}${read ? ` <em>· ${read}/${day.length} lidos</em>` : ""}</span>
+        <button class="btn btn--primary btn--sm" data-plan-read="${plan.id}">${read ? "Continuar" : "Ler"}</button>
+      </div>
+      ${pr.behind > 1 ? `<p class="plan-card__note">Você está ${pr.behind} dias atrás do calendário. Tudo bem: siga no seu ritmo.</p>` : ""}
+    </div>`;
+}
+
+function renderPlans() {
+  S.reader.screen = "plans";
+  clearSelection();
+  const st = getPlanState();
+  $("#bibleBody").innerHTML = `
+    <div class="back-row">
+      <button class="text-btn" data-books>${icon("chev-l", 14)} Bíblia</button>
+    </div>
+    <h1 class="display">Planos de leitura</h1>
+    <p class="muted" style="margin-top:6px">Escolha um ritmo. Dá para ter mais de um plano ao mesmo tempo.</p>
+    <div class="plan-list">
+      ${PLANS.map(plan => {
+        const pr = st[plan.id] ? planProgress(plan) : null;
+        const per = (planDays(plan).flat.length / plan.days);
+        return `
+          <button class="plan-item" data-plan-open="${plan.id}">
+            <span class="plan-item__days"><b>${plan.days}</b><small>dias</small></span>
+            <span class="plan-item__txt">
+              <strong>${escapeHtml(plan.title)}</strong>
+              <small>${escapeHtml(plan.desc)}</small>
+              ${pr
+                ? `${progressBar(pr.pct)}<small class="plan-item__status">${pr.finished ? "Concluído" : `Dia ${pr.current + 1} · ${pr.pct}%`}</small>`
+                : `<small class="plan-item__status">${per < 1.5 ? "1 capítulo" : `~${Math.round(per)} capítulos`} por dia</small>`}
+            </span>
+            ${icon("chev-r", 18)}
+          </button>`;
+      }).join("")}
+    </div>`;
+  window.scrollTo(0, 0);
+}
+
+function renderPlan(id) {
+  const plan = planById(id);
+  if (!plan) return renderPlans();
+  S.reader.screen = "plan";
+  S.reader.planId = id;
+  clearSelection();
+  const pr = planProgress(plan);
+  const { flat, days } = planDays(plan);
+
+  const dayRow = (day, d) => {
+    const done = pr && day.every(x => pr.done[x.i]);
+    const cur  = pr && !pr.finished && d === pr.current;
+    return `
+      <button class="day-row ${done ? "is-done" : ""} ${cur ? "is-current" : ""}" ${pr ? `data-plan-day="${id}:${d}"` : "disabled"}>
+        <span class="day-row__box">${done ? icon("check", 13) : ""}</span>
+        <span class="day-row__n">Dia ${d + 1}</span>
+        <span class="day-row__label">${escapeHtml(dayLabel(day))}</span>
+      </button>`;
+  };
+
+  $("#bibleBody").innerHTML = `
+    <div class="back-row">
+      <button class="text-btn" data-plans>${icon("chev-l", 14)} Planos</button>
+    </div>
+    <h1 class="display">${escapeHtml(plan.title)}</h1>
+    <p class="muted" style="margin-top:6px">${escapeHtml(plan.desc)} ${plural(flat.length, "capítulo", "capítulos")} em ${plan.days} dias.</p>
+
+    ${pr ? `
+      <div class="plan-hero">
+        <div class="plan-hero__nums">
+          <span class="plan-hero__pct">${pr.pct}<small>%</small></span>
+          <span class="muted">${pr.doneCount} de ${pr.total} capítulos<br>${pr.finished ? "Plano concluído" : `Dia ${pr.current + 1} de ${plan.days}`}</span>
+        </div>
+        ${progressBar(pr.pct)}
+        ${pr.behind > 1 ? `<p class="plan-card__note">Você está ${pr.behind} dias atrás do calendário. Tudo bem: siga no seu ritmo.</p>` : ""}
+        ${pr.finished ? "" : `<button class="btn btn--primary btn--block" data-plan-read="${id}">${icon("book", 16)} Ler o dia ${pr.current + 1}: ${escapeHtml(dayLabel(days[pr.current]))}</button>`}
+      </div>` : `
+      <button class="btn btn--primary btn--block" style="margin:18px 0 4px" data-plan-start="${id}">${icon("calendar", 16)} Começar hoje</button>`}
+
+    <h2 class="section-label" style="margin-top:26px">${pr ? "Todos os dias" : "Como fica"}</h2>
+    <div class="day-list">
+      ${(pr ? days : days.slice(0, 7)).map(dayRow).join("")}
+      ${pr ? "" : `<p class="muted" style="padding:8px 4px">…e assim até o dia ${plan.days}.</p>`}
+    </div>
+    ${pr ? `<button class="text-btn" style="margin-top:16px;color:var(--ink-3)" data-plan-stop="${id}">${icon("trash", 14)} Parar este plano</button>` : ""}`;
+
+  window.scrollTo(0, 0);
+  if (pr && !pr.finished) {
+    requestAnimationFrame(() => {
+      const cur = $(".day-row.is-current");
+      if (cur && pr.current > 3) {
+        const top = cur.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2;
+        window.scrollTo({ top: Math.max(0, top) });
+      }
+    });
+  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   COMPARAR VERSÕES
+   loader(versionId) → Promise<[{ n, text }]>
+   ──────────────────────────────────────────────────────────*/
+let _compare = null;
+
+function openCompare(ref, loader) {
+  _compare = { ref, texts: {} };
+  openSheet("Comparar versões", `
+    <p class="note-ref">${escapeHtml(ref)}</p>
+    <div class="compare">
+      ${BIBLE_VERSIONS.map(v => `
+        <section class="compare__item ${v.id === S.version ? "is-current" : ""}" data-cmp="${v.id}">
+          <div class="compare__head"><strong>${v.id}</strong><small>${v.name}</small></div>
+          <p class="compare__text"><span class="skeleton"></span><span class="skeleton skeleton--short"></span></p>
+          <div class="compare__acts"></div>
+        </section>`).join("")}
+    </div>`);
+  const mine = _compare;
+  BIBLE_VERSIONS.forEach(async v => {
+    const el = $(`[data-cmp="${v.id}"]`);
+    try {
+      const items = await loader(v.id);
+      if (_compare !== mine || !el.isConnected) return;
+      mine.texts[v.id] = items;
+      el.querySelector(".compare__text").innerHTML = items.length > 1
+        ? items.map(i => `<sup>${i.n}</sup>${escapeHtml(i.text)}`).join(" ")
+        : escapeHtml(capitalizeFirst(items[0]?.text || ""));
+      el.querySelector(".compare__acts").innerHTML = `
+        <button class="text-btn" data-cmp-copy="${v.id}">${icon("copy", 14)} Copiar</button>
+        ${v.id === S.version
+          ? `<span class="tag tag--muted">Versão atual</span>`
+          : `<button class="text-btn text-btn--accent" data-version="${v.id}">Usar ${v.id}</button>`}`;
+    } catch {
+      if (el.isConnected) el.querySelector(".compare__text").textContent = "Não foi possível carregar esta versão. Verifique sua conexão.";
+    }
+  });
+}
+
+function copyCompare(versionId) {
+  const items = _compare?.texts[versionId];
+  if (items) copyText(formatPassage(items, `${_compare.ref} (${versionId})`), `${versionId} copiada`);
+}
+
+/* ──────────────────────────────────────────────────────────
+   LEITURA EM VOZ ALTA (voz do próprio aparelho)
+   Cada versículo/frase vira uma fala separada: o Chrome corta
+   falas longas, e assim dá para destacar o versículo atual.
+   Pausar cancela e lembra onde parou — o pause() nativo trava
+   em vários Androids.
+   ──────────────────────────────────────────────────────────*/
+const TTS_RATES = [0.8, 1, 1.25, 1.5];
+const TTS = {
+  supported: "speechSynthesis" in window && "SpeechSynthesisUtterance" in window,
+  queue: [], i: 0, gen: 0, kind: null, paused: false, onEnd: null,
+  rate: TTS_RATES.includes(+store.getRaw(KEYS.ttsRate, "1")) ? +store.getRaw(KEYS.ttsRate, "1") : 1,
+};
+
+function ttsVoice() {
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => v.lang === "pt-BR" || v.lang === "pt_BR") || vs.find(v => /^pt/i.test(v.lang));
+}
+
+/* Quebra textos longos em frases, sem perder o callback do início */
+function splitForSpeech(seg) {
+  if (seg.text.length < 220) return [seg];
+  const parts = seg.text.match(/[^.!?;:…]+[.!?;:…]*\s*/g) || [seg.text];
+  return parts.filter(p => p.trim()).map((text, k) => ({ text, onStart: k === 0 ? seg.onStart : null }));
+}
+
+/* "Romanos 8:38-39" → "Romanos 8, versículos 38 a 39" */
+function speakableRef(ref) {
+  return ref.replace(/(\d+):(\d+)(?:-(\d+))?/, (_, c, a, b) =>
+    b ? `${c}, versículos ${a} a ${b}` : `${c}, versículo ${a}`);
+}
+
+function ttsStart(segments, label, { kind = null, onEnd = null } = {}) {
+  if (!TTS.supported) return;
+  ttsStop();
+  TTS.queue  = segments.flatMap(splitForSpeech);
+  TTS.i      = 0;
+  TTS.kind   = kind;
+  TTS.onEnd  = onEnd;
+  TTS.paused = false;
+  $("#ttsLabel").textContent = label;
+  document.body.classList.add("tts-on");
+  updateTtsBar();
+  ttsSpeakNext();
+}
+
+function ttsSpeakNext() {
+  if (!TTS.kind || TTS.paused) return;
+  if (TTS.i >= TTS.queue.length) {
+    const cb = TTS.onEnd;
+    ttsStop();
+    cb?.();
+    return;
+  }
+  const gen = TTS.gen;
+  const seg = TTS.queue[TTS.i];
+  const u = new SpeechSynthesisUtterance(seg.text);
+  u.lang = "pt-BR";
+  const voice = ttsVoice();
+  if (voice) u.voice = voice;
+  u.rate = TTS.rate;
+  u.onstart = () => { if (gen === TTS.gen) seg.onStart?.(); };
+  u.onend = () => { if (gen !== TTS.gen) return; TTS.i++; ttsSpeakNext(); };
+  u.onerror = e => {
+    if (gen !== TTS.gen || e.error === "interrupted" || e.error === "canceled") return;
+    TTS.i++; ttsSpeakNext();
+  };
+  /* Falar logo depois de um cancel() às vezes é ignorado no Chrome */
+  setTimeout(() => { if (gen === TTS.gen) speechSynthesis.speak(u); }, 40);
+}
+
+function ttsStop() {
+  if (!TTS.supported) return;
+  TTS.gen++;
+  TTS.kind = null;
+  TTS.paused = false;
+  TTS.onEnd = null;
+  speechSynthesis.cancel();
+  document.body.classList.remove("tts-on");
+  markSpeaking(null);
+  updateTtsBar();
+}
+
+function ttsTogglePause() {
+  if (!TTS.kind) return;
+  if (TTS.paused) {
+    TTS.paused = false;
+    ttsSpeakNext();
+  } else {
+    TTS.paused = true;
+    TTS.gen++;
+    speechSynthesis.cancel();
+  }
+  updateTtsBar();
+}
+
+function setTtsRate(rate) {
+  TTS.rate = rate;
+  store.setRaw(KEYS.ttsRate, String(rate));
+  $$("[data-rate]").forEach(b => b.classList.toggle("is-on", +b.dataset.rate === rate));
+  updateTtsBar();
+  /* Aplica já: recomeça a frase atual na nova velocidade */
+  if (TTS.kind && !TTS.paused) {
+    TTS.gen++;
+    speechSynthesis.cancel();
+    ttsSpeakNext();
+  }
+}
+
+function updateTtsBar() {
+  const on = !!TTS.kind;
+  $("#ttsBar").classList.toggle("is-open", on);
+  $("#ttsToggle").innerHTML = icon(TTS.paused ? "play" : "pause", 17);
+  $("#ttsToggle").setAttribute("aria-label", TTS.paused ? "Continuar" : "Pausar");
+  $("#ttsToggle").classList.toggle("is-paused", TTS.paused);
+  $("#ttsRate").textContent = `${String(TTS.rate).replace(".", ",")}x`;
+  const lb = $("#listenBtn");
+  lb.classList.toggle("is-on", TTS.kind === "today");
+  lb.querySelector("span").textContent = TTS.kind === "today" ? "Parar" : "Ouvir";
+  $("[data-listen-chapter]")?.classList.toggle("is-on", TTS.kind === "chapter");
+}
+
+async function listenToday() {
+  const item = S.pool[S.idx];
+  if (!item) return;
+  let items = [];
+  try { items = await getPassage(item.apiId, S.version); } catch {}
+  ttsStart([
+    { text: `${speakableRef(item.ref)}.` },
+    ...items.map(i => ({ text: i.text })),
+    { text: "Reflexão." },
+    { text: item.ctx },
+  ], item.ref, { kind: "today" });
+}
+
+function markSpeaking(n) {
+  $$(".rv.is-speaking").forEach(e => e.classList.remove("is-speaking"));
+  if (!n) return;
+  const el = $(`#v${n}`);
+  if (!el) return;
+  el.classList.add("is-speaking");
+  const r = el.getBoundingClientRect();
+  if (r.top < 120 || r.bottom > window.innerHeight - 150) {
+    window.scrollTo({ top: window.scrollY + r.top - window.innerHeight / 3, behavior: "smooth" });
+  }
+}
+
+/* Lê o capítulo e, no fim, segue para o próximo */
+function listenChapter() {
+  const { book, chapter } = S.reader;
+  if (!_chapterVerses.length) return;
+  ttsStart([
+    { text: `${bookName(book)}, capítulo ${chapter}.` },
+    ..._chapterVerses.map((text, i) => ({ text, onStart: () => markSpeaking(i + 1) })),
+  ], `${bookName(book)} ${chapter}`, {
+    kind: "chapter",
+    onEnd: () => {
+      const r = S.reader;
+      if (S.view === "biblia" && r.screen === "read" && r.book === book && r.chapter === chapter && r.next) {
+        readerGo(1, { autoplay: true });
+      }
+    },
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
    GESTO DE ARRASTAR (troca versículo / capítulo)
    ──────────────────────────────────────────────────────────*/
 function onSwipe(el, handler) {
@@ -1429,7 +2271,30 @@ document.addEventListener("click", e => {
   const d = t.dataset;
 
   if (t.matches("[data-close]"))      return closeSheet();
+  if (d.noteKey)                      return openNoteFromReader(d.noteKey);
   if (t.classList.contains("rv"))     return toggleVerse(+d.v, t);
+
+  if (d.plans !== undefined)          return openPlans();
+  if (d.planOpen)                     return openPlanDetail(d.planOpen);
+  if (d.planStart)                    return startPlan(d.planStart);
+  if (d.planStop)                     return stopPlan(d.planStop);
+  if (d.planRead)                     return openPlanReading(d.planRead);
+  if (d.planDay) {
+    const [id, day] = d.planDay.split(":");
+    return openPlanReading(id, +day);
+  }
+  if (d.planMark) {
+    const [id, i] = d.planMark.split(":");
+    return markPlanChapter(id, +i);
+  }
+  if (d.listenChapter !== undefined)  return TTS.kind === "chapter" ? ttsStop() : listenChapter();
+  if (d.noteSave !== undefined)       return saveNoteEditor();
+  if (d.noteDelete)                   return deleteNote(d.noteDelete);
+  if (d.noteEdit)                     return editNoteFromList(d.noteEdit);
+  if (d.noteOpen)                     return openNoteTarget(d.noteOpen);
+  if (d.cmpCopy)                      return copyCompare(d.cmpCopy);
+  if (d.rate)                         return setTtsRate(+d.rate);
+  if (d.shareCopy !== undefined)      return copyText(_shareData.text);
 
   if (d.themeChip !== undefined)      return selectTheme(d.themeChip);
   if (d.dev)                          return openDevotional(d.dev, d.devTheme);
@@ -1507,6 +2372,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderStreak();
   S.idx = dayIndex();
   showVerse();
+  renderPlanToday();
 
   $("#prevBtn").addEventListener("click", () => go(-1));
   $("#nextBtn").addEventListener("click", () => go(1));
@@ -1515,6 +2381,21 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#favBtn").addEventListener("click", toggleFavorite);
   $("#copyBtn").addEventListener("click", copyVerse);
   $("#shareBtn").addEventListener("click", shareToday);
+  $("#compareBtn").addEventListener("click", () => {
+    const item = S.pool[S.idx];
+    openCompare(item.ref, v => getPassage(item.apiId, v));
+  });
+  $("#listenBtn").hidden = !TTS.supported;
+  $("#listenBtn").addEventListener("click", () => TTS.kind === "today" ? ttsStop() : listenToday());
+  $("#noteInput").addEventListener("input", onTodayNoteInput);
+  $("#noteInput").addEventListener("blur", flushNote);
+  window.addEventListener("pagehide", flushNote);
+  $("#ttsToggle").addEventListener("click", ttsTogglePause);
+  $("#ttsStop").addEventListener("click", () => ttsStop());
+  $("#ttsRate").addEventListener("click", () => {
+    const i = TTS_RATES.indexOf(TTS.rate);
+    setTtsRate(TTS_RATES[(i + 1) % TTS_RATES.length]);
+  });
   $("#chapterBtn").addEventListener("click", openChapterFromToday);
   $("#doneBtn").addEventListener("click", toggleDone);
   $("#streakBtn").addEventListener("click", showStreakInfo);
@@ -1523,7 +2404,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("#selClear").addEventListener("click", clearSelection);
   $("#selFav").addEventListener("click", saveSelection);
-  $("#selCopy").addEventListener("click", copySelection);
+  $("#selNote").addEventListener("click", noteSelection);
+  $("#selCompare").addEventListener("click", compareSelection);
   $("#selShare").addEventListener("click", shareSelection);
 
   $("#searchInput").addEventListener("input", onSearchInput);
@@ -1554,6 +2436,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window._lastDay = k;
       renderDate();
       renderStreak();
+      renderPlanToday();
       goToday();
     }
   });
