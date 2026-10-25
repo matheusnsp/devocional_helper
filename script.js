@@ -1292,6 +1292,73 @@ function closeSheet() {
   _sheetReturnFocus?.focus?.({ preventScroll: true });
 }
 
+/* ──────────────────────────────────────────────────────────
+   ARRASTAR A FOLHA PARA BAIXO PARA FECHAR (igual ao Tom Louvores)
+   A folha acompanha o dedo para baixo. Soltou depois de um quarto
+   da altura, ou com um puxão rápido, fecha; senão volta.
+   O arrasto só começa quando o conteúdo está no topo: com a lista
+   rolada, puxar para baixo é rolar de volta, não fechar. Pela pega
+   e pelo título ele vale sempre. No desktop a folha é uma janela
+   no meio da tela e não arrasta.
+   ──────────────────────────────────────────────────────────*/
+(function sheetDrag() {
+  let panel = null, y0 = 0, x0 = 0, t0 = 0, dy = 0, decided = false;
+  const desktop = matchMedia("(min-width: 900px)");
+
+  document.addEventListener("touchstart", e => {
+    if (desktop.matches || !$("#sheet").classList.contains("is-open")) return;
+    const p = e.target.closest?.(".sheet__panel");
+    if (!p) return;
+    /* Mexendo num controle de arrastar (tamanho do texto), o dedo é dele */
+    if (e.target.closest('input[type="range"]')) return;
+    const byTop = !!e.target.closest(".sheet__grip, .sheet__head");
+    /* Escrevendo numa anotação, só arrasta pelo topo */
+    if (!byTop && e.target.closest("textarea")) return;
+    const body = $("#sheetBody");
+    if (!byTop && body.scrollTop > 4) return;
+    const t = e.touches[0];
+    panel = p; y0 = t.clientY; x0 = t.clientX; t0 = Date.now();
+    dy = 0; decided = false;
+  }, { passive: true });
+
+  document.addEventListener("touchmove", e => {
+    if (!panel) return;
+    const t = e.touches[0];
+    const my = t.clientY - y0, mx = t.clientX - x0;
+    if (!decided) {
+      if (Math.abs(my) < 8 && Math.abs(mx) < 8) return;
+      /* Para cima ou de lado: é rolagem ou outro gesto, não fechar */
+      if (my <= 0 || Math.abs(mx) > Math.abs(my)) { panel = null; return; }
+      decided = true;
+    }
+    dy = Math.max(0, my);
+    panel.style.transition = "none";
+    panel.style.transform = `translateY(${dy}px)`;
+    const bd = $(".sheet__backdrop");
+    bd.style.transition = "none";
+    bd.style.opacity = String(Math.max(0, 1 - dy / panel.offsetHeight));
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+
+  const release = () => {
+    if (!panel) return;
+    const p = panel; panel = null;
+    if (!decided) return;
+    const bd = $(".sheet__backdrop");
+    const quick = dy > 50 && Date.now() - t0 < 300;
+    const close = dy > p.offsetHeight / 4 || quick;
+    p.style.transition = "";
+    bd.style.transition = ""; bd.style.opacity = "";
+    if (!close) { p.style.transform = ""; return; }     // volta ao lugar
+    /* Fecha a partir de onde o dedo largou, sem pular de volta ao topo */
+    p.style.transform = "translateY(105%)";
+    closeSheet();
+    setTimeout(() => { p.style.transform = ""; }, 400);
+  };
+  document.addEventListener("touchend", release, { passive: true });
+  document.addEventListener("touchcancel", release, { passive: true });
+})();
+
 function versionOptions() {
   return `<div class="option-list">${BIBLE_VERSIONS.map(v => `
     <button class="option ${v.id === S.version ? "is-on" : ""}" data-version="${v.id}">
